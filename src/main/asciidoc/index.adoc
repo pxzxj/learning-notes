@@ -2,4 +2,5 @@
 
 
 [horizontal]
-xref:springboot-logging.adoc[Spring Boot应用日志存储与分析] :: 2021/09/25
+// xref:springboot-logging.adoc[Spring Boot应用日志存储与分析] :: 2021/09/25
+xref:spring-boot-micrometer.adoc[使用Micrometer记录Spring Boot应用指标] ::    2021/09/29

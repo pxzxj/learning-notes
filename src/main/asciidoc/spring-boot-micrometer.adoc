@@ -1,0 +1,53 @@
+= 使用Micrometer记录Spring Boot应用指标
+
+
+== 简介
+
+spring boot acutator  metrics端点
+
+Dimensional metrics   vs     Hierarchical metrics
+
+Dimensional metrics可以轻松应对变化的指标需求，更灵活
+Tag都是字符串
+
+
+指标不单单是为了监控系统，更是为了理解业务系统
+
+监控只是为了看系统有没有出错，指标不只是这个目的
+
+可观测性包含Logging、Metrics、Tracing
+
+Micrometer类似于Slf4j，使用门面模式
+
+MeterRegistry  Meter   CommonTags     MeterBinder
+
+https://cloud.spring.io/spring-cloud-netflix/2.0.x/multi/multi_netflix-metrics.html
+
+
+== 概念
+Meter MeterRegistry   Tag   Metric
+
+
+Metric Cardinality
+
+Cardinality Explosion
+
+Keep tags under control
+
+
+
+
+
+
+
+
+
+:sectnums!:
+== Appendices
+
+.Performance Monitoring Backend and Frontend using Micrometer
+video::deBSrmskpcY[youtube,width=640,height=480]
+
+xref:slides/SpringOne2019-ClintChecketts-PerformanceMonitoringBackendandFrontendUsingMicrometer.pdf[PPT]
+
+https://github.com/checketts/micrometer-springone-2019[demo]
