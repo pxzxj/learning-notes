@@ -1,0 +1,153 @@
+= Java开发问题排查方法与技巧
+
+== 通用方法
+
+=== 日志
+
+不论是开发或者使用其它组件，一定要知道它的日志保存在哪
+
+
+
+=== 搜索
+
+关键字选择
+
+Google  >>   Bing    >>  baidu
+
+官方文档、项目Issue、javadoc
+
+
+例如搜索发现项目加入spring security后CPU利用率升高
+
+
+=== 重现
+
+本地环境重现
+
+快速重现，甚至为了重现问题单独开发一个程序
+
+重现一般也是和下一节的缩小范围一起反复尝试
+
+
+=== 缩小范围
+
+删除不相关代码
+
+新建测试项目
+
+
+
+
+
+
+=== Debug & Remote Debug
+
+==== tomcat远程调试
+
+
+==== spring boot远程调试
+
+
+
+
+
+
+
+== 问题分类
+
+
+
+
+=== 系统资源
+
+
+==== CPU占用高
+
+
+
+
+==== 内存溢出
+内存溢出有多种报错形式
+jstat
+HeapDumpOnOutOfMemory
+MAT
+
+
+=== 接口
+
+curl
+
+
+浏览器控制台copy as curl
+
+部署到服务器后接口访问不到(防火墙问题)
+
+=== 采集
+回显取不到或取不全
+
+回车问题
+
+
+
+=== SpringMVC
+
+接口写了，访问404
+项目部署上去
+
+=== Spring Boot
+
+
+=== Spring Security
+
+UsernamePasswordFilter
+
+
+=== Spring Data JPA
+
+
+=== Maven
+
+
+
+==== 依赖冲突
+
+
+
+
+==== 传递依赖失败
+
+
+
+=== Tomcat
+出错了 catalina.out 没异常 +
+日志刷太快 打印不好看
+
+
+
+=== MySQL
+表名大小写问题
+
+
+=== Elasticsearch
+
+
+
+=== Kafka
+
+
+
+=== 其它
+前后端责任不清晰，相互推诿
+
+
+
+
+== 总结
+
+以上都是简单问题
+夯实基础知识
+
+:sectnums!:
+== Appendices
+
+bilibili::BV1vt411g7F5[]
