@@ -172,6 +172,7 @@
                             </attributes>
                         </configuration>
                     </execution>
+                    <!--
                     <execution>
                         <id>generate-pdf-doc-default-theme</id>
                         <phase>generate-resources</phase>
@@ -190,15 +191,14 @@
                                 <toc/>
                                 <idprefix/>
                                 <idseparator>-</idseparator>
-                                <!-- Fixes line wraps formatting inserting zero-width spaces (ZWSP) before CJ characters -->
                                 <scripts>cjk</scripts>
-                                <!-- Set KaiGen Gothic Chinese theme -->
                                 <pdf-style>KaiGenGothicCN</pdf-style>
                                 <pdf-stylesdir>${pdf.cjk.kaigen.download.dir}/themes</pdf-stylesdir>
                                 <pdf-fontsdir>${pdf.cjk.kaigen.download.dir}/fonts</pdf-fontsdir>
                             </attributes>
                         </configuration>
                     </execution>
+                    -->
                 </executions>
                 <dependencies>
                     <dependency>

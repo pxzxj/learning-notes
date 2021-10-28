@@ -6,7 +6,7 @@ bilibili::BV1jQ4y1q7uC[]
 
 xref:slides/SpringOne2019-ClintChecketts-PerformanceMonitoringBackendandFrontendUsingMicrometer.pdf[PPT] https://github.com/checketts/micrometer-springone-2019[代码]
 
-== 监控
+== Observability
 
 监控告警是软件系统尤其是对可用性要求高的软件系统的重要组成部分，通过监控告警可以防患于未然，将故障对业务系统的影响降到最低 +
 通常监控需要包含三部分内容日志、指标、跟踪
@@ -32,8 +32,8 @@ Micrometer用于在JVM应用中实现指标统计功能，它的最大特点是�
 
 Micrometer支持众多监控软件，这些软件一般会通过下面两种方式进行分类
 
-*基于指标格式分类:*  ::
-    指标格式有基于维度的(Dimensional)和基于层级的(Hierarchical)两种，Dimensional指标是由一个名称和多个Tag组成，每个Tag是一个键值对，Hierarchical指标则只有一个名称，所有信息都压扁保存在名称中 +
+==== 基于指标格式分类
+指标格式有基于维度的(Dimensional)和基于层级的(Hierarchical)两种，Dimensional指标是由一个名称和多个Tag组成，每个Tag是一个键值对，Hierarchical指标则只有一个名称，所有信息都压扁保存在名称中 +
 
 [caption=""]
 .Hierarchical
@@ -60,8 +60,8 @@ Micrometer支持众多监控软件，这些软件一般会通过下面两种方�
 
 
 
-*基于采集方式分类:*  ::
-    采集方式有Client push和Server poll两种方式，不管哪种方式都是定时操作例如每5秒push一次
+==== 基于采集方式分类
+采集方式有Client push和Server poll两种方式，不管哪种方式都是周期执行
 
 |===
 |Client pushes |Server polls
@@ -71,57 +71,36 @@ Micrometer支持众多监控软件，这些软件一般会通过下面两种方�
 |===
 
 
-=== API说明
+=== 术语
 
-*Meter* ::
+==== Meter
 
-[source,java,subs="verbatim"]
-----
-public interface Meter {
+Meter表示一个指标，新增业务指标时首先需要确定它的类型，Micrometer支持下面几种类型
 
-    Id getId();
+- Counter：计数器，用于保存单调递增型的数据，例如站点的访问次数，JVM的GC次数等；不能为负值，也不支持减少，但可以重置为0
+- Gauge：仪表盘，用于存储有着起伏特征的数据，例如堆内存的大小，注意能用Counter记录的指标不要用Guage
+- Timer：计时器，记录事件的次数和总时间，例如HTTP请求消耗的时间，Timer同时也会包含次数统计，不需要再使用Counter
+- Distribution Summaries： 用于跟踪事件的分布，与Timer结构类似，但值的单位可以是自定义的任意单位
 
-    Iterable<Measurement> measure();
-}
-----
-Meter表示一个指标，Meter有不同的实现代表不同类型的指标包括
+确定类型后要为指标取一个合适的名称并添加标签(Tag)，名称最好由小写字母和点组成例如http.request.count，标签是key-value格式的数据，key-value都是字符串，key最好也只包含小写字母和点，一个指标可以包含多个Tag，最终的指标形式如下
 
-- Counter：记录一个不断递增的数量，例如页面访问量，这个数量不一定是整数
-- Gauge：记录一个不断变化的数值，例如集合的大小，注意能使用Counter的指标不要用Gauge
-- Timer：记录操作的时延和频率，例如HTTP请求消耗的时间，Timer同时也会包含次数统计，不需要再使用Counter
+====
+cpu.usage {"host"="192.168.3.1"} +
+cpu.usage {"host"="192.168.3.2"}
+====
 
-其它指标类型参考 https://micrometer.io/docs/concepts[官方文档]
-
-*Tag*  ::
-Tag是一个键值对数据，表示指标的维度
-
-[source,java,subs="verbatim"]
-----
-public interface Tag {
-
-    String getKey();
-
-    String getValue();
-}
-----
-
-TIP: 与指标名称一样，Tag名称也应该仅由小写字母和点组成如response.status
+名称和标签唯一确定了一个指标，上面的示例表示示两台主机的cpu利用率，host值不同就是两个不同的指标
 
 
-*Measurement*  ::
-Measurement代表指标的值，该值为double类型，注意一个指标可能会包含多个值，例如Timer指标会包含count、totalTime、max三个值表示事件数量、总时间、最大时间，这样的设计是为了满足多样的监控需求，例如统计过去一分钟http请求数量，最大响应时长
+其它指标相关内容 https://micrometer.io/docs/concepts[官方文档]
 
-NOTE: Timer的max值是单个窗口的最大时延，上文提到不管是push还是pull都是定期执行，每两次中间就是一个时间窗口
-
-
-
-*MeterRegistry*  ::
+==== MeterRegistry
 MeterRegistry代表指标的存储，每种监控软件都有对应的MeterRegistry实现
 
 
 === Examples
 
-.Counter & Timer
+==== Counter & Timer
 ====
 [source,java,subs="verbatim"]
 ----
@@ -197,7 +176,7 @@ public class MicrometerTest {
 
 TIP: 可以在 https://github.com/pxzxj/micrometer-demo[GitHub] 下载示例源码
 
-.CompositeRegistry  &  LoggingRegistry
+==== CompositeRegistry  &  LoggingRegistry
 ====
 [source,java,subs="verbatim"]
 ----
@@ -247,35 +226,16 @@ public class MicrometerTest {
 
 
 
-.Tags & CommonsTags
+==== Tags & CommonsTags
 ====
 [source,java,subs="verbatim"]
 ----
 public class MicrometerTest {
 
-        @Test
+    @Test
     void testTagsAndCommonTags() throws InterruptedException {
-        CompositeMeterRegistry meterRegistry = Metrics.globalRegistry;
-        LoggingRegistryConfig loggingRegistryConfig = new LoggingRegistryConfig() {
-            @Override
-            public String get(String s) {
-                return null;
-            }
-
-            @Override
-            public boolean logInactive() {
-                return true;
-            }
-
-            @Override
-            public Duration step() {
-                return Duration.ofSeconds(5);
-            }
-        };
-        MeterRegistry loggingRegistry = new LoggingMeterRegistry(loggingRegistryConfig, Clock.SYSTEM);
-        meterRegistry.add(loggingRegistry);
-        meterRegistry.add(new SimpleMeterRegistry());
-        meterRegistry.config().commonTags("team", "spring");   // <1>
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        meterRegistry.config().commonTags("team", "spring");          //  <1>
         for(Chore chore : chores) {
             System.out.println("Doing " + chore.getName());
             meterRegistry.counter("chore.completed").increment();
@@ -283,10 +243,6 @@ public class MicrometerTest {
         }
         for(Meter meter : meterRegistry.getMeters()) {
             System.out.println(meter.getId() + "   " + meter.measure());
-        }
-        for(int i = 1; i < 100; i++) {
-            TimeUnit.SECONDS.sleep(1);
-            System.out.println("Waiting " + i);
         }
     }
 
@@ -297,7 +253,7 @@ public class MicrometerTest {
 ====
 
 
-.Gauge
+==== Gauge
 ====
 [source,java,subs="verbatim"]
 ----
@@ -355,51 +311,294 @@ public class MicrometerTest {
 <3> 使用强引用
 ====
 
-
-
-
 === 最佳实践
 
 ==== 避免指标数量过多
+
+在使用Micrometer时要注意指标数量，不要出现数量爆炸(Cardinality Explosion)
+
+下面是一个典型的示例，有个查询用户的接口 `/user/\{id}` ，新增了一个指标 `http_request` 记录接口调用量，如果把每次用户请求的url作为一个Tag去记录指标那么最终该接口会出现无数个指标，合理的方式是用 `/user/\{id}` 作为Tag
 
 image::images/cardinality-explosion.png[]
 
 ==== 使用MeterFilter降噪
 
-Don’t use user input (directly)
-Use a MeterFilter to
+解决指标数量爆炸的另一种方式是MeterFilter，它能够重写指标的Tag甚至是直接忽略指标
 
-• Disable noisy meters
-• Rewrite high cardinality tags
-• Cap your total meter count
+====
+[source,java,subs="verbatim"]
+----
+public class MicrometerTest {
 
-Drop unwanted metrics at collection (Prometheus ‘relabeling’)
+    @Test
+    void testMeterFilter() throws InterruptedException {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        meterRegistry.config().meterFilter(MeterFilter.deny(id -> id.getName().equals("chore.completed")));   //  <1>
+        meterRegistry.config().meterFilter(MeterFilter.maximumAllowableMetrics(2));                           //  <2>
+        meterRegistry.config().meterFilter(new MeterFilter() {                                                //  <3>
+            @Override
+            public Meter.Id map(Meter.Id id) {
+                if(id.getName().equals("chore.duration")) {
+                    return id.replaceTags(id.getTags().stream().map(tag -> {
+                        if(tag.getKey().equals("group") && tag.getValue().equals("laundry")) {
+                            return tag;
+                        } else {
+                            return Tag.of("group", "other");
+                        }
+                    }).collect(Collectors.toList()));
+                } else {
+                    return id;
+                }
+            }
+        });
+        meterRegistry.config().commonTags("team", "spring");
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();
+            meterRegistry.timer("chore.duration", Tags.of("group", chore.getGroup())).record(chore.getDuration());
+        }
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+    }
+
+}
+----
+<1> deny()方法用于屏蔽部分指标
+<2> maximumAllowableMetrics()方法设置最大指标数量，超出此数量的指标会直接忽略
+<3> map()方法可以转换指标的Tag
+
+====
+
+MeterFilter还有更多用法可以自行查看其API
+
+== Spring Boot image:images/heart.png[25,25] Micrometer
+
+Spring Boot的Actuator模块提供了与Micrometer的整合，因此在Spring Boot中使用Micrometer会更简单
+
+[source,xml,,subs="verbatim"]
+----
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+----
 
 
+[[autowired-mr]]
+=== Autowired MeterRegistry
 
-演示MeterFilter(deny(),maximumMetrics()、匿名内部类)
+Spring Boot自动配置了一个 `CompositeMeterRegistry` ，因此应用代码中无需再创建，可以直接使用依赖注入，下面是一个构造器注入的示例
+
+====
+[source,java,subs="verbatim"]
+----
+package io.github.controller;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HelloController {
+
+    private Counter counter;
+
+    public HelloController(MeterRegistry meterRegistry) {
+        this.counter = meterRegistry.counter("demo.http.requests.total", Tags.of("uri", "/hello"));
+    }
+
+    @GetMapping("/hello")
+    public String hello() {
+        counter.increment();
+        return "Hello Micrometer!";
+    }
+}
+
+----
+====
+
+还可以使用 `MeterRegistryCustomizer` 对Spring自动配置的 `MeterRegistry` 做更多配置
+
+====
+[source,java,subs="verbatim"]
+----
+@Configuration
+public class MicrometerConfig {
+
+    @Bean
+    public MeterRegistryCustomizer<MeterRegistry> meterRegistryCustomizer() {
+        return registry -> registry.config().commonTags("team", "spring");
+    }
+
+}
+----
+====
+
+=== Metrics Endpoint
+
+Actuator提供了/metrics端点用于查看指标的值，首先需要暴露此端点
+
+[source,yaml,configblocks,subs="verbatim"]
+----
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+----
+浏览器访问/actuator/metrics就可以看到所有的指标
+
+image::images/meters-endpoint.jpg[]
+
+可以看到除了上一步添加的 `demo.http.requests.total` 指标外还有许多其它指标，这些都是Spring Boot默认提供的，实际上这里只是一部分默认指标，完整的可以参考 https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.metrics.supported[官方文档] 进行查看
+
+/metrics后还可以添加特定指标名称查看此指标的值，还可以使用tag参数做进一步过滤，tag参数格式为 `tag=\{key}:\{value}`
+
+image::images/specific-metrics.jpg[]
 
 
+=== RestTemplate
 
+Spring Boot自动配置 `RestTemplateBuilder` 已经添加了指标统计的功能，使用它创建的 `RestTemplate` 会使用一个名称为 `http.client.requests` 的Timer指标记录请求的时延，但要注意接口调用时要使用UriTemplate的形式，否则会出现上文提到的数量爆炸问题
 
-== Spring Boot image:images/heart.png[30,30] Micrometer
+====
+[source,java,subs="verbatim"]
+----
+@RestController
+public class HelloController {
 
-spring boot acutator  metrics端点
+    private RestTemplate restTemplate;
 
+    public HelloController(RestTemplateBuilder builder) {
+        this.restTemplate = builder.build();
+    }
 
-RestTemplate和MetricsClientHttpRequestInterceptor
+    @GetMapping("/restwithuritemplate")
+    public Map<String, String> restWithUriTemplate(String suffix) {
+        return Collections.singletonMap("html", restTemplate.getForObject("https://tieba.baidu.com/{suffix}", String.class, suffix));
+    }
 
+    @GetMapping("/restwithouturitemplate")
+    public Map<String, String> restWithoutUriTemplate(String suffix) {
+        return Collections.singletonMap("html", restTemplate.getForObject("https://tieba.baidu.com/" + suffix, String.class));
+    }
 
-MeterRegistryCustomizer
-
-
-
-
-=== Converting Health Checks To Metrics
-
+}
+----
+====
 
 === MeterBinder
+<<autowired-mr, 上文>>的示例直接向Bean中注入 `MeterRegistry` 用来记录指标，这样对原代表有很强的侵入性，直接影响了原本的依赖关系，一种更好的方法是使用 `MeterBinder`
 
+====
+[source,java,subs="verbatim"]
+----
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.binder.MeterBinder;
 
+import org.springframework.context.annotation.Bean;
+
+public class MyMeterBinderConfiguration {
+
+    @Bean
+    public MeterBinder queueSize(Queue queue) {
+        return (registry) -> Gauge.builder("queueSize", queue::size).register(registry);
+    }
+
+}
+----
+====
+
+=== HealthInfo
+
+Spring Boot 能够对应用本身及依赖的其它外部组件做简单的健康检查，例如Redis是否正常、磁盘空间是否正常等， https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.endpoints.health.auto-configured-health-indicators[所有]这些检查项都需要实现 `HealthIndicator` 接口，健康检查的结果通常只是简单的服务是否存活，不包含特别详细的指标信息
+
+[source,java,subs="verbatim"]
+----
+public interface HealthIndicator extends HealthContributor {
+    /**
+     * Return an indication of health.
+     * @return the health
+     */
+	Health health();
+}
+----
+
+监控检查的结果可以通过 `/health` 端点查看
+
+image::images/health-endpoint.jpg[]
+
+在生产环境中监控检查的结果需要接入真实的监控系统从而实现服务故障时的告警通知，因此可以将健康检查的结果也转换为指标输出
+
+====
+[source,java]
+----
+package io.github.controller;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.binder.MeterBinder;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Status;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Component
+public class HealthToMetricsConverter implements InitializingBean, MeterBinder {
+
+    private Map<String, HealthIndicator> map;
+
+    private ThreadPoolTaskScheduler scheduler;
+
+    private final ConcurrentHashMap<String, Health> latestHealth = new ConcurrentHashMap<>();
+
+    public HealthToMetricsConverter(Map<String, HealthIndicator> map) {
+        this.map = map;
+        this.scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(5);
+        scheduler.setThreadNamePrefix("ThreadPoolTaskScheduler");
+        scheduler.initialize();
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        for(Map.Entry<String, HealthIndicator> entry : map.entrySet()) {
+            scheduler.scheduleWithFixedDelay(() -> latestHealth.put(entry.getKey(), entry.getValue().health()), Duration.ofSeconds(10));    // <1>
+        }
+    }
+
+    @Override
+    public void bindTo(MeterRegistry registry) {
+        for(Map.Entry<String, Health> entry : latestHealth.entrySet()) {
+            registry.gauge("health.indicator", Tags.of("name", entry.getKey()), entry.getValue(), health -> {
+                Status status = health.getStatus();
+                double v = 3.0;
+                if(status.equals(Status.UP)) {         // <2>
+                    v = 1.0;
+                } else if(status.equals(Status.DOWN)) {
+                    v = -1.0;
+                } else if(status.equals(Status.OUT_OF_SERVICE)) {
+                    v = -2.0;
+                }
+                return v;
+            });
+        }
+    }
+}
+----
+<1> 健康检查可能是很慢的过程，而指标采集需要快速，因此使用线程池定期保存监控检查的结果
+<2> 指标的值必须是数字，因此将Status转为数字
+====
 
 == Prometheus & Grafana
+
