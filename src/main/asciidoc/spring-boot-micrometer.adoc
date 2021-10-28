@@ -1,53 +1,405 @@
-= 使用Micrometer记录Spring Boot应用指标
+= 使用Micrometer记录Java应用指标
+
+本文根据SpringOne 2019的演讲Performance Monitoring Backend and Frontend using Micrometer整理而成，英语能力不错的建议直接观看下面的原始视频
+
+bilibili::BV1jQ4y1q7uC[]
+
+xref:slides/SpringOne2019-ClintChecketts-PerformanceMonitoringBackendandFrontendUsingMicrometer.pdf[PPT] https://github.com/checketts/micrometer-springone-2019[代码]
+
+== 监控
+
+监控告警是软件系统尤其是对可用性要求高的软件系统的重要组成部分，通过监控告警可以防患于未然，将故障对业务系统的影响降到最低 +
+通常监控需要包含三部分内容日志、指标、跟踪
+
+*日志(Logging)*  ::
+日志记录了所有业务操作的详细信息，对日常问题定位起着至关重要的左右。日志记录通常使用日志框架Slf4j、Log4j、Logback实现，小应用直接使用日志文件即可无需考虑其它存储方式，而对中大型的应用或者微服务场景中一般使用ELFK的方案存储日志
+
+*指标(Metrics)*  ::
+指标是对某一业务数据的统计或聚合例如常见的CPU利用率、接口访问量等，相比日志指标是更直观的数据，基于指标可以快速发现系统存在在的问题，指标一般也会与告警系统一起使用使运维人员能在问题出现时立刻收到通知 +
+指标统计可以使用Micrometer实现，Micrometer的使用也是本文的主要内容，指标的结果一般使用时序数据库进行存储常见的如InfluxDB、Prometheus等
 
 
-== 简介
+*跟踪(Traceing)* ::
+跟踪通常只在比较复杂的业务系统例如一个业务操作需要调用不同的应用程序完成的场景中使用，通过traceId可以将这些不同的调用关联起来进行分析 +
+Zipkin可以用来实现应用跟踪
+
+
+== Micrometer
+
+Micrometer用于在JVM应用中实现指标统计功能，它的最大特点是使用了类似Slf4j门面模式的设计，使开发者无需关注指标的存储实现，直接使用统一的API记录即可，开发完成后可以选择Micrometer支持的任意一种或多种存储系统，正如使用Slf4j记录的日志既可以使用Log4j的实现也可以使用Logback的实现
+
+=== 支持的监控软件
+
+Micrometer支持众多监控软件，这些软件一般会通过下面两种方式进行分类
+
+*基于指标格式分类:*  ::
+    指标格式有基于维度的(Dimensional)和基于层级的(Hierarchical)两种，Dimensional指标是由一个名称和多个Tag组成，每个Tag是一个键值对，Hierarchical指标则只有一个名称，所有信息都压扁保存在名称中 +
+
+[caption=""]
+.Hierarchical
+====
+    server1.http.requests = 10
+    us-east.blue.server1.http.requests.200.users = 10
+====
+
+[caption=""]
+.Dimensional
+====
+    http_requests{server="server1"} 10
+    http_requests{server="server1", region="us-east", cluster="blue", status="200", uri="users"} 10
+====
+
+从上面的示例可以看出基于维度的指标有两个优点，首先是意义更清晰，它的每个维度都是一个key-value格式的数据，通过维度信息可以很明确看出指标的意义，而基于层级的只有value而没有key，所以不容易理解；另一个优点是它更灵活便于修改，指标维度变化时可以直接修改而不破坏原来的结构
+
+|===
+|Dimensional |Hierarchical
+
+|AppOptics, Atlas, Azure Monitor, Cloudwatch, Datadog, Datadog StatsD, Dynatrace, Elastic, Humio, Influx, KairosDB, New Relic, Prometheus, SignalFx, Sysdig StatsD, Telegraf StatsD, Wavefront
+|Graphite, Ganglia, JMX, Etsy StatsD
+|===
+
+
+
+*基于采集方式分类:*  ::
+    采集方式有Client push和Server poll两种方式，不管哪种方式都是定时操作例如每5秒push一次
+
+|===
+|Client pushes |Server polls
+
+|AppOptics, Atlas, Azure Monitor, Datadog, Elastic, Graphite, Ganglia, Humio, Influx, JMX, Kairos, New Relic, SignalFx, Wavefront
+|Prometheus, all StatsD flavors
+|===
+
+
+=== API说明
+
+*Meter* ::
+
+[source,java,subs="verbatim"]
+----
+public interface Meter {
+
+    Id getId();
+
+    Iterable<Measurement> measure();
+}
+----
+Meter表示一个指标，Meter有不同的实现代表不同类型的指标包括
+
+- Counter：记录一个不断递增的数量，例如页面访问量，这个数量不一定是整数
+- Gauge：记录一个不断变化的数值，例如集合的大小，注意能使用Counter的指标不要用Gauge
+- Timer：记录操作的时延和频率，例如HTTP请求消耗的时间，Timer同时也会包含次数统计，不需要再使用Counter
+
+其它指标类型参考 https://micrometer.io/docs/concepts[官方文档]
+
+*Tag*  ::
+Tag是一个键值对数据，表示指标的维度
+
+[source,java,subs="verbatim"]
+----
+public interface Tag {
+
+    String getKey();
+
+    String getValue();
+}
+----
+
+TIP: 与指标名称一样，Tag名称也应该仅由小写字母和点组成如response.status
+
+
+*Measurement*  ::
+Measurement代表指标的值，该值为double类型，注意一个指标可能会包含多个值，例如Timer指标会包含count、totalTime、max三个值表示事件数量、总时间、最大时间，这样的设计是为了满足多样的监控需求，例如统计过去一分钟http请求数量，最大响应时长
+
+NOTE: Timer的max值是单个窗口的最大时延，上文提到不管是push还是pull都是定期执行，每两次中间就是一个时间窗口
+
+
+
+*MeterRegistry*  ::
+MeterRegistry代表指标的存储，每种监控软件都有对应的MeterRegistry实现
+
+
+=== Examples
+
+.Counter & Timer
+====
+[source,java,subs="verbatim"]
+----
+package io.github;
+
+import io.micrometer.core.instrument.*;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
+import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
+import io.micrometer.core.instrument.logging.LoggingRegistryConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+public class MicrometerTest {
+
+    private List<Chore> chores = Arrays.asList(
+            new Chore("Mow front lawn", Duration.ofMinutes(20), "yard"),
+            new Chore("Mow back lawn", Duration.ofMinutes(10), "yard"),
+            new Chore("Gather the laundry", Duration.ofMinutes(7), "laundry"),
+            new Chore("Wash the laundry", Duration.ofMinutes(3), "laundry"),
+            new Chore("Sort/Fold the laundry", Duration.ofMinutes(50), "laundry"),
+            new Chore("Was the dishes", Duration.ofMinutes(10), "kitchen"),
+            new Chore("Find my phone charger", Duration.ofMinutes(5))
+    );
+
+    @Test
+    void testCounterAndTimer() {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();                 // <1>
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();                // <2>
+            meterRegistry.timer("chore.duration").record(chore.getDuration());   // <3>
+        }
+
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+    }
+
+        static class Chore {
+
+        private String name;
+        private Duration duration;
+        private String group;
+
+        public Chore(String name, Duration duration, String group) {
+            this.name = name;
+            this.duration = duration;
+            this.group = group;
+        }
+
+        public Chore(String name, Duration duration) {
+            this.name = name;
+            this.duration = duration;
+            this.group = "home";
+        }
+
+        //getter, setter
+    }
+}
+----
+<1> `SimpleMeterRegistry` 可以用来测试Micrometer的功能，
+<2> `MeterRegistry` 的 `counter()` 方法用来创建Counter类型指标，`Counter.increment()` 方法表示该指标值加1
+<3> `MeterRegistry` 的 `timer()` 方法用来创建Counter类型指标，`Timer.record()` 方法记录事件耗时
+====
+
+TIP: 可以在 https://github.com/pxzxj/micrometer-demo[GitHub] 下载示例源码
+
+.CompositeRegistry  &  LoggingRegistry
+====
+[source,java,subs="verbatim"]
+----
+public class MicrometerTest {
+
+    @Test
+    void testCompositeMeterRegistryAndLoggingMeterRegistry() throws InterruptedException {
+        CompositeMeterRegistry meterRegistry = Metrics.globalRegistry;       //  <1>
+        LoggingRegistryConfig loggingRegistryConfig = new LoggingRegistryConfig() {
+            @Override
+            public String get(String s) {
+                return null;
+            }
+
+            @Override
+            public boolean logInactive() {
+                return true;
+            }
+
+            @Override
+            public Duration step() {
+                return Duration.ofSeconds(5);
+            }
+        };   // <2>
+        MeterRegistry loggingRegistry = new LoggingMeterRegistry(loggingRegistryConfig, Clock.SYSTEM);
+        meterRegistry.add(loggingRegistry);
+        meterRegistry.add(new SimpleMeterRegistry());
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();
+            meterRegistry.timer("chore.duration").record(chore.getDuration());
+        }
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+        for(int i = 1; i < 100; i++) {           // <3>
+            TimeUnit.SECONDS.sleep(1);
+            System.out.println("Waiting " + i);
+        }
+    }
+}
+----
+<1> 可以使用 `Metrics.globalRegistry` 也可以使用 `new CompositeMeterRegistry()`
+<2> 设置日志每5秒推送一次
+<3> 等100s为了观察 `LoggingMeterRegistry`的效果
+====
+
+
+
+.Tags & CommonsTags
+====
+[source,java,subs="verbatim"]
+----
+public class MicrometerTest {
+
+        @Test
+    void testTagsAndCommonTags() throws InterruptedException {
+        CompositeMeterRegistry meterRegistry = Metrics.globalRegistry;
+        LoggingRegistryConfig loggingRegistryConfig = new LoggingRegistryConfig() {
+            @Override
+            public String get(String s) {
+                return null;
+            }
+
+            @Override
+            public boolean logInactive() {
+                return true;
+            }
+
+            @Override
+            public Duration step() {
+                return Duration.ofSeconds(5);
+            }
+        };
+        MeterRegistry loggingRegistry = new LoggingMeterRegistry(loggingRegistryConfig, Clock.SYSTEM);
+        meterRegistry.add(loggingRegistry);
+        meterRegistry.add(new SimpleMeterRegistry());
+        meterRegistry.config().commonTags("team", "spring");   // <1>
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();
+            meterRegistry.timer("chore.duration", Tags.of("group", chore.getGroup())).record(chore.getDuration());  // <2>
+        }
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+        for(int i = 1; i < 100; i++) {
+            TimeUnit.SECONDS.sleep(1);
+            System.out.println("Waiting " + i);
+        }
+    }
+
+}
+----
+<1> 添加commonsTags，commonsTag就是对所有指标都生效的Tag
+<2> 使用 两个参数的 `timer()` 方法为Timer指标添加Tag
+====
+
+
+.Gauge
+====
+[source,java,subs="verbatim"]
+----
+public class MicrometerTest {
+
+    @Test
+    void testGauge() throws InterruptedException {
+        CompositeMeterRegistry meterRegistry = Metrics.globalRegistry;
+        LoggingRegistryConfig loggingRegistryConfig = new LoggingRegistryConfig() {
+            @Override
+            public String get(String s) {
+                return null;
+            }
+
+            @Override
+            public boolean logInactive() {
+                return true;
+            }
+
+            @Override
+            public Duration step() {
+                return Duration.ofSeconds(5);
+            }
+        };
+        MeterRegistry loggingRegistry = new LoggingMeterRegistry(loggingRegistryConfig, Clock.SYSTEM);
+        meterRegistry.add(loggingRegistry);
+        meterRegistry.add(new SimpleMeterRegistry());
+        meterRegistry.config().commonTags("team", "spring");
+        addGauge(meterRegistry);
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();
+            meterRegistry.timer("chore.duration", Tags.of("group", chore.getGroup())).record(chore.getDuration());
+        }
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+        System.gc();
+        for(int i = 1; i < 100; i++) {
+            TimeUnit.SECONDS.sleep(1);
+            System.out.println("Waiting " + i);
+        }
+    }
+
+    void addGauge(MeterRegistry meterRegistry) {
+        List<Chore> choresList = new ArrayList<>(chores);
+        meterRegistry.gauge("chore.size.weak", choresList, List::size);          //     <1>
+        meterRegistry.gauge("chore.size.lambda", "", o -> choresList.size());    //   <2>
+        Gauge.builder("chore.size.strong", choresList, List::size).strongReference(true).register(meterRegistry);  //  <3>
+    }
+}
+----
+<1> Gauge默认使用弱引用，可能出现值为NaN，演示演示效果时需要注释掉下面两行
+<2> 使用Lambda表达式解决弱引用问题
+<3> 使用强引用
+====
+
+
+
+
+=== 最佳实践
+
+==== 避免指标数量过多
+
+image::images/cardinality-explosion.png[]
+
+==== 使用MeterFilter降噪
+
+Don’t use user input (directly)
+Use a MeterFilter to
+
+• Disable noisy meters
+• Rewrite high cardinality tags
+• Cap your total meter count
+
+Drop unwanted metrics at collection (Prometheus ‘relabeling’)
+
+
+
+演示MeterFilter(deny(),maximumMetrics()、匿名内部类)
+
+
+
+
+== Spring Boot image:images/heart.png[30,30] Micrometer
 
 spring boot acutator  metrics端点
 
-Dimensional metrics   vs     Hierarchical metrics
 
-Dimensional metrics可以轻松应对变化的指标需求，更灵活
-Tag都是字符串
+RestTemplate和MetricsClientHttpRequestInterceptor
 
 
-指标不单单是为了监控系统，更是为了理解业务系统
-
-监控只是为了看系统有没有出错，指标不只是这个目的
-
-可观测性包含Logging、Metrics、Tracing
-
-Micrometer类似于Slf4j，使用门面模式
-
-MeterRegistry  Meter   CommonTags     MeterBinder
-
-https://cloud.spring.io/spring-cloud-netflix/2.0.x/multi/multi_netflix-metrics.html
-
-
-== 概念
-Meter MeterRegistry   Tag   Metric
-
-
-Metric Cardinality
-
-Cardinality Explosion
-
-Keep tags under control
+MeterRegistryCustomizer
 
 
 
 
+=== Converting Health Checks To Metrics
+
+
+=== MeterBinder
 
 
 
-
-
-:sectnums!:
-== Appendices
-
-.Performance Monitoring Backend and Frontend using Micrometer
-video::deBSrmskpcY[youtube,width=640,height=480]
-
-xref:slides/SpringOne2019-ClintChecketts-PerformanceMonitoringBackendandFrontendUsingMicrometer.pdf[PPT]
-
-https://github.com/checketts/micrometer-springone-2019[demo]
+== Prometheus & Grafana
