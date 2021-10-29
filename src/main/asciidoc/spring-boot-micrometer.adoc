@@ -535,7 +535,7 @@ image::images/health-endpoint.jpg[]
 在生产环境中监控检查的结果需要接入真实的监控系统从而实现服务故障时的告警通知，因此可以将健康检查的结果也转换为指标输出
 
 ====
-[source,java]
+[source,java,subs="verbatim"]
 ----
 package io.github.controller;
 
@@ -601,4 +601,29 @@ public class HealthToMetricsConverter implements InitializingBean, MeterBinder {
 ====
 
 == Prometheus & Grafana
+
+Micrometer使用了门面模式，使用不同的监控系统只需要添加对应的依赖 `micrometer-registry-\{system}` 即可，Prometheus对应如下依赖
+
+[source,xml,subs="verbatim"]
+----
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+----
+
+TIP: Prometheus的安装很简单，在官网下载安装包解压运行即可
+
+Prometheus是使用pull的方式采集数据，Actuator模块会使用 `/prometheus` 端点暴露所有指标数据，因此在Prometheus的配置文件 `prometheus.yml` 中配置采集的目标和接口如下
+
+[source,yaml,subs="verbatim"]
+----
+scrape_configs:
+  - job_name: "myapp"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["HOST:PORT"]
+----
+
+
 
