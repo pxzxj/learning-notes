@@ -513,6 +513,42 @@ public class MyMeterBinderConfiguration {
 ----
 ====
 
+=== MeterFilter
+Spring Boot应用中声明为Bean的MeterFilter会自动配置在MeterRegistry上
+
+[source,java,subs="verbatim"]
+----
+import io.micrometer.core.instrument.config.MeterFilter;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration(proxyBeanMethods = false)
+public class MyMetricsFilterConfiguration {
+
+    @Bean
+    public MeterFilter renameRegionTagMeterFilter() {
+        return MeterFilter.renameTag("com.example", "mytag.region", "mytag.area");
+    }
+
+}
+
+----
+
+
+=== Common Tags
+Spring Boot应用可以在application.yml中配置CommonTag
+
+[source,yaml,configblocks,subs="verbatim"]
+----
+management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      country: cn
+----
+
+
 === HealthInfo
 
 Spring Boot 能够对应用本身及依赖的其它外部组件做简单的健康检查，例如Redis是否正常、磁盘空间是否正常等， https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.endpoints.health.auto-configured-health-indicators[所有]这些检查项都需要实现 `HealthIndicator` 接口，健康检查的结果通常只是简单的服务是否存活，不包含特别详细的指标信息
@@ -625,5 +661,9 @@ scrape_configs:
       - targets: ["HOST:PORT"]
 ----
 
+NOTE: 静态配置的方式实际上并不推荐，Prometheus支持使用服务发现的方式如Eureka、Zookeeper添加target，具体配置方式参考 https://prometheus.io/docs/prometheus/latest/configuration/configuration/[官方网站]
 
+最后在Grafana中添加Prometheus作为数据源并添加Spring Boot仪表盘，就可以非常直观地查看所有指标数据了
+
+image::images/grafana.jpg[]
 
