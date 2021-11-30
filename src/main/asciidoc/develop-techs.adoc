@@ -17,6 +17,7 @@
 - IntelliJ IDEA
 - Git
 - Curl
+- flyway/liquibase
 
 === 基础框架
 
