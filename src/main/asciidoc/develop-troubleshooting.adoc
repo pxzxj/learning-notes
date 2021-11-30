@@ -6,7 +6,9 @@
 
 不论是开发或者使用其它组件，一定要知道它的日志保存在哪
 
+配置文件配置日志位置
 
+systemctl
 
 === 搜索
 
@@ -34,10 +36,10 @@ Google  >>   Bing    >>  baidu
 删除不相关代码
 
 新建测试项目
+单独开发一个程序还可以避免受其它功能影响，例如axis2和cxf会相互影响
 
-
-
-
+=== 替换
+有时候实现同一目的的方法有很多种，例如nginx、haproxy、端口映射都能实现反向代理，与其花大量时间解决一个方案存在的问题不如直接选择另一个方案
 
 
 === Debug & Remote Debug
@@ -48,15 +50,7 @@ Google  >>   Bing    >>  baidu
 ==== spring boot远程调试
 
 
-
-
-
-
-
 == 问题分类
-
-
-
 
 === 系统资源
 
@@ -77,6 +71,7 @@ MAT
 
 curl
 
+webservice(优先选择生成客户端代码)
 
 浏览器控制台copy as curl
 
@@ -87,15 +82,13 @@ curl
 
 回车问题
 
-
-
 === SpringMVC
 
 接口写了，访问404
 项目部署上去
 
 === Spring Boot
-
+自动配置
 
 === Spring Security
 
@@ -121,11 +114,10 @@ UsernamePasswordFilter
 === Tomcat
 出错了 catalina.out 没异常 +
 日志刷太快 打印不好看
-
-
+日志分隔
 
 === MySQL
-表名大小写问题
+
 
 
 === Elasticsearch
@@ -138,9 +130,6 @@ UsernamePasswordFilter
 
 === 其它
 前后端责任不清晰，相互推诿
-
-
-
 
 == 总结
 

@@ -1,0 +1,19 @@
+= Interview-Questions
+
+
+
+== Code
+
+1. 如何实现多继承(不是真正的多继承，指一个类包含两个其它类的功能)
+2. equals()方法需要具备自反性、对称性、传递性、一致性，分别写几个违背对称性、传递性、一致性的示例代码
+
+== ThreadLocal
+1. 使用WeakReference是因为ThreadLocal可能在线程结束之前就已经使用完了，如果不用弱引用，线程结束前ThreadLocal都不能被回收，这里与方法局部变量区别在于方法执行完成后其局部变量就能被回收，而ThreadLocal是Thread的属性，不用弱引用的话就只能等线程结束后再被回收；另一方面ThreadLocal是在多个线程中使用的，如果是强引用只要存在一个线程没结束ThreadLocal就不能被回收。
+2. 内存泄漏问题与弱引用无关，指的是在tomcat这类连接池的场景，线程根本不会结束，例如在springMVC的controller中声明一个ThreadLocal用于保存特定请求参数，请求结束后由于线程并未结束，之前保存的参数也仍然在内存中。
+3. 另一种内存泄漏的场景就是ThreadLocal已经被回收了但线程还没结束，其中的Entry也已经失效了但还不能被回收，由于Value不能回收，它的ClassLoader也不能被回收，因此可能同时会导致ClassLoader内存泄漏。
+
+ If a short-lived object is held for a long time by a long-lived object, it will cause the short-lived object to not be released after use, resulting in memory leaks.
+
+ https://stackoverflow.com/questions/17968803/threadlocal-memory-leak
+ https://www.programmersought.com/article/88854924004/
+ https://java.jiderhamn.se/2012/01/29/classloader-leaks-iv-threadlocal-dangers-and-why-threadglobal-may-have-been-a-more-appropriate-name/

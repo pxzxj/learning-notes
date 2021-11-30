@@ -1,0 +1,19 @@
+= 杂项
+
+判断物理机还是虚拟机
+
+dmidecode | grep 'Product Name'
+
+
+mvn dependency:copy-dependencies
+
+mvn dependency:tree
+
+
+反向路由检查
+
+
+容错：发生故障时，如何让系统继续运行 +
+高可用：系统中断时，如何尽快恢复 +
+灾备：系统毁灭时，如何抢救数据
+

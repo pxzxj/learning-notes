@@ -1,0 +1,13 @@
+= IntelliJ IDEA Tips and Tricks
+
+- Scratch File
+- Scratch Buffer
+- 选择历史粘贴(ctrl + shift + v)
+- Select All Occurrences(找到所有与当前选中单次相同的单词并选中，然后可以进行批量修改)
+- Language Expression (Check Regexp)
+- parameter info
+- surround with
+- join line
+- Hide All Tool Window
+- Add or Remove Caret
+- Inspect Code

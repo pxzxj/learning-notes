@@ -1,0 +1,108 @@
+= Develop-Techs
+
+== 基础
+
+- Java基础
+- 设计模式
+- 算法与数据结构
+- 新版本新特性
+- nio
+- 最佳实践
+- JVM
+
+== 开发
+
+=== 工具
+
+- IntelliJ IDEA
+- Git
+
+=== 基础框架
+
+- Spring Framework
+- Spring Boot
+- Guava
+
+=== Web
+
+- Spring MVC
+
+=== Persistence
+
+- Hibernate
+- MyBatis
+- Spring Data JPA
+- JPA
+
+=== 验证
+
+- Bean Validation
+
+=== 安全
+
+- OAuth2
+- OIDC
+- Spring Security
+
+=== 指标
+- Micrometer
+
+=== Reactive
+
+- Reactive Stream
+- Reactive Manifesto
+- Reactor
+- Spring WebFlux
+- Netty
+
+=== 微服务
+- Spring Cloud
+- Nacos
+- Spring Session
+
+== 测试
+
+=== 框架
+- Junit
+- wiremock
+- spring-test
+- spring-boot test
+- testcontainer
+- TDD(Test Driven Develop)
+- Jacoco
+
+=== 工具
+- JeMeter
+
+== 部署
+
+- Docker
+- Kubernetes
+- CI/CD
+- GitHub Action
+
+== 文档
+
+- markdown
+- asciidoc
+- asciidoctor
+- Docs as code
+- TDD(Test Driven Document)
+- Spring Rest Docs
+
+== Backend
+
+- MySQL
+- Tomcat
+- Kafka
+- Redis
+- Elasticsearch
+
+== Observability
+
+- Prometheus
+- Elasticsearch、FileBeat、Logstash、Kibana
+
+
+== Miscellaneous
+- 架构图
