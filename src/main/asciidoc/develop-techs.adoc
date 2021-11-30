@@ -16,6 +16,7 @@
 
 - IntelliJ IDEA
 - Git
+- Curl
 
 === 基础框架
 
@@ -64,6 +65,7 @@
 
 === 框架
 - Junit
+- mokito
 - wiremock
 - spring-test
 - spring-boot test
