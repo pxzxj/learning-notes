@@ -28,6 +28,9 @@
 === Web
 
 - Spring MVC
+- WebService
+- cxf
+- axis2
 
 === Persistence
 
