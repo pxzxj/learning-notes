@@ -10,49 +10,49 @@
 - 最佳实践
 - JVM
 
-== 开发
-
-=== 工具
+== 工具
 
 - IntelliJ IDEA
 - Git
-- Curl
-- flyway/liquibase
 
-=== 基础框架
+
+
+== 基础框架
 
 - Spring Framework
 - Spring Boot
 - Guava
 
-=== Web
+== Web
 
 - Spring MVC
 - WebService
 - cxf
 - axis2
+- Curl
 
-=== Persistence
+== Persistence
 
 - Hibernate
 - MyBatis
 - Spring Data JPA
 - JPA
+- flyway/liquibase
 
-=== 验证
+== 验证
 
 - Bean Validation
 
-=== 安全
+== 安全
 
 - OAuth2
 - OIDC
 - Spring Security
 
-=== 指标
+== 指标
 - Micrometer
 
-=== Reactive
+== Reactive
 
 - Reactive Stream
 - Reactive Manifesto
@@ -60,10 +60,21 @@
 - Spring WebFlux
 - Netty
 
-=== 微服务
+== 微服务
 - Spring Cloud
 - Nacos
 - Spring Session
+
+== ETL
+
+- ELK
+
+== Stream
+
+- Kafka
+
+== Miscellaneous
+- 架构图
 
 == 测试
 
@@ -96,19 +107,10 @@
 - TDD(Test Driven Document)
 - Spring Rest Docs
 
-== Backend
-
-- MySQL
-- Tomcat
-- Kafka
-- Redis
-- Elasticsearch
-
 == Observability
 
 - Prometheus
 - Elasticsearch、FileBeat、Logstash、Kibana
 
 
-== Miscellaneous
-- 架构图
+
