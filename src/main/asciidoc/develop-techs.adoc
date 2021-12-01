@@ -32,7 +32,7 @@
 - Curl
 
 == Persistence
-
+- MySQL
 - Hibernate
 - MyBatis
 - Spring Data JPA
