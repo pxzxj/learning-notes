@@ -12,3 +12,8 @@
 - Add or Remove Caret
 - Inspect Code
 - http文件
+- recent files(ctrl + e) show edited files
+- recent location (ctrl + shift + e)
+- go to Test(ctrl + shift + t)
+- navigate back/forward (ctrl + alt + 左右箭头)
+- find usage
