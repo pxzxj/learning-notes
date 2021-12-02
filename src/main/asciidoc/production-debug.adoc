@@ -1,0 +1,21 @@
+= 线上环境调试方法
+
+== 背景
+在某些业务场景中，开发的功能无法本地验证，只能在测试环境甚至生产环境验证，典型的如调用其它厂商的Rest接口或者Webservice接口，
+对方服务只能在内网环境访问，此时需要将开发的程序打包部署在内网环境进行调试验证，验证失败则根据异常信息修改代码重新打包部署，
+如此重复数次甚至数十次直到联调成功，这个过程浪费大量时间在打包部署上面，更好的方式是直接在线上环境修改代码并执行验证。
+
+== 方法
+
+https://github.com/pxzxj/webservice-demo/tree/master/client[webservice-client] 仓库中包含了一个 `Client` 类用于调用webservice，
+按照下面步骤操作就可以在线上环境运行 `Client`
+
+1. 执行 `mvn dependency:copy-dependencies` ，将webservice-client的所有依赖jar包下载到 `target/dependency` 目录中
+2. 线上环境新建一个项目目录client
+3. client目录下新建lib目录并将第一步的所有jar包上传到lib目录下
+4. client目录下新建src目录以及对应的包目录并在包下创建用于调用webservice接口的java文件
+5. 编译项目 `javac -cp lib/* -d bin  src/io/github/*.java`
+6. 运行Client类 `java -cp bin;lib/* io.github.Client`
+7. 如果有异常则修改 `Client` 类或者新增其它类并重复5、6步
+
+NOTE: 在Linux环境下第6步 `-cp` 后的多个classpath使用分号连接

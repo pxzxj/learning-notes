@@ -1,0 +1,14 @@
+= asciidoc介绍
+
+== 简介
+
+
+== 语法
+
+[source]
+----
+//插入音频
+audio::ocean-waves.wav[]
+//超链接
+https://micrometer.io/docs/concepts[官方文档]
+----

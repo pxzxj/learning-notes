@@ -1,8 +1,9 @@
 = 目录
 
 
-[horizontal]
-// xref:springboot-logging.adoc[Spring Boot应用日志存储与分析] :: 2021/09/25
-xref:spring-boot-micrometer.adoc[使用Micrometer记录Java应用指标] ::    2021/10/29
+audio::audio/曾志豪 - 雪满征刀.mp3[]
 
-// xref:develop-troubleshooting.adoc[Java开发问题排查方法与技巧] ::    2021/10/26
+
+[horizontal]
+xref:spring-boot-micrometer.adoc[使用Micrometer记录Java应用指标] ::    2021/10/29
+xref:production-debug.adoc[线上环境调试方法] ::     2021/12/02
