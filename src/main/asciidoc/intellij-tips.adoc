@@ -11,3 +11,4 @@
 - Hide All Tool Window
 - Add or Remove Caret
 - Inspect Code
+- http文件
