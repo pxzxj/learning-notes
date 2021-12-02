@@ -1,1 +1,1 @@
-include::src/main/asciidoc/index.adoc[]
+= articles
