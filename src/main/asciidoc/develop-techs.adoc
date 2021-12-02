@@ -98,7 +98,7 @@
 - JeMeter
 
 == 部署
-
+- nginx
 - Docker
 - Kubernetes
 - CI/CD
