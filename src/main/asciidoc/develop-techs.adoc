@@ -30,6 +30,7 @@
 - cxf
 - axis2
 - Curl
+- RPC
 
 == Persistence
 - MySQL
@@ -72,6 +73,11 @@
 == Stream
 
 - Kafka
+
+== workflow
+- BPMN
+- activiti
+- camunda
 
 == Miscellaneous
 - 架构图
