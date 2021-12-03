@@ -11,4 +11,6 @@
 audio::ocean-waves.wav[]
 //超链接
 https://micrometer.io/docs/concepts[官方文档]
+//引用其它文档
+ include::developguide.adoc[leveloffset=+1]
 ----
