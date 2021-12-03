@@ -17,3 +17,4 @@
 - go to Test(ctrl + shift + t)
 - navigate back/forward (ctrl + alt + 左右箭头)
 - find usage
+- next highlighted error
