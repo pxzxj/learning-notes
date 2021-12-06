@@ -1,4 +1,5 @@
 = 使用Micrometer记录Java应用指标
+pxzxj; pudge.zxj@gmail.com; 2021/10/29
 
 本文根据SpringOne 2019的演讲Performance Monitoring Backend and Frontend using Micrometer整理而成，英语能力不错的建议直接观看下面的原始视频
 

@@ -4,13 +4,11 @@
 
 
 == 语法
+    //插入音频
+    audio::ocean-waves.wav[]
+    //超链接
+    https://micrometer.io/docs/concepts[官方文档]
+    //引用其它文档
+    include::developguide.adoc[leveloffset=+1]
 
-[source]
-----
-//插入音频
-audio::ocean-waves.wav[]
-//超链接
-https://micrometer.io/docs/concepts[官方文档]
-//引用其它文档
- include::developguide.adoc[leveloffset=+1]
-----
+使用文档内跳转

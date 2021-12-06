@@ -1,30 +1,379 @@
+:toc:
 = 高级策略模式
-
-== 回顾策略模式
-
+pxzxj; pudge.zxj@gmail.com; 2021/12/6
 
 
+== 背景
+=== 策略模式回顾
 
-== 模式结构
+image::images/Strategy_Pattern_in_UML.png[]
+策略模式是行为型设计模式的一种，UML图如上所示，`Context` 持有 `Strategy` 接口引用，实际调用时可以是 `ConcreteStrategyA` 也可以是 `ConcreteStrategyB`
 
+策略模式与Spring Framework中的依赖注入类似，都是面向接口编程，实际使用时可以注入接口的任意实现，这种方法符合面向对象设计中的开闭原则、里氏替换原则和依赖倒转原则
 
+=== 策略模式的问题
 
+`Strategy` 有多个实现，那么 `Context` 到底该使用哪个，策略模式中一般是使用一个配置文件配置一个具体实现的全类名，这意味着将决定权交给开发者，也意味着多个 `Strategy` 的实现无法同时使用
+
+然而实际业务场景中我们期望根据上下文参数或者请求参数动态选择 `Strategy` 的实现处理相关业务逻辑(伪代码如下)，因此考虑对策略模式进行增强，下面结合一个实例描述整个优化过程
+
+    if(conditionA) {
+        concreteStrategyA.execute();
+    } else (conditionB) {
+        concreteStrategyB.execute();
+    }
 
 
 == 实例与分析
-1. 普通的写一个接口和几个实现
 
-    存在的问题 暴露了接口的实现，不符合最小化访问权限的原则
+*需求*： 某厂商计算开发一个二元计算器，厂商默认支持加减乘除运算，同时允许用户扩展其它运算
 
-2. 使用接口静态方法返回不同实现
+NOTE: 实际业务场景中业务逻辑会比加减乘除复杂的多，但不影响整体模式设计
 
-    隐藏了接口的实现，但每次添加新的实现后都需要在接口上添加对应的静态方法
+=== 枚举实现
 
-3. 默认实现作为枚举，并添加一个判断方法，再结合组合模式
+加减乘除运算通常用来作为枚举抽象方法的示例如下
 
-4. 遍历顺序
+[source,java,subs="verbatim"]
+----
+public enum BinaryOperation {
+
+    PLUS("+") {
+        @Override
+        public double apply(double x, double y) {
+            return x + y;
+        }
+    };
+    // 省略减、乘、除
+
+    private String symbol;
+
+    BinaryOperation(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public abstract double apply(double x, double y);
+}
+----
+
+*使用枚举能够满足默认的加减乘除运算，但显然用户无法扩展其它运算*
+
+=== 接口代替枚举
+
+为了允许用户扩展，定义一个二元运算接口以及默认的加减乘除实现
+
+[source,java,subs="verbatim"]
+----
+public interface BinaryOperation {
+
+    double apply(double x, double y);
+}
+
+/**
+* 加法实现，减乘除省略
+*/
+public class PlusOperation implements BinaryOperation {
+    @Override
+    public double apply(double x, double y) {
+        return x + y;
+    }
+}
+----
+
+将 `x` 、`y` 和要执行的运算封装在一个实体类 `CalculateRequest` 中并在计算器 `Calculator` 中根据不同计算类型选择 `BinaryOperation` 的不同实现
+
+[source,java,subs="verbatim"]
+----
+/**
+* 计算请求
+*/
+public class CalculateRequest {
+
+    private String symbol;
+
+    private double x;
+
+    private double y;
+
+    // getter， setter
+
+}
+
+/**
+* 计算器
+*/
+public class Calculator {
+
+    private final BinaryOperation PLUS = new PlusOperation();
+    private final BinaryOperation MINUS = new MinusOperation();
+    private final BinaryOperation MULTIPLY = new MultiplyOperation();
+    private final BinaryOperation DIVIDE = new DivideOperation();
+
+    public double calculate(CalculateRequest calculateRequest) {
+        String symbol = calculateRequest.getSymbol();
+        double x = calculateRequest.getX();
+        double y = calculateRequest.getY();
+        if(symbol.equals("+")) {
+            return PLUS.apply(x, y);
+        } else if(symbol.equals("-")) {
+            return MINUS.apply(x, y);
+        } else if(symbol.equals("*")) {
+            return MULTIPLY.apply(x, y);
+        } else if(symbol.equals("/")) {
+            return DIVIDE.apply(x, y);
+        } else {
+            throw new IllegalArgumentException(symbol);
+        }
+    }
+}
+----
+
+*将整个判断过程都在 `Calculator` 中实现显然不是好的实践，每次新增一类运算都需要修改 `Calculator` ，这违背了面向对象设计的开闭原则，
+而且该业务场景中运算是允许用户自行实现的，`Calculator` 中根本无法了解用户自行实现的运算*
+
+=== 提取判断逻辑到接口
+
+针对上一节的问题可以将运算符判断的过程提取到 `BinaryOperation` 中，使用 `supports()` 方法判断是否支持特定计算请求，并重构原本的 `apply()` 方法，使用 `CalculateRequest` 作为方法参数
+
+[source,java,subs="verbatim"]
+----
+public interface BinaryOperation {
+
+    boolean supports(CalculateRequest calculateRequest);
+
+    double apply(CalculateRequest calculateRequest);
+}
+
+/**
+* 加法实现，减乘除省略
+*/
+public class PlusOperation implements BinaryOperation {
+
+    @Override
+    public boolean supports(CalculateRequest calculateRequest) {
+        return "+".equals(calculateRequest.getSymbol());
+    }
+
+    @Override
+    public double apply(CalculateRequest calculateRequest) {
+        return calculateRequest.getX() + calculateRequest.getY();
+    }
+
+}
+----
+
+在 `Calculator` 中使用一个集合保存多个 `BinaryOperation` 的实现，计算时遍历选择 `supports()` 方法返回true的实现，并提供一个 `addOperation()` 方法允许向集合中添加新的操作
+
+[source,java,subs="verbatim"]
+----
+public class Calculator {
+
+    private final List<BinaryOperation> binaryOperations = new ArrayList<>();
+
+    public Calculator() {
+        binaryOperations.add(new PlusOperation());
+        binaryOperations.add(new MinusOperation());
+        binaryOperations.add(new MultiplyOperation());
+        binaryOperations.add(new DivideOperation());
+    }
+
+    public void addOperation(BinaryOperation binaryOperation) {
+        binaryOperations.add(binaryOperation);
+    }
+
+    public double calculate(CalculateRequest calculateRequest) {
+        for(BinaryOperation binaryOperation : binaryOperations) {
+            if(binaryOperation.supports(calculateRequest)) {
+                return binaryOperation.apply(calculateRequest);
+            }
+        }
+        throw new IllegalArgumentException(calculateRequest.getSymbol());
+    }
+}
+----
+
+*到此为止，我们的业务需求实际上已经实现了，并且 `BinaryOperation` 也已经展现了本文希望说明的高级策略模式，然而还存在优化空间*
+
+=== 缩小访问范围
+
+上一节 `BinaryOperation` 的多个实现 `PlusOperation`、`MinusOperation` 都声明了 `public` ，允许所有类直接访问，实际上这是没必要的，
+不符合权限最小化的原则，jdk 1.8提供的接口静态方法可以对此进行优化
+
+[source,java,subs="verbatim"]
+----
+public interface BinaryOperation {
+
+    //加法运算，减乘除省略
+    BinaryOperation PLUS = new BinaryOperation() {
+        @Override
+        public boolean supports(CalculateRequest calculateRequest) {
+            return "+".equals(calculateRequest.getSymbol());
+        }
+
+        @Override
+        public double apply(CalculateRequest calculateRequest) {
+            return calculateRequest.getX() + calculateRequest.getY();
+        }
+    };
+
+    boolean supports(CalculateRequest calculateRequest);
+
+    double apply(CalculateRequest calculateRequest);
+
+    /**
+    * 返回单例的加法运算
+    * @return
+    */
+    static BinaryOperation plusOperation() {
+        return PLUS;
+    }
+
+}
+
+public class Calculator {
+
+    private final List<BinaryOperation> binaryOperations = new ArrayList<>();
+
+    public Calculator() {
+        binaryOperations.add(BinaryOperation.plusOperation());
+        binaryOperations.add(BinaryOperation.minusOperation());
+        binaryOperations.add(BinaryOperation.miltiplyOperation());
+        binaryOperations.add(BinaryOperation.divideOperation());
+    }
+
+    //...
+}
+----
+
+NOTE: 上面的示例直接以匿名内部类的方式声明了加法运算，实际业务中如果接口的实现逻辑比较复杂使用这种方式会可能导致接口内部代码大幅增加，此时可以按照上面几节的方式创建一个单独的的实现类，实现类使用默认包级别的访问限定符，
+接口内创建此实现的实例并使用静态方法返回，是否是单例根据业务场景决定
+
+=== 使用组合模式减少重复代码
+
+本示例使用 `Calculator` 封装了多个 `BinaryOperator` 实现各类型运算，那么如果有另一个客户端类也希望使用 `BinaryOperator` 及其实现呢，它也需要使用一个集合属性添加所有 `BinaryOperator` 的实现，使用时不断遍历选择一个实现
+
+显然，添加默认实现以及遍历选择的代码都属于重复代码可以再次进行封装，一种方式是将它们封装在一个工具类中，然后更好的是使用组合模式
+
+[source,java,subs="verbatim"]
+----
+public class CompositeBinaryOperation implements BinaryOperation {
+
+    private Collection<BinaryOperation> binaryOperations;
+
+    public CompositeBinaryOperation() {
+        binaryOperations = new ArrayList<>();
+        binaryOperations.add(BinaryOperation.plusOperation());
+        binaryOperations.add(BinaryOperation.minusOperation());
+        binaryOperations.add(BinaryOperation.multiplyOperation());
+        binaryOperations.add(BinaryOperation.divideOperation());
+    }
+
+    public void addOperation(BinaryOperation binaryOperation) {
+        binaryOperations.add(binaryOperation);
+    }
+
+    @Override
+    public boolean supports(CalculateRequest calculateRequest) {
+        return binaryOperations.stream().anyMatch(op -> op.supports(calculateRequest));
+    }
+
+    @Override
+    public double apply(CalculateRequest calculateRequest) {
+        return binaryOperations.stream()
+                            .filter(op -> op.supports(calculateRequest))
+                            .findFirst()
+                            .orElseThrow(IllegalArgumentException::new)
+                            .apply(calculateRequest);
+    }
+}
+----
+
+客户端代码中可以直接使用 `new` 创建 `CompositeBinaryOperation` ，不过更好的方式是结合Spring Framework使用，
+将 `CompositeBinaryOperation` 声明为一个Bean注入到客户端代码中，这样做的好处是客户端代码仍然可以面向接口 `BinaryOperation` 开发，遵循里氏代换原则和依赖倒转原则
+
+[source,java,subs="verbatim"]
+----
+@Configuration
+public class OperationConfig {
+
+    @Bean
+    public BinaryOperation compositeBinaryOperation() {
+        CompositeBinaryOperation compositeBinaryOperation = new CompositeBinaryOperation();
+        //添加其它运算符
+        compositeBinaryOperation.addOperation(new CustomOperation());
+        return compositeBinaryOperation;
+    }
+}
+
+@Service
+class Calculator {
+
+    private final BinaryOperation binaryOperation;
+
+    public Calculator(BinaryOperation binaryOperation) {
+        this.binaryOperation = binaryOperation;
+    }
+
+    public double calculate(CalculateRequest calculateRequest) throws OperationNotSupportedException {
+        return binaryOperation.apply(calculateRequest);
+    }
+}
+----
+
+=== 遍历顺序
+
+上面几节使用集合保存了多个 `BinaryOperation` 的实现使用时进行遍历，某些场景下还需要控制遍历顺序，此时考虑 `BinaryOperation` 继承Spring Framework提供的 `Ordered` 接口，遍历时按照不同实现的顺序进行遍历
+
+[source,java,subs="verbatim"]
+----
+public interface BinaryOperation extends Ordered {
+
+    boolean supports(CalculateRequest calculateRequest);
+
+    double apply(CalculateRequest calculateRequest);
+
+}
+----
+
+== 模式结构
+通过上面的示例可以总结高级策略模式主要是在原有策略模式接口上新增一个 `supports()` 方法，接口的实现类在 `supports()` 方法中添加判断逻辑，`supports()` 方法返回true时表示此实现可以处理当前请求
+
+上下文类 `Context` 以集合或者组合模式的方式持有多个策略接口的实现，执行业务操作时选择 `supports()` 方法返回true的实现
+
+image::images/advanced-strategy-pattern.png[]
 
 
+== Spring中的高级策略模式
 
-== Spring中的策略模式
+Spring中也大量使用了高级策略模式，例如
 
+.org.springframework.validation.Validator
+====
+
+[source,java,subs="verbatim"]
+----
+public interface Validator {
+
+	boolean supports(Class<?> clazz);
+
+	void validate(Object target, Errors errors);
+
+}
+----
+====
+
+.org.springframework.web.method.support.HandlerMethodArgumentResolver
+====
+[source,java,subs="verbatim"]
+----
+public interface HandlerMethodArgumentResolver {
+
+	boolean supportsParameter(MethodParameter parameter);
+
+	@Nullable
+	Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+			NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception;
+
+}
+----
+====

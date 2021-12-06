@@ -1,9 +1,9 @@
 = 目录
 
-
 audio::audio/曾志豪 - 雪满征刀.mp3[]
 
 
 [horizontal]
 xref:spring-boot-micrometer.adoc[使用Micrometer记录Java应用指标] ::    2021/10/29
 xref:production-debug.adoc[线上环境调试方法] ::     2021/12/02
+xref:advanced-strategy-pattern.adoc[高级策略模式] ::    2021/12/06
