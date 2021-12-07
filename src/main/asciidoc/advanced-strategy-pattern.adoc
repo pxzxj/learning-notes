@@ -197,37 +197,27 @@ public class Calculator {
 === 缩小访问范围
 
 上一节 `BinaryOperation` 的多个实现 `PlusOperation`、`MinusOperation` 都声明了 `public` ，允许所有类直接访问，实际上这是没必要的，
-不符合权限最小化的原则，jdk 1.8提供的接口静态方法可以对此进行优化
+不符合权限最小化的原则，jdk 1.8提供的接口静态方法可以对此进行优化，将 `PlusOperation`、`MinusOperation` 都改为默认包级别的访问，
+并在 `BinaryOperation` 接口中提供静态方法返回对应运算的实例
 
 [source,java,subs="verbatim"]
 ----
+class PlusOperation implements BinaryOperation {
+
+    //...
+}
+
 public interface BinaryOperation {
-
-    //加法运算，减乘除省略
-    BinaryOperation PLUS = new BinaryOperation() {
-        @Override
-        public boolean supports(CalculateRequest calculateRequest) {
-            return "+".equals(calculateRequest.getSymbol());
-        }
-
-        @Override
-        public double apply(CalculateRequest calculateRequest) {
-            return calculateRequest.getX() + calculateRequest.getY();
-        }
-    };
 
     boolean supports(CalculateRequest calculateRequest);
 
     double apply(CalculateRequest calculateRequest);
 
-    /**
-    * 返回单例的加法运算
-    * @return
-    */
     static BinaryOperation plusOperation() {
-        return PLUS;
+        return new PlusOperation();
     }
 
+    // 减乘除省略
 }
 
 public class Calculator {
@@ -244,9 +234,6 @@ public class Calculator {
     //...
 }
 ----
-
-NOTE: 上面的示例直接以匿名内部类的方式声明了加法运算，实际业务中如果接口的实现逻辑比较复杂使用这种方式会可能导致接口内部代码大幅增加，此时可以按照上面几节的方式创建一个单独的的实现类，实现类使用默认包级别的访问限定符，
-接口内创建此实现的实例并使用静态方法返回，是否是单例根据业务场景决定
 
 === 使用组合模式减少重复代码
 
