@@ -1,14 +1,69 @@
-= asciidoc介绍
+:toc:
+= 技术文档编写指南
+pxzxj; pudge.zxj@gmail.com; 2021/12/6
 
-== 简介
+== Introduction
+软件开发中文档跟代码同等重要，
+
+== Docs as Code
+https://www.writethedocs.org/guide/docs-as-code/
 
 
-== 语法
-    //插入音频
-    audio::ocean-waves.wav[]
-    //超链接
-    https://micrometer.io/docs/concepts[官方文档]
-    //引用其它文档
-    include::developguide.adoc[leveloffset=+1]
+doc review
 
-使用文档内跳转
+== Asciidoc
+
+
+
+
+== Asciidoctor
+
+=== IDEA Plugin
+
+
+=== Asciidoctor-maven-plugin
+
+介绍几个重要配置
+
+=== Spring-Backends
+
+
+
+=== Bilibili-extension
+
+
+
+
+
+
+
+
+
+== Examples
+
+更多实例参考官方实例仓库
+
+=== Html backend
+
+=== Pdf backend
+
+
+
+=== CI/CD
+
+GitHub Action
+GitHub Pages
+
+== Doc Review
+
+
+== Style
+
+https://www.ruanyifeng.com/blog/2016/10/document_style_guide.html[中文技术文档的写作规范]
+
+https://github.com/spring-io/spring-asciidoctor-backends/blob/main/guides/style-guide.adoc[spring-style]
+
+== Best-practice
+
+单独的文档项目或模块
+提纲
