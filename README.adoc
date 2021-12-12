@@ -4,3 +4,4 @@
 xref:src/main/asciidoc/spring-boot-micrometer.adoc[使用Micrometer记录Java应用指标] ::    2021/10/29
 xref:src/main/asciidoc/production-debug.adoc[线上环境调试方法] ::     2021/12/02
 xref:src/main/asciidoc/advanced-strategy-pattern.adoc[高级策略模式] ::    2021/12/06
+xref:src/main/asciidoc/documentation.adoc[技术文档编写指南] ::    2021/12/12

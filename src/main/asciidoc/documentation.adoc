@@ -1,6 +1,7 @@
 = 技术文档编写指南
+pxzxj; pudge.zxj@gmail.com; 2021/12/12
 :toc:
-pxzxj; pudge.zxj@gmail.com; 2021/12/6
+
 
 == Introduction
 软件开发中文档跟代码同等重要，优秀的文档对软件的日常使用和后期维护都至关重要，另一方面结合国内软件厂商员工流动频繁的情况，完善文的档还能帮助新员工迅速熟悉项目及业务，
@@ -17,7 +18,8 @@ pxzxj; pudge.zxj@gmail.com; 2021/12/6
 
 2. 协作编写困难
 
-    同样是因为 `Word` 文档的复杂格式，无法多人协作在一个文档上编辑，只能手动合并，合并后的文档以及无法区分特定内容的真正作者。
+    同样是因为 `Word` 文档的复杂格式，无法多人协作在一个文档上编辑，只能手动合并，
+    合并后的文档以及无法区分特定内容的真正作者。
 
 3. 代码支持性差
 
@@ -25,11 +27,13 @@ pxzxj; pudge.zxj@gmail.com; 2021/12/6
 
 4. 格式调整耗时
 
-    想要获得期望的整洁美观效果，通常需要不断调整文档格式，`Word` 的格式调整等都需要鼠标操作，键鼠切换通用会降低文档编写效率，这也正是Intellij IDEA提供了如此多快捷键的原因。
+    想要获得期望的整洁美观效果，通常需要不断调整文档格式，`Word` 的格式调整等都需要鼠标操作，
+    键鼠切换通用会降低文档编写效率，这也正是Intellij IDEA提供了如此多快捷键的原因。
 
 5. 需要单独上传
 
-    通常是再桌面新建一个文档，如果要上传到SVN或者Git上还需要手动复制到对应目录，很多开发文档已经写了但忘记上传。
+    通常是再桌面新建一个文档，如果要上传到SVN或者Git上还需要手动复制到对应目录，
+    很多开发文档已经写了但忘记上传。
 
 6. 需要单独下载
 
@@ -37,12 +41,11 @@ pxzxj; pudge.zxj@gmail.com; 2021/12/6
 
 
 == Docs as Code
-针对上文描述的 `Word` 文档存在的诸多问题，国外的诸多企业包括Google、Microsoft等开始使用 `Docs as Code` 的方式进行文档编写。`Docs as Code` 是指按照写代码的方式写文档，主要包括下面几点内容
+针对上文描述的 `Word` 文档存在的诸多问题，国外的诸多企业开始基于 `Docs as Code` 的理念进行文档编写。`Docs as Code` 是指按照写代码的方式写文档，主要包括下面几点内容
 
 - *使用简单文本编写文档*
 
     这一点是最重要的要求，只有简单文本才能使用Git强大的版本管理功能。
-    Markdown和AsciiDoc是两种主流的轻量级文本标记语言，按照特定格式约定使用简单文本的方式编写却能渲染出多种各种常见的文档样式。
 
 - *使用版本控制工具管理文档*
 
@@ -52,7 +55,7 @@ pxzxj; pudge.zxj@gmail.com; 2021/12/6
 - *文档评审*
 
     代码需要评审，文档也是一样，只有评审通过的文档才能合并到主干。
-    评审可以是线下会议的方式进行也可以是线上评论Commit或者Pull Request的方式进行。
+    评审可以是线下会议的方式进行也可以是线上Review Commit或者Pull Request的方式进行。
 
 - *为文档编写测试*
 
@@ -258,14 +261,6 @@ a|
 == Usage
 ----
 
-|内联锚点
-|_n/a_
-a|
-[source]
-----
-. [[step-1]]Download the software
-----
-
 |内联图片
 a|
 [source,markdown]
@@ -399,28 +394,6 @@ a|
 . third
 ----
 
-|横线
-a|
-[source,markdown]
-----
-***
-
-* * *
-
----
-
-- - -
-
-___
-
-_ _ _
-----
-a|
-[source]
-----
-'''
-----
-
 |文档头
 a|
 .Slapped on as "`front matter`"
@@ -463,64 +436,34 @@ a|
 * Eggs
 * Bread
 ----
-
-|包含文档
-|_n/a_
-a|
-[source]
-----
-\include::intro.adoc[]
-----
-
-|URI引用
-a|
-[source,markdown]
-----
-Go to the [home page][home].
-
-[home]: https://example.org
-----
-a|
-[source]
-----
-:home: https://example.org
-
-Go to the {home}[home page].
-----
-
-|特定 CSS classes
-|_n/a_
-a|
-[source]
-----
-[.path]_Gemfile_
-----
 |===
 
 NOTE: 受约束的是指使用时前后必须有空格，不受约束的则表示可以在任何地方使用
 
 == Asciidoctor
 
-https://asciidoctor.org/[Asciidoctor] 是最流行的AsciiDoc处理软件，它使用Ruby编写，源码托管在GitHub上。
+https://asciidoctor.org/[Asciidoctor] 是最流行的AsciiDoc处理软件，它使用Ruby编写，源码托管在GitHub上，
+很多知名的项目如Spring、Hibernate、JUnit等都是使用Asciidoctor生成项目文档的。
+
 AsciiDoctor能够快速将asciidoc文档转换为Html5、Docbook、Pdf、Epub3等多种格式。
 同时AsciiDoctor还提供了很多扩展接口，允许开发者根据特定需求扩展AsciiDoctor的功能，
 下文介绍的 `Bilibili Extension` 以及 `Spring Backend` 就是对AsciiDoctor的扩展。
 
 Asciidoctor包含了多种不同形式的实现用于满足不同人员的需求，包括命令行工具、Intellij IDEA插件、浏览器插件、Maven插件、Gradle插件等，
-本文选择对Java开发者比较友好的Intellij IDEA和maven插件进行介绍
+本文选择对Java开发者比较友好的Intellij IDEA和maven插件进行介绍。
 
 === Intellij IDEA Plugin
-搜索AsciiDoc插件安装即可
+搜索AsciiDoc插件安装即可。
 
 image::images/install-from-marketplace.png[]
 
-插件安装完成后新建.adoc结尾的文件就会自动使用此插件，左侧为使用asciidoc编写的原始内容，右侧为渲染后的效果
+插件安装完成后新建.adoc结尾的文件就会自动使用此插件，左侧为使用asciidoc编写的原始内容，右侧为渲染后的效果。
 
 image::images/asciidoc-intellij-idea-plugin-editor.png[]
 
 === Asciidoctor-Maven-Plugin
 
-Asciidoctor Maven Plugin可以将AsciiDoc文档转换为多种格式。跟其它Maven插件一样，在 `pom.xml` 中添加AsciiDoctor插件配置即可开始使用
+Asciidoctor Maven Plugin可以将AsciiDoc文档转换为多种格式。跟其它Maven插件一样，在 `pom.xml` 中添加AsciiDoctor插件配置即可开始使用。
 
 [source,xml,subs="verbatim"]
 ----
@@ -561,35 +504,158 @@ Asciidoctor Maven Plugin可以将AsciiDoc文档转换为多种格式。跟其它
 `Configuration` 中支持众多参数的配置，下面选择几个重要的进行说明，完整参数列表参考 https://docs.asciidoctor.org/maven-tools/latest/plugin/goals/process-asciidoc/[官方文档]
 
 _**sourceDirectory**_ ::
-    源文件目录，默认检查 __/src/docs/asciidoc, /src/asciidoc和/src/main/asciidoc__
+    源文件目录，默认检查 __/src/docs/asciidoc, /src/asciidoc和/src/main/asciidoc__。
 _**sourceDocumentName**_ ::
-    源文件名称，默认检查 `sourceDirectory` 下的所有文件
+    源文件名称，默认检查 `sourceDirectory` 下的所有文件。
 _**sourceDocumentExtensions**_ ::
-    源文件扩展名，默认包含__ad, adoc, and asciidoc__
+    源文件扩展名，默认包含__ad, adoc, and asciidoc__。
 _**outputDirectory**_ ::
-    转换后文件输出目录，默认为__${project.build.directory}/generated-docs.__
+    转换后文件输出目录，默认为__${project.build.directory}/generated-docs.__。
 _**backend**_ ::
-    转换目标类型，默认是html5
+    转换目标类型，默认是html5。
 _**doctype**_ ::
-    支持book和article，默认使用article
+    支持book和article，默认使用article。
 
-=== Spring-Backends
+=== Spring Backend
 Asciidoctor提供了通用的文档输出格式，而不同框架或软件则可以根据自身需求进行扩展，Spring为了提升文档可读性创建了 https://github.com/spring-io/spring-asciidoctor-backends[spring-asciidoctor-backends]项目用于生成Spring风格的html文档。
 
+==== Install
+再Asciidoctor Maven插件中添加Spring Backend相关配置即可使用。
+[source,xml,subs="verbatim"]
+----
+<plugin>
+	<groupId>org.asciidoctor</groupId>
+	<artifactId>asciidoctor-maven-plugin</artifactId>
+	<version>2.1.0</version>
+	<executions>
+		<execution>
+			<id>generate-html-documentation</id>
+			<phase>prepare-package</phase>
+			<goals>
+				<goal>process-asciidoc</goal>
+			</goals>
+			<configuration>
+				<backend>spring-html</backend>                      <1>
+			</configuration>
+		</execution>
+	</executions>
+	<dependencies>
+		<dependency>                                                <2>
+			<groupId>io.spring.asciidoctor.backends</groupId>
+			<artifactId>spring-asciidoctor-backends</artifactId>
+			<version>${spring-asciidoctor-backends.version}</version>
+		</dependency>
+	</dependencies>
+</plugin>
 
-介绍Spring Asciidoctor Backend
+<repositories>
+	<repository>                                                    <3>
+		<id>spring-release</id>
+		<name>Spring Releases</name>
+		<url>https://repo.spring.io/release</url>
+		<snapshots>
+			<enabled>false</enabled>
+		</snapshots>
+	</repository>
+</repositories>
+----
+1. backend设置为spring-html
+2. 添加spring-backend依赖
+3. 配置Spring Maven仓库
+
+==== Spring Look and Feel
+生成的html样式与Spring官网保持一致，左上角展示Spring的Logo。
+
+TIP: 后期可能会允许使用自定义的Logo，参考 https://github.com/spring-io/spring-asciidoctor-backends/issues/24[Ability to override the banner logo]
+
+==== Responsive Design
+生成的html遵循响应式设计，能在各种设备上很好地展示，如台式机、平板电脑、智能手机等。
+
+==== "Back to Index" Link
+如果当前页面部署index.html,那么提供一个Back to Index链接用于返回到首页
+
+==== Dark Mode
+页面右上角支持切换黑夜模式，模式设置保存在本地，无需每次重新加载后设置
+
+==== Tabs
+支持多个Tab页合并与切换，常见的如Maven和Gradle，Java和Groovy、Kotlin
+
+[source,xml,indent=0,role="primary"]
+.Maven
+----
+<dependency>
+    <groupId>com.example</groupId>
+    <artifactId>some-library</artifactId>
+    <version>1.2.3</version>
+</dependency>
+----
+
+[source,indent=0,role="secondary"]
+.Gradle
+----
+compile 'com.example:some-library:1.2.3'
+----
+
+==== Code Folding
+折叠部分非核心代码，例如Java代码的import或者getter、setter
+
+[source,java]
+----
+public class Example {
+
+	private String first;
+
+	private String second;
+
+	// @fold:on // getters / setters...
+	public String getFirst() {
+		return this.first;
+	}
+
+	public void setFirst(String first) {
+		this.first = first;
+	}
+
+	public String getSecond() {
+		return this.second;
+	}
+
+	public void setSecond(String second) {
+		this.second = second;
+	}
+	// @fold:off
+
+}
+----
+
+==== Different Config Blocks
+configblocks用于生成同一配置的yaml格式和properties格式，例如下面的源文件和渲染后效果
+
+-----
+[source,yaml,configblocks]
+----
+example:
+  property:
+    alpha: a
+----
+-----
+
+[source,yaml,configblocks]
+----
+example:
+  property:
+    alpha: a
+----
+
+NOTE: 此功能还需要添加 `io.spring.asciidoctor:spring-asciidoctor-extensions-spring-boot` 依赖，参考 https://github.com/spring-io/spring-asciidoctor-extensions[spring-asciidoctor-extensions]
 
 
 
-此外，Spring还创建了 https://github.com/spring-io/spring-asciidoctor-extensions[spring-asciidoctor-extensions]用于实现Spring Boot文档的部分需求
-
-
-
-=== Bilibili-extension
+=== Bilibili Extension
 文档中插入视频是很常见的需求，可能是需要记录视频教程的学习笔记，也可能是使用视频对文档的内容做进一步说明。
 默认Asciidoctor仅支持在文档中插入Youtube、vimeo视频或者本地视频文件，但国内开发者更多使用的是Bilibili，
 因此开发了 `asciidoctor-bilibili-extension` 用于向AsciiDoc文档中插入Bilibili视频，
-详细用法参考 https://github.com/pxzxj/asciidoctor-bilibili-extension[GitHub仓库]
+详细用法参考 https://github.com/pxzxj/asciidoctor-bilibili-extension[asciidoctor-bilibili-extension]。
 
 
 == Examples
@@ -605,23 +671,31 @@ Asciidoctor提供了大量的 https://github.com/asciidoctor/asciidoctor-maven-e
 [[cicd]]
 === CI/CD
 
-GitHub Action
-
-GitHub Pages
+`Docs as Code` 要求文档同代码一样能够在CI/CD流水线中自动发布，例如可以将生成的html文件部署到nginx搭建的站点上就可以直接在浏览器中查看文档了，
+由于文档是使用Maven插件生成的，因此整个发布过程与普通Java项目没有任何区别。
+本文使用 `GitHub Action` 以及 `GitHub Pages` 演示CI/CD过程，示例代码参考 https://github.com/pxzxj/asciidoc-cicd-demo[asciidoc-cicd-demo]。
 
 === Doc Review
+代码需要评审，文档也一样，通过文档评审可以逐步提升文档质量以及团队文档编写能力。
 
+GitHub和GitLab都提供了强大的 `Review` 功能，可以对PR的内容进行评审和讨论，只有评审通过的内容才会合并。
+以Spring Boot项目中的一个对 `README.adoc` 润色的 https://github.com/spring-projects/spring-boot/pull/28835[PR]为例，
+Spring成员查看提交的内容并提出疑问，原作者进行回复
+
+image::images/doc-review.png[]
 
 == Style
+上文主要讨论了编写技术文档使用的工具，而文档编写的另一个重要主题是写作规范，
+使用陈述句还是祈使句、使用第一人称还是第二人称等等这些语法细节也会影响最终文档的质量。
 
-https://www.ruanyifeng.com/blog/2016/10/document_style_guide.html[中文技术文档的写作规范]
+Spring就非常重视文档写作规范， https://github.com/spring-io/spring-asciidoctor-backends/blob/main/guides/style-guide.adoc[spring-style]详细描述了编写Spring技术文档相关规范，
+同时还根据开发者反馈对文档不断进行 https://github.com/spring-projects/spring-boot/issues/27895[优化]，可以说完善的文档也是Spring框架如此成功的重要原因之一。
 
-https://github.com/spring-io/spring-asciidoctor-backends/blob/main/guides/style-guide.adoc[spring-style]
+中文技术领域目前比较受开发者认可的是由阮一峰编写的 https://www.ruanyifeng.com/blog/2016/10/document_style_guide.html[中文技术文档的写作规范]，GitHub的Star数量已经接近一万。
 
-== Best-practice
+== Best Practice
 
-单独的文档项目或模块
-提纲
-参考开源项目
-常用的变量声明为文档属性
-内容为王，不必过分追求美观
+1. 先列举文档的目录，再补充各章节的内容。
+2. 参考优秀的开源项目文档。
+3. 内容为王，时间紧急情况下优先保证内容，其次考虑格式美观。
+4. **写**，立即开始。

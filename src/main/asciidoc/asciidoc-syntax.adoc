@@ -1,4 +1,5 @@
-= AsciiDoc语法参考
+= AsciiDoc语法参考(更新中)
+pxzxj; pudge.zxj@gmail.com; 2021/12/12
 :toc:
 :imagesdir: images
 :navtitle: Syntax Quick Reference
@@ -12,8 +13,169 @@
 :release-version: 2.4.3
 :experimental:
 
+本文对AsciiDoc的常用语法做简要说明，详细用法参考 https://docs.asciidoctor.org/asciidoc/latest/[官方文档]
+
+== 头
+
+文档头包含文档的标题和可选的多个文档属性
+
+.标题
+----
+= Document Title
+
+Document Content...
+----
+
+如果要定义副标题，在标题后添加冒号加空格
+----
+= Title of the document: This is the subtitle
+----
+
+紧接着标题的是作者信息，包含作者名称和邮箱，多个作者及其邮箱由分号和空格分隔
+
+.作者示例
+----
+= Document Title
+Author Name <author@email.org>; Author Name <author@email.org>
+
+Document Content...
+----
+
+作者信息下面一般是修订信息，包含修订号、修订日期和备注，修订号和修订日期使用逗号加空格分隔，修订备注用冒号加空格分隔。
+
+.标题，作者，修订信息
+----
+= Document Title
+Author Name <author@email.org>
+v2.0, 2019-03-22: First draft
+
+This document provides...
+----
+
+再下面就是文档属性，最常用的文档属性是toc，表示展示文档目录，toc后面添加left表示目录在文档左侧展示
+
+.文档属性
+----
+= Document Title
+Author Name <author@email.org>
+v2.0, 2019-03-22
+:toc:
+:toc: left
+
+This document provides...
+----
+
+[#section-titles]
+== 章节
+
+整个文档的标题是顶级标记，也称为Level 0标题，默认一个文档只能有一个Level 0标题，文档内容使用不同等号数量表示各级标题
+
+.章节标题
+[#ex-article]
+----
+= Document Title (Level 0)
+
+== Level 1 Section Title
+
+=== Level 2 Section Title
+
+==== Level 3 Section Title
+
+===== Level 4 Section Title
+
+====== Level 5 Section Title
+
+== Another Level 1 Section Title
+----
+
+.View result of <<ex-article>>
+[%collapsible.result]
+====
+[float]
+= Document Title (Level 0)
+
+[float]
+== Level 1 Section Title
+
+[float]
+=== Level 2 Section Title
+
+[float]
+==== Level 3 Section Title
+
+[float]
+===== Level 4 Section Title
+
+[float]
+====== Level 5 Section Title
+
+[float]
+== Another Level 1 Section Title
+====
+
+The `book` document type can have additional level 0 section titles, which are interpreted as xref:sections:parts.adoc[parts].
+The presence of at least one part implicitly makes the document a multi-part book.
+
+.Book section levels
+----
+= Document Title (Level 0)
+
+== Level 1 Section Title
+
+= Level 0 Section Title (Part)
+
+== Level 1 Section Title
+
+=== Level 2 Section Title
+
+==== Level 3 Section Title
+
+===== Level 4 Section Title
+
+====== Level 5 Section Title
+
+= Another Level 0 Section Title (Part)
+----
+
+.Discrete heading (not a section)
+----
+[discrete]
+=== I'm an independent heading!
+----
+
+您可以为任何段落、列表或分隔块元素指定标题。标题用作元素的标题。在大多数情况下，标题显示在内容的正上方。如果内容是图形或图像，则在内容下方显示标题。
+
+块标题定义在元素上方的一行上。该行必须以点 ( .)开头，紧随其后的是标题文本，中间没有空格
+
+
+.Shorthand method for assigning block ID (anchor) and role
+----
+[#goals.incremental]
+* Goal 1
+* Goal 2
+----
+
+[TIP]
+====
+* To specify multiple roles using the shorthand syntax, delimit them by dots.
+* The order of `id` and `role` values in the shorthand syntax does not matter.
+====
+
+.Formal method for assigning block ID (anchor) and role
+----
+[id="goals",role="incremental"]
+* Goal 1
+* Goal 2
+----
+
+.Explicit section ID (anchor)
+----
+[#null-values]
+== Primitive types and null values
+----
+
 [[paragraphs]]
-== 段
+== 段落
 
 .Paragraph
 [#ex-normal]
@@ -106,6 +268,14 @@ This paragraph will not be.
 ====
 
 TIP: 未指定 `.lead` 时AsciiDoctor会自动将文档的第一段作为前言处理
+
+
+.Assign ID (anchor) and role to inline formatted text
+----
+[#id-name.role-name]`monospace text`
+
+[#free-world.goals]*free the world*
+----
 
 == 文本
 
@@ -381,169 +551,6 @@ Refer to xref:document-b.adoc#section-b[Section B of Document B] for more inform
 
 If you never return from xref:document-b.adoc[Document B], we'll send help.
 ----
-
-== 头
-
-The https://docs.asciidoctor.org/asciidoc/latest/document/header/[document header] is optional.
-The header may not contain any empty lines and must be separated from the content by at least one empty line.
-
-.标题
-----
-= Document Title
-
-This document provides...
-----
-
-Author 可以写在带有或不带有属性的标题之后。
-
-作者还可以在尖括号内以电子邮件或 URL 的形式包含信息。可以有一个作者列表。多个作者及其电子邮件由分号和空格分隔;
-
-.Title and author line
-----
-= Document Title
-Author Name <author@email.org>; Author Name <author@email.org>
-
-This document provides...
-----
-
-修订信息列在 .adoc 文档的第三行，在作者信息行下方（带或不带属性）。它可以包括以下数据：
-
-修订号：必须至少包含一个数字字符。数字字符前面的字母或符号不会被渲染。除非设置了属性 :version-label!: 。
-
-修订日期
-
-修订备注
-
-修订号和修订日期由,（逗号和空格）分隔。修订备注由:（冒号和空格）分隔
-
-.Title, author line, and revision line
-----
-= Document Title
-Author Name <author@email.org>
-v2.0, 2019-03-22: First draft
-
-This document provides...
-----
-
-IMPORTANT: You cannot have a https://docs.asciidoctor.org/asciidoc/latest/document/revision-line/[revision line] without an https://docs.asciidoctor.org/asciidoc/latest/document/author-line/[author line].
-
-.Document header with attribute entries
-----
-= Document Title
-Author Name <author@email.org>
-v2.0, 2019-03-22
-:toc:
-:homepage: https://example.org
-
-This document provides...
-----
-
-如果要定义副标题:，请在标题后添加一个（冒号后跟空格）
-----
-= Title of the document: This is the subtitle
-----
-
-[#section-titles]
-== 标题
-
-AsciiDoc 支持三种类型的标题：
-
-文件名
-
-章节标题
-
-块标题
-
-When the document type is `article` (the default), the document can only have one level 0 section title (`=`), which is the document title (i.e., doctitle).
-
-.Article section levels
-[#ex-article]
-----
-= Document Title (Level 0)
-
-== Level 1 Section Title
-
-=== Level 2 Section Title
-
-==== Level 3 Section Title
-
-===== Level 4 Section Title
-
-====== Level 5 Section Title
-
-== Another Level 1 Section Title
-----
-
-.View result of <<ex-article>>
-[%collapsible.result]
-====
-[float]
-= Document Title (Level 0)
-
-[float]
-== Level 1 Section Title
-
-[float]
-=== Level 2 Section Title
-
-[float]
-==== Level 3 Section Title
-
-[float]
-===== Level 4 Section Title
-
-[float]
-====== Level 5 Section Title
-
-[float]
-== Another Level 1 Section Title
-====
-
-The `book` document type can have additional level 0 section titles, which are interpreted as xref:sections:parts.adoc[parts].
-The presence of at least one part implicitly makes the document a multi-part book.
-
-.Book section levels
-----
-= Document Title (Level 0)
-
-== Level 1 Section Title
-
-= Level 0 Section Title (Part)
-
-== Level 1 Section Title
-
-=== Level 2 Section Title
-
-==== Level 3 Section Title
-
-===== Level 4 Section Title
-
-====== Level 5 Section Title
-
-= Another Level 0 Section Title (Part)
-----
-
-.Discrete heading (not a section)
-----
-[discrete]
-=== I'm an independent heading!
-----
-
-您可以为任何段落、列表或分隔块元素指定标题。标题用作元素的标题。在大多数情况下，标题显示在内容的正上方。如果内容是图形或图像，则在内容下方显示标题。
-
-块标题定义在元素上方的一行上。该行必须以点 ( .)开头，紧随其后的是标题文本，中间没有空格
-
-== 目录
-
-.Activate Table of Contents for a document
-----
-= Document Title
-Doc Writer <doc.writer@email.org>
-:toc:
-:toc: left
-----
-
-The Table of Content's https://docs.asciidoctor.org/asciidoc/latest/toc/title/[title], https://docs.asciidoctor.org/asciidoc/latest/toc/section-depth/[displayed section depth], and https://docs.asciidoctor.org/asciidoc/latest/toc/position/[position] can be customized.
 
 == 引入
 
@@ -982,7 +989,7 @@ video::67480300[vimeo]
 
 You can control the video settings using https://docs.asciidoctor.org/asciidoc/latest/macros/audio-and-video/[additional attributes and options] on the macro.
 
-== 键盘、按钮、菜单
+== 键盘按钮菜单
 
 IMPORTANT: You must set the `experimental` attribute in the document header to enable these macros.
 
@@ -1379,6 +1386,33 @@ Another paragraph.
 Any block can have a title, positioned above the block.
 A block title is a line of text that starts with a dot.
 The dot cannot be followed by a space.
+
+
+
+.Shorthand method for assigning block options
+----
+[%header%footer%autowidth]
+|===
+|Header A |Header B
+|Footer A |Footer B
+|===
+----
+
+.Formal method for assigning block options
+----
+[options="header,footer,autowidth"]
+|===
+|Header A |Header B
+|Footer A |Footer B
+|===
+
+// options can be shorted to opts
+[opts="header,footer,autowidth"]
+|===
+|Header A |Header B
+|Footer A |Footer B
+|===
+----
 
 .Sidebar block
 [#ex-sidebar]
@@ -1831,66 +1865,6 @@ Robyn:Indestructable:Dance
 或者，您可以将 AsciiDoc 样式应用到单个单元格，方法是在垂直条前加上a：
 AsciiDoc 表也可以直接从 CSV 数据创建。只需将format块属性设置为csv并在块分隔符中插入 CSV 数据
 
-== IDs, roles, and options
-
-.Shorthand method for assigning block ID (anchor) and role
-----
-[#goals.incremental]
-* Goal 1
-* Goal 2
-----
-
-[TIP]
-====
-* To specify multiple roles using the shorthand syntax, delimit them by dots.
-* The order of `id` and `role` values in the shorthand syntax does not matter.
-====
-
-.Formal method for assigning block ID (anchor) and role
-----
-[id="goals",role="incremental"]
-* Goal 1
-* Goal 2
-----
-
-.Explicit section ID (anchor)
-----
-[#null-values]
-== Primitive types and null values
-----
-
-.Assign ID (anchor) and role to inline formatted text
-----
-[#id-name.role-name]`monospace text`
-
-[#free-world.goals]*free the world*
-----
-
-.Shorthand method for assigning block options
-----
-[%header%footer%autowidth]
-|===
-|Header A |Header B
-|Footer A |Footer B
-|===
-----
-
-.Formal method for assigning block options
-----
-[options="header,footer,autowidth"]
-|===
-|Header A |Header B
-|Footer A |Footer B
-|===
-
-// options can be shorted to opts
-[opts="header,footer,autowidth"]
-|===
-|Header A |Header B
-|Footer A |Footer B
-|===
-----
-
 == 注释
 
 可以向 Asciidoc 标记添加注释。注释不会添加到生成的输出中。您可以使用单行和多行注释。单行注释以双斜线 (//) 开头。多行注释包含在由四个正斜杠 (////) 组成的块中
@@ -2030,7 +2004,7 @@ To learn more about the available attributes and substitution groups see:
 要在文档中包含目录，您可以定义toc属性：
 要让处理器自动编号部分，请sectnums在文档标题中定义属性：
 
-== 文本替换
+== 特殊符号
 
 AsciiDoc 还识别符号、箭头和破折号的文本表示。
 
