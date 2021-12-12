@@ -657,6 +657,7 @@ NOTE: 此功能还需要添加 `io.spring.asciidoctor:spring-asciidoctor-extensi
 因此开发了 `asciidoctor-bilibili-extension` 用于向AsciiDoc文档中插入Bilibili视频，
 详细用法参考 https://github.com/pxzxj/asciidoctor-bilibili-extension[asciidoctor-bilibili-extension]。
 
+bilibili::BV12t411m7RV[]
 
 == Examples
 
