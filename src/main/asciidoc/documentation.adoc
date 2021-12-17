@@ -667,7 +667,11 @@ image::images/doc-review.png[]
 Spring就非常重视文档写作规范， https://github.com/spring-io/spring-asciidoctor-backends/blob/main/guides/style-guide.adoc[spring-style]详细描述了编写Spring技术文档相关规范，
 同时还根据开发者反馈对文档不断进行 https://github.com/spring-projects/spring-boot/issues/27895[优化]，可以说完善的文档也是Spring框架如此成功的重要原因之一。
 
+Kubernetes的文档规范参考 https://kubernetes.io/docs/contribute/style/style-guide/[Documentation Style Guide]
+
 中文技术领域目前比较受开发者认可的是由阮一峰编写的 https://www.ruanyifeng.com/blog/2016/10/document_style_guide.html[中文技术文档的写作规范]，GitHub的Star数量已经接近一万。
+
+
 
 == Best Practice
 
