@@ -19,3 +19,4 @@
 - find usage
 - next highlighted error   alt + N
 - Reformatting Code   Ctrl + Alt + L
+- Chained method calls  格式化长的方法调用，常用于stream或者lambda或者Builder
