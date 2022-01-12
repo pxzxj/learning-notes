@@ -1,0 +1,104 @@
+= Spring Data JPA最佳实践
+pxzxj; pudge.zxj@gmail.com; 2022/01/12
+
+本文根据SpringOne 2021的演讲Building Fast and Scalable Persistence Layers with Spring Data JPA整理而成，英语能力不错的建议直接观看下面的原始视频
+
+bilibili::BV1Rq4y167qQ[]
+
+演讲的PPT和源码在下面的地址
+
+* https://thorben-janssen.com/wp-content/uploads/talks/Fast%20and%20Scalable%20Persistence%20Layers%20with%20Spring%20Data%20JPA.pdf[Slides]
+* https://github.com/thjanssen/Talk-ScalablePersistenceLayersSpringDataJPA[Source Code]
+
+== 简介
+
+Spring Data JPA is the de facto standard for persisting data in a relational database. It provides excellent developer productivity and is so easy to use that you can learn it within a few hours.
+
+That changes as soon as your application needs to handle a huge amount of data or if you want to guarantee very short response times. Features and concepts that work perfectly fine for smaller applications start to become a burden that slow down your application.
+
+But that doesn’t have to be the case for your application. Spring Data JPA is a great fit for complex projects with high-performance requirements. You only need to know which features to use and which you should better avoid.
+
+During this talk, I’ll show you how to get the most out of your Spring Data JPA-based persistence layer. By following these recommendations, you’ll be able to enjoy Spring Data JPA’s developer productivity and provide a blazingly fast experience to your users.
+
+
+== t2
+
+=== Code Sample1
+com.thorben.janssen.spring.data.TestDemo#findAll
+
+日志中的metrics显示执行了20条sql，需要优化
+
+=== Code Sample2
+修改tournaments为LAZY执行com.thorben.janssen.spring.data.TestDemo#findWithTournaments
+显示20条statement；接着使用FETCH JOIN，此时显示一条statement，接着演示EntityGraph也是一条statement
+
+要注意LEFT JOIN FETCH别太多或者EntityGraph别太复杂，否则sql也就复杂，执行会很慢
+
+=== Code Sample3
+如果底层用hibernate，用Set表示集合
+
+com.thorben.janssen.spring.data.TestDemo#removePlayerFromTournament
+
+log显示执行了18条statement，因为先删后插
+
+解决办法是把players属性从List换成Set
+
+
+=== Projection
+
+
+写操作用Entities Class，因为它支持Entity整个生命周期包括部分SQL自动生成并执行
+
+Scalar values和DTO比Entities效率高十几倍
+
+不要用Scalar values，推荐使用DTO Projection，因为 Scalar values Projection
+是对象数组需要遍历数组通过索引获取各字段的值
+
+Spring Data JPA使Projection变得简单，定义接口即可，Spring Data JPA会自动生成类
+
+=== Code Sample4
+
+com.thorben.janssen.spring.data.TestDemo#getPlayerNamesDto
+
+log显示只查询了两列
+
+com.thorben.janssen.spring.data.TestDemo#getPlayerNames
+
+演示使用接口的Projection
+
+com.thorben.janssen.spring.data.TestDemo#getPlayerNamesDtoNative
+
+会抛出异常，可以通过注解定义ResultSetMapping解决此问题但太复杂了，直接用接口的Projection即可
+
+com.thorben.janssen.spring.data.TestDemo#getPlayerNamesNative
+
+正确的用法
+
+com.thorben.janssen.spring.data.TestDemo#getTournamentWithPlayers
+
+演示有association的Projection，注意这样会查询所有列，实际上已经失去Projection的好处了
+
+
+com.thorben.janssen.spring.data.TestDemo#getPlayerFullNames
+
+可以实现但不好，因为查询了所有列，因为Spring Data JPA是先查询实体类再应用表达式，这样也失去了Projection的好处，查询了很多用不到的列
+
+com.thorben.janssen.spring.data.TestDemo#getBetterPlayerFullNames
+
+正确的用法，不用表达式，用接口默认方法
+
+
+=== Cache
+
+hibernate session级别的一级缓存，再不同用户同时操作的场景中没啥用，因为用的是不同的session
+
+=== Code Sample5
+
+com.thorben.janssen.spring.data.TestDemo#getPlayerUsingCache
+
+演示二级缓存的使用
+
+
+
+
+
