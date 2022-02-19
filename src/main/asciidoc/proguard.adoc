@@ -1,0 +1,663 @@
+= ProGuard Reference
+pxzxj; pudge.zxj@gmail.com; 2022/02/19
+:toc:
+
+== 简介
+=== 基本功能
+ProGuard是一个压缩、优化和混淆Java字节码文件的免费的工具，压缩步骤它会检测并移除不会使用的类、方法、字段和class属性，优化步骤会分析和优化方法的字节码，以更高效的语法实现原有逻辑，混淆步骤使用简短无意义的字母序列重命名类、方法、字段；这三步完成后还会对生成的字节码做预验证并添加预验证信息保证文件格式正确。最终处理后的字节码比原文件小但执行更高效且很难反向工程。
+
+ProGuard的处理流程可以用下图来表示，通常将待混淆的所有类打成jar包进行处理，最终也输出为jar包，需要注意的是整个处理过程需要依赖库的参与，如常见的WEB-INF/lib下的所有jar包或者pom.xml中的所有dependency，也就是下图中的Library jars，依赖库在处理前后不发生变化。
+
+image::images/proguard.png[]
+
+=== 入口点(Entry Points)
+
+为了告知ProGuard哪些代码是需要保留的哪些是需要丢弃或者混淆的，你需要指定一些入口点，典型的入口点包括main方法、Servlet、Controller等。 +
+压缩步骤中，ProGuard从这些入口点出发，根据方法和属性的调用关系确定其它需要保留的类或属性，最终未被引用的类或成员被移除。 +
+优化步骤中，ProGuard尽力优化代码，上一步中保留下来的类或方法除入口点外会被声明为final，未使用的方法参数会被移除，多个方法的逻辑可能会合并到一个方法内实现。 +
+混淆步骤中，ProGuard重命名类和成员，主要针对上一步中保留下来的除入口点外的类和成员，通常是使用一个简短的英文字母进行重命名，当然也可以手动指定重命名前后的名称映射关系。
+
+=== 反射(Reflection)
+反射是Java语言的强大特性之一，但也经常会带来一些特殊问题，一个常见场景是将全类名声明在配置文件中，在代码中使用Class.forName()生成实例对象，为了保证对应的类不会在压缩步骤中被删除必须将其声明为入口点。
+然而ProGuard也能自动探测并处理下面几种反射语法：
+
+*	Class.forName("SomeClass")
+*	SomeClass.class
+*	SomeClass.class.getField("someField")
+*	SomeClass.class.getDeclaredField("someField")
+*	SomeClass.class.getMethod("someMethod", null)
+*	SomeClass.class.getMethod("someMethod", new Class[] { A.class,... })
+*	SomeClass.class.getDeclaredMethod("someMethod", null)
+*	SomeClass.class.getDeclaredMethod("someMethod", new Class[] { A.class,... })
+*	AtomicIntegerFieldUpdater.newUpdater(SomeClass.class, "someField")
+*	AtomicLongFieldUpdater.newUpdater(SomeClass.class, "someField")
+*	AtomicReferenceFieldUpdater.newUpdater(SomeClass.class, SomeType.class, "someField")
+
+上述示例虽然使用了反射，但类名或者方法名、属性名都已经确定，ProGuard会识别这些类或成员进行保留，在混淆步骤中如果对应类或成员被重命名，这些反射代码也被相应更新。
+
+== 用法
+=== 下载
+在 https://sourceforge.net/projects/proguard/[sourceforge] 页面中点击Download下载ProGuard
+解压后的文件夹中bin目录有proguard.bat和proguardgui.bat两个脚本可以在windows下运行, 前者是在命令行下运行，后者可以打开一个图形界面；类似的有Unix环境下运行的.sh脚本
+
+=== 参数
+要用ProGuard处理一个web项目需要用到它的诸多参数，还要指定多个类和对应的方法，这些配置内容较多所以通常会将其写在一个文件中供ProGuard使用，最终执行命令如下，
+
+[source,bash]
+----
+bin/proguard @myconfig.pro
+----
+
+其中 `myconfig.pro` 就是包含所有配置的文件，文件中可以按行指定不同的配置参数，#开头的行为注释信息。 +
+ProGuard的参数主要可分为如下几组, 这部分建议访参考 https://www.guardsquare.com/en/products/proguard/manual/usage[官方网站]
+
+==== 输入输出选项(Input/Output Options)
+@filename ::
+    -include filename的缩写形式
+-include filename ::
+读取文件中所有选项, filename为绝对路径或相对路径, 相对路径可以和下面的-basedirectory配合使用 +
+filename也能以尖括号的方式使用Java系统属性, 如<java.home>/lib/rt.jar, <user.home>指用户家目录, <user.dir>表示当前目录
+-basedirectory directoryname ::
+指定文件所在的目录名, 此参数必须在-include前使用
+-injars class_path ::
+class_path由多个个体(entrty)组成, 每个个体可以是class文件的任何表示形式, 如常见的class目录、apk文件、jar文件、aar文件、war文件、ear文件、jmod文件、zip文件, 多个个体使用路径分隔符分隔(Unix使用冒号:,Windows使用分号;), entry的顺序决定了它的优先级
+-outjars class_path ::
+同上, 多个injar可以聚合为一个outjar, 同样一个injar也可以通过filter拆分为多个outjar
+-libraryjars class_path ::
+injar需要依赖的jar包
+-skipnonpubliclibraryclasses ::
+跳过-libraryjars中非public的类, 这样可以提升处理速度和减少Proguard的内存占用。 默认Proguard会读取-libraryjars中所有的类, 但通常非public的类不会和injars中的类直接相关
+-dontskipnonpubliclibraryclasses ::
+4.5版本后这是默认设置
+-dontskipnonpubliclibraryclassmembers ::
+是否跳过非public的属性和方法, 默认会跳过
+-keepdirectories [directory_filter] ::
+为了减小jar文件体积, 默认所有目录都会被删除, 仅指定-keepdirectories则所有目录都会保留, 指定directory_filter时仅保留filter筛选的目录
+-target version ::
+指定目标class文件的版本号, 可以是1.0,..., 1.9, 或者是简短的5,..., 12, 默认版本号保持不变
+-forceprocessing ::
+强制处理, 即使outjar已经存在
+
+==== 保持选项(keep Option)
+-keep [,modifier,...] class_specification ::
+modifier包括如下类型
+* includedescriptorclasses： -keep选项声明的所有属性和方法归属的类不做任何修改
+* includecode： -keep选项声明的方法的所有属性都不做任何修改, 例如不能被优化和混淆
+* allowshrinking： -keep选项声明的入口点能被移除，但不能优化或混淆
+* allowoptimization：-keep选项声明的入口点能被优化，但不能移除或混淆
+* allowobfuscation：-keep选项声明的入口点能被混淆，但不能移除或优化
+
+.示例
+[source,bash]
+----
+-keep public class * extends android.app.Activity
+-keep public class * implements javax.servlet.Servlet
+-keep public class * {
+public protected *;
+}
+----
+-keepclassmembers [,modifier,...] class_specification ::
+保留类成员不变
+
+.示例
+[source,bash]
+----
+-keepclassmembers class * implements java.io.Serializable {
+private static final java.io.ObjectStreamField[] serialPersistentFields;
+private void writeObject(java.io.ObjectOutputStream);
+private void readObject(java.io.ObjectInputStream);
+java.lang.Object writeReplace();
+java.lang.Object readResolve();
+}
+----
+-keepclasseswithmembers [,modifier,...] class_specification ::
+保留满足条件的类
+
+.示例
+[source,bash]
+----
+-keepclasseswithmembers public class * {
+public static void main(java.lang.String[]);
+}
+----
+-keepnames class_specification ::
+-keep,allowshrinkingclass_specification的缩写形式
+-keepclassmembernames class_specification ::
+-keepclassmembers,allowshrinkingclass_specification的缩写形式
+-keepclasseswithmembernames class_specification ::
+-keepclasseswithmembers,allowshrinkingclass_specification的缩写形式，保留类和成员的名称
+
+.示例
+[source,bash]
+----
+-keepclasseswithmembernames,includedescriptorclasses class * {
+native <methods>;
+}
+----
+
+==== 压缩选项(Shrinking Options)
+-dontshrink ::
+不压缩, 默认会移除没用的类或成员, 每个优化步骤完成后都会执行一次收缩
+-printusage [filename] ::
+把没用的代码输出到文件或标准输出
+-whyareyoukeeping class_specification ::
+输出保留类的原因
+
+==== 优化选项(Optimization Options)
+-dontoptimize ::
+不优化, 内联并且合并类或成员, 在字节码级别上优化所有方法
+-optimizations [optimization_filter] ::
+更细粒度级别上指定优化打开和关闭, 这是高级选项
+-optimizationpasses n ::
+-assumenosideeffects class_specification ::
+-assumenoexternalsideeffects class_specification ::
+-assumenoescapingparameters class_specification ::
+-assumenoexternalreturnvalues class_specification ::
+-assumevalues class_specification ::
+-allowaccessmodification ::
+优化时允许扩大权限实现内联, 如修改属性为public删除get/set方法, 此选项需谨慎使用
+-mergeinterfacesaggressively ::
+
+==== 混淆选项(Obfuscation options)
+-dontobfuscate ::
+不混淆, 默认会混淆
+-printmapping [filename] ::
+打印新旧名称的对应关系
+-applymapping filename ::
+根据文件中指定的对应关系进行重命名，通常是在-printmapping生成文件基础上修改
+-obfuscationdictionary filename ::
+-classobfuscationdictionary filename ::
+-packageobfuscationdictionary filename ::
+-overloadaggressively ::
+-useuniqueclassmembernames ::
+-dontusemixedcaseclassnames ::
+-keeppackagenames [package_filter] ::
+-flattenpackagehierarchy [package_name] ::
+-repackageclasses [package_name] ::
+重命名包名, 使代码更难理解, package_name没有值或值为''时包名会完全移除, 类中基于包名获取资源文件的代码会因此失效, 如Freemarker模板, 需谨慎使用
+-keepattributes [attribute_filter] ::
+保留一些可选属性, 混淆时生效, 常见可选属性包括
+* InnerClasses： 类和内部类的链接关系
+* MethodParameters： 方法参数名和参数修饰符
+* Exceptions： 方法可能抛出的异常
+* LineNumberTable： 方法 的行号
+* RuntimeVisibleAnnotations： 运行时生效的注解
+
+.示例
+[source,bash]
+----
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,\*Annotation*,EnclosingMethod
+----
+-keepparameternames ::
+保持方法的参数名和参数类型不变, 仅在混淆时生效, 通常在处理类库jar包使用, 因为一些IDE会根据参数名和参数类型给开发者相应帮助, 如自动补全等
+-renamesourcefileattribute [string] ::
+修改SourceFile和SourceDir的属性值为一个常量, 与keepattributes一起使用
+-adaptclassstrings [class_filter] ::
+-adaptresourcefilenames [file_filter] ::
+-adaptresourcefilecontents [file_filter] ::
+
+==== 预验证选项(Preverification options)
+-dontpreverify ::
+不对class文件预验证, 不常用
+-microedition ::
+-android ::
+表示class文件是基于安卓平台的, ProGuard处理时会考虑诸多安卓相关的特性
+
+==== 通用选项(General options)
+* -verbose
+* -dontnote [class_filter]
+* -dontwarn [class_filter]
+* -ignorewarnings
+* -printconfiguration [filename]
+* -dump [filename]
+* -addconfigurationdebugging
+
+
+=== 示例
+本节主要从官网Examples部分选取部分JavaEE相关示例，可以在官网查看 https://www.guardsquare.com/en/products/proguard/manual/examples[完整示例]
+
+.保留所有Servlet
+====
+[source,bash]
+----
+-injars      in.jar
+-outjars     out.jar
+-libraryjars <java.home>/lib/rt.jar
+-libraryjars /usr/local/java/servlet/servlet.jar
+-printseeds
+
+-keep public class * implements javax.servlet.Servlet
+----
+====
+
+.保留枚举的values()和valueOf()方法
+====
+[source,bash]
+----
+-keepclassmembers,allowoptimization enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+----
+====
+
+.保留序列化的类的重要方法
+====
+[source,bash]
+----
+-keepclassmembers class * implements java.io.Serializable {
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}
+----
+====
+
+.保留POJO的方法
+====
+[source,bash]
+----
+-keep class mybeans.** {
+    void set*(***);
+    void set*(int, ***);
+
+    boolean is*();
+    boolean is*(int);
+
+    *** get*();
+    *** get*(int);
+}
+
+----
+====
+
+.保留注解信息
+====
+[source,bash]
+----
+-keepattributes *Annotation*
+----
+====
+
+.保留依赖注入信息
+====
+[source,bash]
+----
+-keepclassmembers class * {
+    @org.springframework.beans.factory.annotation.Autowired *;
+}
+----
+====
+
+=== 常见错误及原因
+命令执行出错时可优先在官网的 https://www.guardsquare.com/en/products/proguard/manual/troubleshooting[Troubleshooting]章节查询对应错误，找不到时再到其它站点搜索
+
+== 实践
+本章以一个简单的ssm项目为例来说明使用ProGuard完成代码混淆的基本流程
+
+=== 入口点分析
+从上一节对用法的介绍可以看出使用ProGuard的关键就是配置文件的编写，而配置文件中最重要的部分就是入口点选择，如果不能选对入口点，会使关键的类或成员被移除或重命名，最终处理后的项目无法正常运行。
+
+本项目使用了SpringMVC + Spring + Mybatis + Shiro框架进行构建，所以在代码混淆时要注意以下入口点
+
+* Controller类的方法用于处理@RequestMapping注解URL对应的请求，所以Controller类和它的所有方法都要保留
+* Controller类的方法名可以变化，但方法参数名不能变化，否则无法完成参数赋值
+* AOP声明中涉及的类的包名和方法名不能变化，此项目中AOP主要用于声明式事务，对Service类的add、update、delete开头的方法做事务控制，这些类和对应的方法名必须声明为入口点
+* Mybatis使用的Mapper接口名、包名、方法名不能变化，sql查询结果映射的实体类名、属性名不能变化，这些也需要声明为入口点
+* web.xml中声明的过滤器、监听器以及Spring配置文件中涉及的其它Bean定义都需要声明为入口点
+
+=== 编写配置文件
+根据第一步的入口点分析编写如下配置文件
+
+[source,bash]
+----
+-injars      example.jar
+-outjars     example_out.jar
+-libraryjars <java.home>/lib/rt.jar
+#jdk中加密相关的jar包
+-libraryjars <java.home>/lib/jce.jar
+#所有maven依赖的目录
+-libraryjars mavenlibs
+#tomcat中的依赖库, 主要是servlet-api
+-libraryjars tomcatlibs
+-printseeds
+#混淆使用的映射文件
+-applymapping classname.map
+-printmapping baseframe.map
+#不提示通知信息
+-dontnote
+#优化时不修饰类或方法为final, 否则无法使用cglib代理
+-optimizations !class/marking/final,!method/marking/final
+
+-renamesourcefileattribute SourceFile
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,*Annotation*,EnclosingMethod,LocalVariableTable,LocalVariableTypeTable
+
+-keepclassmembers enum  * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+#Controller类的属性和方法都保留, 但可以重命名
+-keep,allowobfuscation @org.springframework.web.bind.annotation.RestController public class * {
+	<fields>;
+	<methods>;
+}
+#保留无参构造器, 否则无法实例化为bean, 保留@Autowired声明的属性
+-keepclassmembers class * {
+	<init>();
+	@org.springframework.beans.factory.annotation.Autowired *;
+}
+#保留参数名, 否则Controller方法参数赋值存在问题
+-keepparameternames
+#保留service的包名, 否则声明式事务失效
+-keeppackagenames io.github.**.service
+#保留service中事务相关的方法名, 否则声明式事务失效
+-keepclassmembernames class io.github.**.service.* {
+	*** add*(...);
+	*** save*(...);
+	*** insert*(...);
+	*** update*(...);
+	*** del*(...);
+	*** get*(...);
+	*** find*(...);
+}
+#保留Mapper接口
+-keep interface io.github.**.dao.*Mapper {
+	 <methods>;
+}
+#保留实体类不变化, 否则sql数据映射和Controller参数映射失效
+-keep class io.github.**.entity.* {
+    *;
+}
+#保留Servlet
+-keep,allowoptimization public class * implements javax.servlet.Servlet
+#保留SpringMVC拦截器
+-keep,allowoptimization public class * extends org.springframework.web.servlet.handler.HandlerInterceptorAdapter
+#保留Shiro过滤器
+-keep,allowoptimization public class * extends org.apache.shiro.web.servlet.AdviceFilter
+#保留Shiro的Realm
+-keep,allowoptimization public class * extends org.apache.shiro.realm.AuthorizingRealm
+#保留SpringMVC的过滤器
+-keep public class * extends org.springframework.web.filter.OncePerRequestFilter {
+	*;
+}
+
+# 移除不会产生边际效用的方法
+# Remove - System method calls. Remove all invocations of System
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.System {
+    public static long currentTimeMillis();
+    static java.lang.Class getCallerClass();
+    public static int identityHashCode(java.lang.Object);
+    public static java.lang.SecurityManager getSecurityManager();
+    public static java.util.Properties getProperties();
+    public static java.lang.String getProperty(java.lang.String);
+    public static java.lang.String getenv(java.lang.String);
+    public static java.lang.String mapLibraryName(java.lang.String);
+    public static java.lang.String getProperty(java.lang.String,java.lang.String);
+}
+
+# Remove - Math method calls. Remove all invocations of Math
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.Math {
+    public static double sin(double);
+    public static double cos(double);
+    public static double tan(double);
+    public static double asin(double);
+    public static double acos(double);
+    public static double atan(double);
+    public static double toRadians(double);
+    public static double toDegrees(double);
+    public static double exp(double);
+    public static double log(double);
+    public static double log10(double);
+    public static double sqrt(double);
+    public static double cbrt(double);
+    public static double IEEEremainder(double,double);
+    public static double ceil(double);
+    public static double floor(double);
+    public static double rint(double);
+    public static double atan2(double,double);
+    public static double pow(double,double);
+    public static int round(float);
+    public static long round(double);
+    public static double random();
+    public static int abs(int);
+    public static long abs(long);
+    public static float abs(float);
+    public static double abs(double);
+    public static int max(int,int);
+    public static long max(long,long);
+    public static float max(float,float);
+    public static double max(double,double);
+    public static int min(int,int);
+    public static long min(long,long);
+    public static float min(float,float);
+    public static double min(double,double);
+    public static double ulp(double);
+    public static float ulp(float);
+    public static double signum(double);
+    public static float signum(float);
+    public static double sinh(double);
+    public static double cosh(double);
+    public static double tanh(double);
+    public static double hypot(double,double);
+    public static double expm1(double);
+    public static double log1p(double);
+}
+
+# Remove - Number method calls. Remove all invocations of Number
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.* extends java.lang.Number {
+    public static java.lang.String toString(byte);
+    public static java.lang.Byte valueOf(byte);
+    public static byte parseByte(java.lang.String);
+    public static byte parseByte(java.lang.String,int);
+    public static java.lang.Byte valueOf(java.lang.String,int);
+    public static java.lang.Byte valueOf(java.lang.String);
+    public static java.lang.Byte decode(java.lang.String);
+    public int compareTo(java.lang.Byte);
+    public static java.lang.String toString(short);
+    public static short parseShort(java.lang.String);
+    public static short parseShort(java.lang.String,int);
+    public static java.lang.Short valueOf(java.lang.String,int);
+    public static java.lang.Short valueOf(java.lang.String);
+    public static java.lang.Short valueOf(short);
+    public static java.lang.Short decode(java.lang.String);
+    public static short reverseBytes(short);
+    public int compareTo(java.lang.Short);
+    public static java.lang.String toString(int,int);
+    public static java.lang.String toHexString(int);
+    public static java.lang.String toOctalString(int);
+    public static java.lang.String toBinaryString(int);
+    public static java.lang.String toString(int);
+    public static int parseInt(java.lang.String,int);
+    public static int parseInt(java.lang.String);
+    public static java.lang.Integer valueOf(java.lang.String,int);
+    public static java.lang.Integer valueOf(java.lang.String);
+    public static java.lang.Integer valueOf(int);
+    public static java.lang.Integer getInteger(java.lang.String);
+    public static java.lang.Integer getInteger(java.lang.String,int);
+    public static java.lang.Integer getInteger(java.lang.String,java.lang.Integer);
+    public static java.lang.Integer decode(java.lang.String);
+    public static int highestOneBit(int);
+    public static int lowestOneBit(int);
+    public static int numberOfLeadingZeros(int);
+    public static int numberOfTrailingZeros(int);
+    public static int bitCount(int);
+    public static int rotateLeft(int,int);
+    public static int rotateRight(int,int);
+    public static int reverse(int);
+    public static int signum(int);
+    public static int reverseBytes(int);
+    public int compareTo(java.lang.Integer);
+    public static java.lang.String toString(long,int);
+    public static java.lang.String toHexString(long);
+    public static java.lang.String toOctalString(long);
+    public static java.lang.String toBinaryString(long);
+    public static java.lang.String toString(long);
+    public static long parseLong(java.lang.String,int);
+    public static long parseLong(java.lang.String);
+    public static java.lang.Long valueOf(java.lang.String,int);
+    public static java.lang.Long valueOf(java.lang.String);
+    public static java.lang.Long valueOf(long);
+    public static java.lang.Long decode(java.lang.String);
+    public static java.lang.Long getLong(java.lang.String);
+    public static java.lang.Long getLong(java.lang.String,long);
+    public static java.lang.Long getLong(java.lang.String,java.lang.Long);
+    public static long highestOneBit(long);
+    public static long lowestOneBit(long);
+    public static int numberOfLeadingZeros(long);
+    public static int numberOfTrailingZeros(long);
+    public static int bitCount(long);
+    public static long rotateLeft(long,int);
+    public static long rotateRight(long,int);
+    public static long reverse(long);
+    public static int signum(long);
+    public static long reverseBytes(long);
+    public int compareTo(java.lang.Long);
+    public static java.lang.String toString(float);
+    public static java.lang.String toHexString(float);
+    public static java.lang.Float valueOf(java.lang.String);
+    public static java.lang.Float valueOf(float);
+    public static float parseFloat(java.lang.String);
+    public static boolean isNaN(float);
+    public static boolean isInfinite(float);
+    public static int floatToIntBits(float);
+    public static int floatToRawIntBits(float);
+    public static float intBitsToFloat(int);
+    public static int compare(float,float);
+    public boolean isNaN();
+    public boolean isInfinite();
+    public int compareTo(java.lang.Float);
+    public static java.lang.String toString(double);
+    public static java.lang.String toHexString(double);
+    public static java.lang.Double valueOf(java.lang.String);
+    public static java.lang.Double valueOf(double);
+    public static double parseDouble(java.lang.String);
+    public static boolean isNaN(double);
+    public static boolean isInfinite(double);
+    public static long doubleToLongBits(double);
+    public static long doubleToRawLongBits(double);
+    public static double longBitsToDouble(long);
+    public static int compare(double,double);
+    public boolean isNaN();
+    public boolean isInfinite();
+    public int compareTo(java.lang.Double);
+    public byte byteValue();
+    public short shortValue();
+    public int intValue();
+    public long longValue();
+    public float floatValue();
+    public double doubleValue();
+    public int compareTo(java.lang.Object);
+    public boolean equals(java.lang.Object);
+    public int hashCode();
+    public java.lang.String toString();
+}
+
+# Remove - String method calls. Remove all invocations of String
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.String {
+    public static java.lang.String copyValueOf(char[]);
+    public static java.lang.String copyValueOf(char[],int,int);
+    public static java.lang.String valueOf(boolean);
+    public static java.lang.String valueOf(char);
+    public static java.lang.String valueOf(char[]);
+    public static java.lang.String valueOf(char[],int,int);
+    public static java.lang.String valueOf(double);
+    public static java.lang.String valueOf(float);
+    public static java.lang.String valueOf(int);
+    public static java.lang.String valueOf(java.lang.Object);
+    public static java.lang.String valueOf(long);
+    public boolean contentEquals(java.lang.StringBuffer);
+    public boolean endsWith(java.lang.String);
+    public boolean equalsIgnoreCase(java.lang.String);
+    public boolean equals(java.lang.Object);
+    public boolean matches(java.lang.String);
+    public boolean regionMatches(boolean,int,java.lang.String,int,int);
+    public boolean regionMatches(int,java.lang.String,int,int);
+    public boolean startsWith(java.lang.String);
+    public boolean startsWith(java.lang.String,int);
+    public byte[] getBytes();
+    public byte[] getBytes(java.lang.String);
+    public char charAt(int);
+    public char[] toCharArray();
+    public int compareToIgnoreCase(java.lang.String);
+    public int compareTo(java.lang.Object);
+    public int compareTo(java.lang.String);
+    public int hashCode();
+    public int indexOf(int);
+    public int indexOf(int,int);
+    public int indexOf(java.lang.String);
+    public int indexOf(java.lang.String,int);
+    public int lastIndexOf(int);
+    public int lastIndexOf(int,int);
+    public int lastIndexOf(java.lang.String);
+    public int lastIndexOf(java.lang.String,int);
+    public int length();
+    public java.lang.CharSequence subSequence(int,int);
+    public java.lang.String concat(java.lang.String);
+    public java.lang.String replaceAll(java.lang.String,java.lang.String);
+    public java.lang.String replace(char,char);
+    public java.lang.String replaceFirst(java.lang.String,java.lang.String);
+    public java.lang.String[] split(java.lang.String);
+    public java.lang.String[] split(java.lang.String,int);
+    public java.lang.String substring(int);
+    public java.lang.String substring(int,int);
+    public java.lang.String toLowerCase();
+    public java.lang.String toLowerCase(java.util.Locale);
+    public java.lang.String toString();
+    public java.lang.String toUpperCase();
+    public java.lang.String toUpperCase(java.util.Locale);
+    public java.lang.String trim();
+}
+
+# Remove - StringBuffer method calls. Remove all invocations of StringBuffer
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.StringBuffer {
+    public java.lang.String toString();
+    public char charAt(int);
+    public int capacity();
+    public int codePointAt(int);
+    public int codePointBefore(int);
+    public int indexOf(java.lang.String,int);
+    public int lastIndexOf(java.lang.String);
+    public int lastIndexOf(java.lang.String,int);
+    public int length();
+    public java.lang.String substring(int);
+    public java.lang.String substring(int,int);
+}
+
+# Remove - StringBuilder method calls. Remove all invocations of StringBuilder
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.StringBuilder {
+    public java.lang.String toString();
+    public char charAt(int);
+    public int capacity();
+    public int codePointAt(int);
+    public int codePointBefore(int);
+    public int indexOf(java.lang.String,int);
+    public int lastIndexOf(java.lang.String);
+    public int lastIndexOf(java.lang.String,int);
+    public int length();
+    public java.lang.String substring(int);
+    public java.lang.String substring(int,int);
+}
+
+----
+
+=== 其它说明
+
+1. @myconfig.pro最好搭配-basedirectory选项使用且-basedirectory在前，这样配置中的所有文件都可以使用相对路径，最终执行混淆命令如下 +
+ `proguard -basedirectory C:/Users/abc/Desktop/proguard6.1.0/test/example @example.pro`
+2. web项目在部署时会将项目内容打包为war形式，因为web容器能够自动解压部署，但ProGuard主要是用于处理字节码文件且要求包名和文件夹路径一致，所以需要将所有class文件打包为jar形式并指定依赖库进行处理，可以在target/classes目录下执行如下命令完成打包 +
+ `jar -cvf example.jar io`
+3. 由于SpringMVC大量使用注解创建Bean，而Bean的名称默认是类名首字母小写，混淆后的class在不同包下存在大量的重复类名如下图，这样会出现Bean名称冲突的问题，由于ProGuard并未提供保证类名唯一的选项，所以需要使用-applymapping参数指定混淆前后类名的对应关系如下，从而保证混淆后的类名不重复，不过此文件内容也不必完全自行编写，可以在-printmapping生成的文件基础上修改即可
+4. org.slf4j.Logger属性必须声明为static或final如下，否则不能正确处理
+5. 在入口点分析一节中已经分析了必须保持Controller的方法参数名不变才能实现参数赋值，实际上SpringMVC也支持名称不同时的参数赋值，即给方法参数添加@RequestParam注解，注解中声明请求参数名，所以只要在开发时简单类型的参数都使用@RequestParam注解，那么方法的参数名也可以变化
+6. 在入口点分析一节中已经分析了Mybatis的Mapper文件对应的接口不能变化，否则所有查询都会失效，这一点实际上也可以规避，只要在混淆后根据前后接口名和方法名的映射关系修改对应Mapper文件内容即可，这一步需要自行开发工具进行实现。
+7. 实践后发现方法参数名是否变化取决于是否保留LocalVariableTable属性，而与-keepparameternames无关，保留LocalVariableTable属性时所有方法参数和局部变量名称都保持不变，不保留时都重命名，而且参数名是否保留无法在类或方法的粒度进行控制，仅能做全局控制。
+8. SpringMVC中Controller类的方法参数名必须与前端参数名对应，要注意混淆可能导致的传参失败问题。
+9. MyBatis在Mapper文件中声明对应的接口和方法，要注意混淆可能导致的Mapper文件失效问题

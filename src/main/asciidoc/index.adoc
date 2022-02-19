@@ -8,3 +8,5 @@ xref:spring-boot-micrometer.adoc[使用Micrometer记录Java应用指标] ::    2
 xref:production-debug.adoc[线上环境调试方法] ::     2021/12/02
 xref:advanced-strategy-pattern.adoc[高级策略模式] ::    2021/12/06
 xref:documentation.adoc[技术文档编写指南] ::    2021/12/12
+xref:asciidoc-syntax.adoc[AsciiDoc语法参考] ::    2021/12/12
+xref:proguard.adoc[ProGuard参考手册] ::   2022/02/19

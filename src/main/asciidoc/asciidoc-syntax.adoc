@@ -1,4 +1,4 @@
-= AsciiDoc语法参考(更新中)
+= AsciiDoc语法参考
 pxzxj; pudge.zxj@gmail.com; 2021/12/12
 :toc:
 :imagesdir: images
