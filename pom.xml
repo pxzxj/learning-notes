@@ -169,6 +169,7 @@
                             <attributes>
                                 <sectanchors>true</sectanchors>
                                 <toc>left</toc>
+                                <docinfo>shared</docinfo>
                             </attributes>
                         </configuration>
                     </execution>
