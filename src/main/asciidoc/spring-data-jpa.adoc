@@ -10,6 +10,8 @@ bilibili::BV1Rq4y167qQ[]
 * https://thorben-janssen.com/wp-content/uploads/talks/Fast%20and%20Scalable%20Persistence%20Layers%20with%20Spring%20Data%20JPA.pdf[Slides]
 * https://github.com/thjanssen/Talk-ScalablePersistenceLayersSpringDataJPA[Source Code]
 
+TIP: 使用 `docker run --name some-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=test -p 5432:5432 --rm postgres` 启动一个postgresql数据库
+
 == 简介
 
 Spring Data JPA is the de facto standard for persisting data in a relational database. It provides excellent developer productivity and is so easy to use that you can learn it within a few hours.
