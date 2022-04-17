@@ -22,6 +22,7 @@
 - Chained method calls  格式化长的方法调用，常用于stream或者lambda或者Builder
 - Project  alt + 1
 - run anything                          双击ctrl
+- insert live template  (Ctrl + Alt + Shift + J)
 
 
 
