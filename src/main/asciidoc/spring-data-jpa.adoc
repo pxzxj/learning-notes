@@ -10,33 +10,93 @@ bilibili::BV1Rq4y167qQ[]
 * https://thorben-janssen.com/wp-content/uploads/talks/Fast%20and%20Scalable%20Persistence%20Layers%20with%20Spring%20Data%20JPA.pdf[Slides]
 * https://github.com/thjanssen/Talk-ScalablePersistenceLayersSpringDataJPA[Source Code]
 
-TIP: 使用 `docker run --name some-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=test -p 5432:5432 --rm postgres` 启动一个postgresql数据库
+TIP: 演讲中的示例代码使用了postgresql数据库，本地没有安装的可以使用
+`docker run --name some-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=test -p 5432:5432 --rm postgres` 启动一个postgresql容器
 
 == 简介
 
-Spring Data JPA is the de facto standard for persisting data in a relational database. It provides excellent developer productivity and is so easy to use that you can learn it within a few hours.
+Spring Data JPA是Spring Data家族的其中一个项目，主要对一些实现了JPA规范的持久层框架进行封装和增强，
+它极大地降低了JPA的使用难度，使那些基于Spring框架构建的应用非常轻松地实现持久层访问。
 
-That changes as soon as your application needs to handle a huge amount of data or if you want to guarantee very short response times. Features and concepts that work perfectly fine for smaller applications start to become a burden that slow down your application.
+Spring Data JPA良好的封装性使它非常易用，但也隐藏了内部所有的执行逻辑，使其成为一个黑盒子，当然对于一般的中小型应用也确实不需要关注
+其内部的执行逻辑，但是在构建大型应用或者对性能要求较高的中小型应用时很可能会发现Spring Data JPA并不能满足要求，
+这通常是由于使用方法不当使用导致的，因此本文对Spring Data JPA的最佳实践进行说明，遵循这些建议可以在
+提升开发效率的同时保证应用运行速度。
 
-But that doesn’t have to be the case for your application. Spring Data JPA is a great fit for complex projects with high-performance requirements. You only need to know which features to use and which you should better avoid.
+== Identify Issues
 
-During this talk, I’ll show you how to get the most out of your Spring Data JPA-based persistence layer. By following these recommendations, you’ll be able to enjoy Spring Data JPA’s developer productivity and provide a blazingly fast experience to your users.
+要提升Spring Data JPA的执行效率，首先需要能够观测其内部执行情况，
+大部分情况下Spring Data JPA与Hibernate一起使用，因此可以通过配置Hibernate的相关参数在控制台展示内部执行情况。
 
+[source,yaml,subs="verbatim",configblocks]
+----
+spring:
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true                  # <1>
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 3        # <2>
+logging:
+  level:
+    org:
+      hibernate:
+        stat: debug                                # <3>
+        SQL: debug
+----
+<1> 输出执行统计
+<2> 输出慢Sql
+<3> 输出执行的Sql
 
-== t2
+NOTE: 注意这些参数配置会一定程度上影响执行速度，因此生产环境不建议使用
 
-=== Code Sample1
-com.thorben.janssen.spring.data.TestDemo#findAll
+修改 `ChessPlayer#tournaments` 的 fetchType 为 `EAGER` 并运行 `TestDemo#findAll()` 会在控制台输出执行的SQL以及如下统计信息
 
-日志中的metrics显示执行了20条sql，需要优化
+----
+2022-04-25 21:45:13.095  INFO 30756 --- [           main] i.StatisticalLoggingSessionEventListener : Session Metrics {
+2150100 nanoseconds spent acquiring 1 JDBC connections;
+0 nanoseconds spent releasing 0 JDBC connections;
+1206300 nanoseconds spent preparing 20 JDBC statements;
+45058100 nanoseconds spent executing 20 JDBC statements;
+0 nanoseconds spent executing 0 JDBC batches;
+92742400 nanoseconds spent performing 40 L2C puts;
+0 nanoseconds spent performing 0 L2C hits;
+729500 nanoseconds spent performing 19 L2C misses;
+0 nanoseconds spent executing 0 flushes (flushing a total of 0 entities and 0 collections);
+13700 nanoseconds spent executing 1 partial-flushes (flushing a total of 0 entities and 0 collections)
+}
+----
 
-=== Code Sample2
-修改tournaments为LAZY执行com.thorben.janssen.spring.data.TestDemo#findWithTournaments
-显示20条statement；接着使用FETCH JOIN，此时显示一条statement，接着演示EntityGraph也是一条statement
+== Association Fetching
+关联查询是JPA中非常常见的操作，定义实体关联关系的注解都包含了一个 `fetch` 属性用于定义关联查询方式
 
-要注意LEFT JOIN FETCH别太多或者EntityGraph别太复杂，否则sql也就复杂，执行会很慢
+[source,java,subs="verbatim"]
+----
+@ManyToOne(fetch = FetchType.LAZY)
+private Publisher publisher;
+----
 
-=== Code Sample3
+`FetchType` 是一个枚举类型，包含 `LAZY` 和 `EAGER` 两个值表示使用时查询和立即查询，
+ToMany默认使用 `LAZY`，ToOne默认使用 `EAGER`。
+
+`EAGER` 意味着不管是否使用都会查询关联的实体，因此一般情况下 `LAZY` 是更好的选择，也就是说
+ToOne需要显示指定 `fetch` 值为 `LAZY`。而在可以确定后续代码中会使用关联的实体的场景中则
+可以使用 `@Query` 注解手动在JPQL语句中指定join关系用于同时查询所需实体和其关联实体。
+
+`TestDemo#findWithTournaments()` 用于演示 LEFT JOIN FETCH 和 EntityGraph 的效果
+
+1. 修改 `ChessPlayer#tournaments` 的 `fetch` 值为默认值。
+2. 注释 `ChessPlayerRepository#findWithTournamentsBy()` 的 @Query 和 @EntityGraph 后执行
+`TestDemo#findWithTournaments()`，观察控制台统计信息发现会执行20条statement。
+3. 分别打开 `ChessPlayerRepository#findWithTournamentsBy()` 的 @Query 和 @EntityGraph 注释后再
+执行 `TestDemo#findWithTournaments()`，观察控制台统计信息发现都只执行一条statement。
+
+NOTE: 使用 `join` 查询确实会减少执行的sql数量，但也意味着会一次查询大量数据，因此很容易出现慢sql，尤其是
+关联多个实体时，因此在使用时要特别注意。
+
+== Many-to-Many Association
 如果底层用hibernate，用Set表示集合
 
 com.thorben.janssen.spring.data.TestDemo#removePlayerFromTournament
@@ -46,7 +106,7 @@ log显示执行了18条statement，因为先删后插
 解决办法是把players属性从List换成Set
 
 
-=== Projection
+== Projection
 
 
 写操作用Entities Class，因为它支持Entity整个生命周期包括部分SQL自动生成并执行
@@ -90,7 +150,7 @@ com.thorben.janssen.spring.data.TestDemo#getBetterPlayerFullNames
 正确的用法，不用表达式，用接口默认方法
 
 
-=== Cache
+== Cache
 
 hibernate session级别的一级缓存，再不同用户同时操作的场景中没啥用，因为用的是不同的session
 
