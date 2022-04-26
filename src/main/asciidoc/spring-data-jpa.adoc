@@ -1,5 +1,5 @@
 = Spring Data JPA最佳实践
-pxzxj; pudge.zxj@gmail.com; 2022/01/12
+pxzxj; pudge.zxj@gmail.com; 2022/04/26
 
 本文根据SpringOne 2021的演讲Building Fast and Scalable Persistence Layers with Spring Data JPA整理而成，英语能力不错的建议直接观看下面的原始视频
 
@@ -97,69 +97,313 @@ NOTE: 使用 `join` 查询确实会减少执行的sql数量，但也意味着会
 关联多个实体时，因此在使用时要特别注意。
 
 == Many-to-Many Association
-如果底层用hibernate，用Set表示集合
 
-com.thorben.janssen.spring.data.TestDemo#removePlayerFromTournament
+多对多关联的场景中，我们经常使用 `List` 保存 *多* 的实体，然而此时Hibernate在对这些 *多* 的实体执行写操作时效率很低，
+必须使用 `Set` 进行替换。
 
-log显示执行了18条statement，因为先删后插
+`TestDemo#removePlayerFromTournament()` 用于演示使用 `List` 和 `Set` 时执行不同的sql
 
-解决办法是把players属性从List换成Set
+1. 首先修改 `ChessTournament#players` 的类型为List并执行 `TestDemo#removePlayerFromTournament()` 观察控制台信息会发现执行了
+18条statement，因为先删除了所有的player再插入不需要删除的player。
+2. 修改 `ChessTournament#players` 的类型为Set再次执行 `TestDemo#removePlayerFromTournament()` 观察控制台信息会发现
+执行了4条statement。
 
+.List
+----
+2022-04-26 20:30:50.183 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    select
+        chesstourn0_.id as id1_2_0_,
+        chesstourn0_.end_date as end_date2_2_0_,
+        chesstourn0_.name as name3_2_0_,
+        chesstourn0_.start_date as start_da4_2_0_,
+        chesstourn0_.version as version5_2_0_
+    from
+        chess_tournament chesstourn0_
+    where
+        chesstourn0_.id=?
+2022-04-26 20:30:50.214  INFO 19764 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 6 milliseconds. SQL: 'HikariProxyPreparedStatement@472019958 wrapping select chesstourn0_.id as id1_2_0_, chesstourn0_.end_date as end_date2_2_0_, chesstourn0_.name as name3_2_0_, chesstourn0_.start_date as start_da4_2_0_, chesstourn0_.version as version5_2_0_ from chess_tournament chesstourn0_ where chesstourn0_.id=2'
+2022-04-26 20:30:50.386 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    select
+        players0_.tournaments_id as tourname1_4_0_,
+        players0_.players_id as players_2_4_0_,
+        chessplaye1_.id as id1_1_1_,
+        chessplaye1_.birth_date as birth_da2_1_1_,
+        chessplaye1_.first_name as first_na3_1_1_,
+        chessplaye1_.last_name as last_nam4_1_1_,
+        chessplaye1_.version as version5_1_1_
+    from
+        chess_tournament_players players0_
+    inner join
+        chess_player chessplaye1_
+            on players0_.players_id=chessplaye1_.id
+    where
+        players0_.tournaments_id=?
+2022-04-26 20:30:50.406  INFO 19764 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 4 milliseconds. SQL: 'HikariProxyPreparedStatement@1453157901 wrapping select players0_.tournaments_id as tourname1_4_0_, players0_.players_id as players_2_4_0_, chessplaye1_.id as id1_1_1_, chessplaye1_.birth_date as birth_da2_1_1_, chessplaye1_.first_name as first_na3_1_1_, chessplaye1_.last_name as last_nam4_1_1_, chessplaye1_.version as version5_1_1_ from chess_tournament_players players0_ inner join chess_player chessplaye1_ on players0_.players_id=chessplaye1_.id where players0_.tournaments_id=2'
+2022-04-26 20:30:50.558 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    update
+        chess_tournament
+    set
+        end_date=?,
+        name=?,
+        start_date=?,
+        version=?
+    where
+        id=?
+        and version=?
+2022-04-26 20:30:50.583  INFO 19764 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 5 milliseconds. SQL: 'HikariProxyPreparedStatement@177522915 wrapping update chess_tournament set end_date='2021-05-25 +08', name='Local Championship', start_date='2021-05-22 +08', version=1 where id=2 and version=0'
+2022-04-26 20:30:50.590 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    delete
+    from
+        chess_tournament_players
+    where
+        tournaments_id=?
+2022-04-26 20:30:50.594 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    insert
+    into
+        chess_tournament_players
+        (tournaments_id, players_id)
+    values
+        (?, ?)
+...
+2022-04-26 20:30:50.646 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    insert
+    into
+        chess_tournament_players
+        (tournaments_id, players_id)
+    values
+        (?, ?)
+2022-04-26 20:30:50.650  INFO 19764 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 4 milliseconds. SQL: 'HikariProxyPreparedStatement@306941929 wrapping insert into chess_tournament_players (tournaments_id, players_id) values (2, 33)'
+2022-04-26 20:30:50.669  INFO 19764 --- [           main] i.StatisticalLoggingSessionEventListener : Session Metrics {
+    3880100 nanoseconds spent acquiring 1 JDBC connections;
+    0 nanoseconds spent releasing 0 JDBC connections;
+    2100900 nanoseconds spent preparing 18 JDBC statements;
+    58723500 nanoseconds spent executing 18 JDBC statements;
+    0 nanoseconds spent executing 0 JDBC batches;
+    144689100 nanoseconds spent performing 18 L2C puts;
+    0 nanoseconds spent performing 0 L2C hits;
+    6642700 nanoseconds spent performing 1 L2C misses;
+    149136500 nanoseconds spent executing 1 flushes (flushing a total of 16 entities and 47 collections);
+    0 nanoseconds spent executing 0 partial-flushes (flushing a total of 0 entities and 0 collections)
+}
+
+----
+
+.Set
+----
+2022-04-26 20:33:32.488 DEBUG 32020 --- [           main] org.hibernate.SQL                        :
+    select
+        chesstourn0_.id as id1_2_0_,
+        chesstourn0_.end_date as end_date2_2_0_,
+        chesstourn0_.name as name3_2_0_,
+        chesstourn0_.start_date as start_da4_2_0_,
+        chesstourn0_.version as version5_2_0_
+    from
+        chess_tournament chesstourn0_
+    where
+        chesstourn0_.id=?
+2022-04-26 20:33:32.503  INFO 32020 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 5 milliseconds. SQL: 'HikariProxyPreparedStatement@622702995 wrapping select chesstourn0_.id as id1_2_0_, chesstourn0_.end_date as end_date2_2_0_, chesstourn0_.name as name3_2_0_, chesstourn0_.start_date as start_da4_2_0_, chesstourn0_.version as version5_2_0_ from chess_tournament chesstourn0_ where chesstourn0_.id=2'
+2022-04-26 20:33:32.611 DEBUG 32020 --- [           main] org.hibernate.SQL                        :
+    select
+        players0_.tournaments_id as tourname1_4_0_,
+        players0_.players_id as players_2_4_0_,
+        chessplaye1_.id as id1_1_1_,
+        chessplaye1_.birth_date as birth_da2_1_1_,
+        chessplaye1_.first_name as first_na3_1_1_,
+        chessplaye1_.last_name as last_nam4_1_1_,
+        chessplaye1_.version as version5_1_1_
+    from
+        chess_tournament_players players0_
+    inner join
+        chess_player chessplaye1_
+            on players0_.players_id=chessplaye1_.id
+    where
+        players0_.tournaments_id=?
+2022-04-26 20:33:32.789 DEBUG 32020 --- [           main] org.hibernate.SQL                        :
+    update
+        chess_tournament
+    set
+        end_date=?,
+        name=?,
+        start_date=?,
+        version=?
+    where
+        id=?
+        and version=?
+2022-04-26 20:33:32.809  INFO 32020 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 6 milliseconds. SQL: 'HikariProxyPreparedStatement@1761528165 wrapping update chess_tournament set end_date='2021-05-25 +08', name='Local Championship', start_date='2021-05-22 +08', version=1 where id=2 and version=0'
+2022-04-26 20:33:32.818 DEBUG 32020 --- [           main] org.hibernate.SQL                        :
+    delete
+    from
+        chess_tournament_players
+    where
+        tournaments_id=?
+        and players_id=?
+2022-04-26 20:33:32.836  INFO 32020 --- [           main] i.StatisticalLoggingSessionEventListener : Session Metrics {
+    2230700 nanoseconds spent acquiring 1 JDBC connections;
+    0 nanoseconds spent releasing 0 JDBC connections;
+    1028500 nanoseconds spent preparing 4 JDBC statements;
+    17931500 nanoseconds spent executing 4 JDBC statements;
+    0 nanoseconds spent executing 0 JDBC batches;
+    113258000 nanoseconds spent performing 18 L2C puts;
+    0 nanoseconds spent performing 0 L2C hits;
+    11600200 nanoseconds spent performing 1 L2C misses;
+    116423200 nanoseconds spent executing 1 flushes (flushing a total of 16 entities and 47 collections);
+    0 nanoseconds spent executing 0 partial-flushes (flushing a total of 0 entities and 0 collections)
+}
+----
 
 == Projection
+Spring Data JPA提供的默认查询虽然便于使用，但每次都会查询所有字段，很多时候这是不必要的，
+比如在使用联合索引的情况下，只查询索引包含的字段可以提升查询效率。
+为此Spring Data JPA提供了Projection实现只查询部分字段。
 
+=== 基于实体类的Projection
+`TestDemo#getPlayerNamesDto()` 用于演示基于实体类的Projection，从控制台的输出可以看到生成的SQL只查询了实体的两个属性
 
-写操作用Entities Class，因为它支持Entity整个生命周期包括部分SQL自动生成并执行
+[source,java,subs="verbatim"]
+----
+public class PlayerName {
 
-Scalar values和DTO比Entities效率高十几倍
+    private String firstName;
+    private String lastName;
 
-不要用Scalar values，推荐使用DTO Projection，因为 Scalar values Projection
-是对象数组需要遍历数组通过索引获取各字段的值
+    //getter, setter
+}
+----
 
-Spring Data JPA使Projection变得简单，定义接口即可，Spring Data JPA会自动生成类
+----
+2022-04-26 21:11:25.688 DEBUG 26960 --- [           main] org.hibernate.SQL                        :
+    select
+        chessplaye0_.first_name as col_0_0_,
+        chessplaye0_.last_name as col_1_0_
+    from
+        chess_player chessplaye0_
+    where
+        chessplaye0_.first_name=?
+----
 
-=== Code Sample4
+=== 基于接口的Projection
 
-com.thorben.janssen.spring.data.TestDemo#getPlayerNamesDto
+`TestDemo#getPlayerNames()` 用于演示基于接口的Projection，从控制台的输出可以看到生成的sql只查询了接口的get方法对于的字段
 
-log显示只查询了两列
+[source,java,subs="verbatim"]
+----
+public interface PlayerNameIntf {
 
-com.thorben.janssen.spring.data.TestDemo#getPlayerNames
+    String getFirstName();
+    String getLastName();
+}
+----
 
-演示使用接口的Projection
+----
+2022-04-26 21:17:52.261 DEBUG 31952 --- [           main] org.hibernate.SQL                        :
+    select
+        chessplaye0_.first_name as col_0_0_,
+        chessplaye0_.last_name as col_1_0_
+    from
+        chess_player chessplaye0_
+    where
+        chessplaye0_.first_name=?
+----
 
-com.thorben.janssen.spring.data.TestDemo#getPlayerNamesDtoNative
+一般情况下优先选择使用基于接口的Projection，除了声明更简单外还支撑Native Query，`TestDemo#getPlayerNamesDtoNative()`
+和 `TestDemo#getPlayerNamesDtoNative()` 分别使用实体类和接口接收Native Query的查询结果，
+但使用实体类时会抛出 `ConverterNotFoundException`，而使用接口则能正常查询。
 
-会抛出异常，可以通过注解定义ResultSetMapping解决此问题但太复杂了，直接用接口的Projection即可
+=== Nested associations
 
-com.thorben.janssen.spring.data.TestDemo#getPlayerNamesNative
+Projection还支持接口中定义关联的实体，`TestDemo#getTournamentWithPlayers()` 用于演示此场景
 
-正确的用法
+[source,java,subs="verbatim"]
+----
+public interface TournamentIntf {
 
-com.thorben.janssen.spring.data.TestDemo#getTournamentWithPlayers
+    String getName();
+    List<PlayerNameIntf> getPlayers();
+}
 
-演示有association的Projection，注意这样会查询所有列，实际上已经失去Projection的好处了
+public interface PlayerNameIntf {
 
+    String getFirstName();
+    String getLastName();
+}
+----
 
-com.thorben.janssen.spring.data.TestDemo#getPlayerFullNames
+----
+2022-04-26 22:21:20.112 DEBUG 9948 --- [           main] org.hibernate.SQL                        :
+    select
+        chesstourn0_.id as id1_2_,
+        chesstourn0_.end_date as end_date2_2_,
+        chesstourn0_.name as name3_2_,
+        chesstourn0_.start_date as start_da4_2_,
+        chesstourn0_.version as version5_2_
+    from
+        chess_tournament chesstourn0_
+    where
+        chesstourn0_.name=?
+2022-04-26 22:21:20.138  INFO 9948 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 13 milliseconds. SQL: 'HikariProxyPreparedStatement@1965388767 wrapping select chesstourn0_.id as id1_2_, chesstourn0_.end_date as end_date2_2_, chesstourn0_.name as name3_2_, chesstourn0_.start_date as start_da4_2_, chesstourn0_.version as version5_2_ from chess_tournament chesstourn0_ where chesstourn0_.name='Tata Steel Chess Tournament 2021''
+2022-04-26 22:21:20.222 DEBUG 9948 --- [           main] o.h.stat.internal.StatisticsImpl         : HHH000117: HQL: select generatedAlias0 from ChessTournament as generatedAlias0 where generatedAlias0.name=:param0, time: 122ms, rows: 1
+2022-04-26 22:21:20.238  INFO 9948 --- [           main] c.thorben.janssen.spring.data.TestDemo   : ======== Test Output ===========
+2022-04-26 22:21:20.253 DEBUG 9948 --- [           main] org.hibernate.SQL                        :
+    select
+        players0_.tournaments_id as tourname1_4_0_,
+        players0_.players_id as players_2_4_0_,
+        chessplaye1_.id as id1_1_1_,
+        chessplaye1_.birth_date as birth_da2_1_1_,
+        chessplaye1_.first_name as first_na3_1_1_,
+        chessplaye1_.last_name as last_nam4_1_1_,
+        chessplaye1_.version as version5_1_1_
+    from
+        chess_tournament_players players0_
+    inner join
+        chess_player chessplaye1_
+            on players0_.players_id=chessplaye1_.id
+    where
+        players0_.tournaments_id=?
+----
 
-可以实现但不好，因为查询了所有列，因为Spring Data JPA是先查询实体类再应用表达式，这样也失去了Projection的好处，查询了很多用不到的列
+尽管查询能够正常执行，但从控制台的输出可以看出查询了所有字段，而不只是Projection中声明的字段，这样的结果
+完全失去了Projection的优势，反而还多定义了接口，因此绝对不要使用Nested associations。
 
-com.thorben.janssen.spring.data.TestDemo#getBetterPlayerFullNames
+=== SPEL
 
-正确的用法，不用表达式，用接口默认方法
+Projection的接口支持使用SPEL表达式，`TestDemo#getPlayerFullNames()` 演示了这一场景，与
+Nested associations一样，最终会查询所有字段，因此这种方式也不要使用。
 
+[source,java,subs="verbatim"]
+----
+public interface PlayerFullNameIntf {
 
-== Cache
+    @Value("#{target.lastName +', ' + target.firstName}")
+    String getFullName();
+}
+----
 
-hibernate session级别的一级缓存，再不同用户同时操作的场景中没啥用，因为用的是不同的session
+通过在Projection接口中定义默认方法既可以保留Projection的好处，又能对查询的字段计算后返回，
+`TestDemo#getBetterPlayerFullNames()` 演示了这一用法
 
-=== Code Sample5
+[source,java,subs="verbatim"]
+----
+public interface BetterPlayerFullNameIntf {
 
-com.thorben.janssen.spring.data.TestDemo#getPlayerUsingCache
+    String getFirstName();
+    String getLastName();
 
-演示二级缓存的使用
+    default String getFullName() {return getLastName()+", "+getFirstName();}
+}
+----
 
+从控制台的输出也可以看出只查询了get方法对应的字段
+
+----
+2022-04-26 22:29:44.729 DEBUG 25592 --- [           main] org.hibernate.SQL                        :
+    select
+        chessplaye0_.first_name as col_0_0_,
+        chessplaye0_.last_name as col_1_0_
+    from
+        chess_player chessplaye0_
+    where
+        chessplaye0_.first_name=?
+----
 
 
 
