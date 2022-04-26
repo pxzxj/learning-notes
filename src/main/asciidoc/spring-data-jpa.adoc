@@ -13,7 +13,7 @@ bilibili::BV1Rq4y167qQ[]
 TIP: 演讲中的示例代码使用了postgresql数据库，本地没有安装的可以使用
 `docker run --name some-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=test -p 5432:5432 --rm postgres` 启动一个postgresql容器
 
-== 简介
+== Introduction
 
 Spring Data JPA是Spring Data家族的其中一个项目，主要对一些实现了JPA规范的持久层框架进行封装和增强，
 它极大地降低了JPA的使用难度，使那些基于Spring框架构建的应用非常轻松地实现持久层访问。
@@ -82,7 +82,7 @@ private Publisher publisher;
 ToMany默认使用 `LAZY`，ToOne默认使用 `EAGER`。
 
 `EAGER` 意味着不管是否使用都会查询关联的实体，因此一般情况下 `LAZY` 是更好的选择，也就是说
-ToOne需要显示指定 `fetch` 值为 `LAZY`。而在可以确定后续代码中会使用关联的实体的场景中则
+ToOne需要显式指定 `fetch` 值为 `LAZY`。而在可以确定后续代码中会使用关联的实体的场景中则
 可以使用 `@Query` 注解手动在JPQL语句中指定join关系用于同时查询所需实体和其关联实体。
 
 `TestDemo#findWithTournaments()` 用于演示 LEFT JOIN FETCH 和 EntityGraph 的效果
@@ -256,7 +256,7 @@ Spring Data JPA提供的默认查询虽然便于使用，但每次都会查询�
 比如在使用联合索引的情况下，只查询索引包含的字段可以提升查询效率。
 为此Spring Data JPA提供了Projection实现只查询部分字段。
 
-=== 基于实体类的Projection
+=== Projection with entity
 `TestDemo#getPlayerNamesDto()` 用于演示基于实体类的Projection，从控制台的输出可以看到生成的SQL只查询了实体的两个属性
 
 [source,java,subs="verbatim"]
@@ -281,7 +281,7 @@ public class PlayerName {
         chessplaye0_.first_name=?
 ----
 
-=== 基于接口的Projection
+=== Projection with interface
 
 `TestDemo#getPlayerNames()` 用于演示基于接口的Projection，从控制台的输出可以看到生成的sql只查询了接口的get方法对于的字段
 
