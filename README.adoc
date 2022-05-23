@@ -8,3 +8,4 @@ xref:src/main/asciidoc/documentation.adoc[技术文档编写指南] ::    2021/1
 xref:src/main/asciidoc/asciidoc-syntax.adoc[AsciiDoc语法参考] ::    2021/12/12
 xref:src/main/asciidoc/proguard.adoc[ProGuard参考手册] ::   2022/02/19
 xref:src/main/asciidoc/spring-data-jpa.adoc[Spring Data JPA最佳实践] ::   2022/04/26
+xref:src/main/asciidoc/jdb.adoc[JDB(Java Debugger)] ::   2022/05/23
