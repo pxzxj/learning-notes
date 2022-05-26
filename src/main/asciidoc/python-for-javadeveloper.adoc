@@ -1,0 +1,43 @@
+= 给Java开发者的Python入门指南
+
+
+== features
+
+Python无需声明类型
+Python
+Python的Iterable对应Java的Iterable
+Python中的generator对应Java的Stream
+
+
+== 查看类型
+
+Python使用type()函数查看对象类型，Java使用.getClass()
+
+=== 列表与数组
+
+Python也支持列表(list)类型和数组(array)类型
+
+列表是由一系列按特定顺序排列的元素组成，可以将任何东西加入列表中，其中的元素之间没有任何关系；
+
+Python中的列表(list)用于顺序存储结构。它可以方便、高效的的添加删除元素，并且列表中的元素可以是多种类型。
+
+数组也就是一个同一类型的数据的有限集合。
+
+列表list与数组array的相同点是都可以根据索引来取其中的元素
+
+列表list与数组array的不同点：
+
+* 列表list中的元素的数据类型可以不一样。数组array里的元素的数据类型必须一样；
+* 列表list不可以进行数学四则运算，数组array可以进行数学四则运算；
+* 相对于array，列表会使用更多的存储空间。
+
+
+https://stackoverflow.com/questions/176011/python-list-vs-array-when-to-use
+
+=== todo
+
+https://stackoverflow.com/questions/1535327/how-to-print-instances-of-a-class-using-print
+
+https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do
+
+https://stackoverflow.com/questions/176011/python-list-vs-array-when-to-use
