@@ -1,0 +1,5 @@
+= SpringBoot Starter DataInitialization
+
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto.data-initialization.dependencies
+
+org.springframework.boot.autoconfigure.session.JdbcSessionDataSourceScriptDatabaseInitializer

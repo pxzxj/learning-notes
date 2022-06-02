@@ -1,0 +1,470 @@
+= Test
+
+
+测试是软件开发中很重要的一部分工作，良好的测试可以在早期就发现系统存在的漏洞，保障系统发布后运行稳定。
+
+测试领域有着众多的方法论：单元测试、集成测试、功能测试、性能测试、压力测试、安全测试、回归测试、验收测试、全链路测试、混沌工程等等，
+即使是有多年工作经验的测试人员也经常不能分辨清楚这么多相似却又不同的概念。本章也不会对这些内容做过多说明，主要还是介绍对开发人员来说
+比较实用的测试方法和技能。
+
+之所以会要求开发掌握一定的测试能力是因为完全依赖测试人员人工测试是低效的也是不可靠的。在业务系统不断迭代过程中测试人员通常只会对新开发
+的功能做测试，但新开发的功能是有可能影响到原来的功能的，最终导致客户使用过程中发现原来正常的功能突然又不可用了。
+或者是开发人员盲目自信认为小的bug修复不会影响原有功能直接跳过了测试，结果上线运行后才发现异常。这样的问题在公司多个项目
+都曾出现过，给客户留下了非常不好的印象。使用单元测试或者集成测试可以在项目构建时就发现问题，不论项目后期如何迭代，只要
+原来的测试仍然能够执行通过就可以保证功能是正常的。
+
+== 单元测试 vs 集成测试
+有些测试只对一些特殊的业务系统才有必要，但单元测试和集成测试是最通用的测试方法，任何业务系统都可以使用单元测试和集成测试来实现系统稳定性。
+
+|===
+|类型 |定义 |优点 |缺点
+
+|单元测试
+|验证特定代码部分的功能的测试，最小的单元测试可能只是测试一个构造方法或者get/set方法，方法内存在if分支时通常会写多个单元测试去执行不同分支的代码
+|能保证某一部分代码完全正确，而且执行速度快
+|无法保证多个正确的代码段能否协同工作，而且每次对原方法修改后对应的单元测试都要修改，工作量比较大，还有涉及数据库操作的单元测试会使用内存数据库代替真实数据库，无法保证测试通过的代码在真实数据库上也能运行正常
+
+|集成测试
+|将各个代码块按照系统设计组合成完整的系统后进行的测试
+|更接近生产环境，在涉及数据库操作的系统中体现在会使用与生产环境一样的数据库进行集成测试，而且不需要经常重构，无论业务代码内部逻辑怎样变化，只要输入数据和预期的输出不变那么集成测试就不需要调整
+|执行速度慢，它要初始化系统的各个模块，调用时也需要执行各个模块的代码，正因为执行的代码更多，不能获得预期输出时定位问题也更难
+
+|===
+
+综上，单元测试和集成测试各有优缺点，二者需要结合使用。
+
+== 示例
+
+一个使用Junit 5开发的测试用例如下所示
+
+[source,java,subs="verbatim"]
+----
+class RoleServiceTest {
+
+    @Test                                                                                        // <1>
+	@DisplayName("测试用户组分页查询")                                                              // <2>
+	void testFindRolePager() {
+		Page<Role> rolePager = roleService.findRolePager(new Role(), PageRequest.of(0, 10));     // <3>
+		assertEquals(2, rolePager.getTotalElements());                                           // <4>
+	}
+}
+----
+<1> 使用 `@Test` 注解声明这是一个测试方法
+<2> 使用 `@DisplayName` 注解描述测试内容，这不是必须的，使用方法名称描述是更好的选择
+<3> 执行业务方法
+<4> 执行断言方法
+
+== 框架
+
+* https://junit.org/junit5/[Junit 5]   基础测试框架
+* https://testng.org/doc/[TestNG]     基础测试框架
+* https://site.mockito.org/[Mockito]     用于生成Mock对象
+* https://github.com/wiremock/wiremock[wiremock]  用于服务端Mock
+* https://docs.spring.io/spring-framework/docs/current/reference/html/testing.html[Spring Test] 与Spring Framework配合使用的测试框架
+* https://docs.spring.io/spring-security/reference/servlet/test/index.html[Spring Security Test] 与Spring Security配合使用的测试工具，主要测试认证授权等功能
+* https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.testing[Spring Boot Test] Spring Boot 提供的测试模块，配置更少，功能更强大
+* https://www.testcontainers.org/[TestContainer] 用于在测试中创建容器
+* ...
+
+TIP: 很多Java框架在核心模块之外都会提供一个单独的测试模块用来测试使用此框架实现的业务功能，所以在学习相关框架时也要关注它对测试的支持
+
+眼花缭乱的测试框架也增加了编写测试的难度，所以建议从模仿做起，基础框架中的测试已经应用了这里介绍的大部分框架，可以先模仿其编写自己的业务测试，在使用中再去了解相关细节。
+
+== JUnit
+
+=== 参数测试
+很多业务方法都是关于输入输出的，以特定的输入执行方法判断能否返回预期的输出，这种场景非常适合使用 https://junit.org/junit5/docs/current/user-guide/#writing-tests-parameterized-tests[参数测试]
+
+下面是一个使用 `@ValueSource` 做参数测试的示例，`strings` 数组的值会分别作为参数执行测试方法
+====
+[source,java,subs="verbatim"]
+
+----
+class MyTest {
+    @ParameterizedTest
+	@ValueSource(strings = { "racecar", "radar", "able was I ere I saw elba" })
+	void containsA(String candidate) {
+		assertTrue(candidate.contains("a"));
+	}
+}
+----
+====
+
+执行结果如下所示，三个参数的测试结果都是✔，表示测试通过
+----
+palindromes(String) ✔
+├─ [1] candidate=racecar ✔
+├─ [2] candidate=radar ✔
+└─ [3] candidate=able was I ere I saw elba ✔
+----
+
+方法参数并不总是像上面示例那么简单，复杂参数列表可以使用 `@MethodSource` 实现
+
+====
+[source,java,subs="verbatim"]
+----
+class MyTest {
+    @ParameterizedTest
+    @MethodSource("stringIntAndListProvider")                    // <1>
+    void testWithMultiArgMethodSource(String str, int num, List<String> list) {
+        assertEquals(5, str.length());
+        assertTrue(num >=1 && num <=2);
+        assertEquals(2, list.size());
+    }
+
+    static Stream<Arguments> stringIntAndListProvider() {
+        return Stream.of(
+            arguments("apple", 1, Arrays.asList("a", "b")),
+            arguments("lemon", 2, Arrays.asList("x", "y"))
+        );
+    }
+}
+----
+<1> 使用静态方法stringIntAndListProvider的返回值作为方法参数
+====
+
+== Mokito
+
+=== mock vs spy
+spy是mock和真实对象的结合，可以mock真实对象的部分方法，实际用的比较少
+
+=== mock静态方法
+
+[source,java,subs="verbatim"]
+----
+MockedStatic<ExternalTaskClient> mockedStatic = mockStatic(ExternalTaskClient.class);
+ExternalTaskClientBuilder clientBuilder = mock(ExternalTaskClientBuilder.class, RETURNS_SELF);
+when(ExternalTaskClient.create()).thenReturn(clientBuilder);
+----
+
+=== 验证方法被调用的次数
+
+[source,java,subs="verbatim"]
+----
+class T{
+
+  @Test
+  public void shouldVerifyBasicAuthCredentials() {
+    ArgumentCaptor<ClientRequestInterceptor> argumentCaptor =
+        ArgumentCaptor.forClass(ClientRequestInterceptor.class);
+    verify(clientBuilder).addInterceptor(argumentCaptor.capture());
+
+    assertThat(argumentCaptor.getValue())
+        .extracting("username", "password")
+        .containsExactlyInAnyOrder("my-username", "my-password");
+  }
+
+
+
+  @Test
+  public void shouldVerifyBasicAuthAndInterceptors() {
+    ArgumentCaptor<ClientRequestInterceptor> interceptorCaptor =
+        ArgumentCaptor.forClass(ClientRequestInterceptor.class);
+    verify(clientBuilder, times(3))
+        .addInterceptor(interceptorCaptor.capture());
+
+    assertThat(interceptorCaptor.getAllValues().size()).isEqualTo(3);
+    assertThat(interceptorCaptor.getAllValues())
+        .containsOnlyOnce(interceptorOne, interceptorTwo);
+    assertThat(interceptorCaptor.getAllValues())
+        .extracting("class")
+        .containsOnlyOnce(BasicAuthProvider.class);
+  }
+
+  @Test
+  public void startup() {
+    assertThat(topicSubscriptions.size()).isEqualTo(2);
+    assertThat(topicSubscriptions)
+        .extracting("topicName", "autoOpen", "businessKey", "lockDuration", "processDefinitionKey")
+        .containsExactlyInAnyOrder(
+            tuple("topic-one", false, null, 33L, null),
+            tuple("topic-two", false, "business-key", null, "proc-def-key"));
+  }
+}
+----
+
+== AssertJ
+
+assertThat(someObject).extracting(fieldOrProperty) 可以获取private属性的值
+
+assertThat(frodo).extracting("name", as(InstanceOfAssertFactories.STRING)).startsWith("Fro");
+
+== spring-test
+
+ReflectionTestUtils可以访问或者赋值私有字段
+
+
+
+== 数据库
+在测试涉及数据库操作的方法时选择合适的数据库很重要，目前比较主流的方法是在单元测试中使用内存数据库保证执行速度，
+在集成测试中使用与生产环境相同的数据库容器。
+
+Spring Boot提供了
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.testing.spring-boot-applications.autoconfigured-spring-data-jpa[`@AutoConfigureTestDatabase`]
+注解自动配置一个测试的 `DataSource` 替换应用中声明的 `DataSource`，
+这个 `DataSource` 会根据classpath中的数据库驱动启动一个内存数据库。如果想使用真实数据库而不是内存数据库，可以设置注解的 `replace` 属性为 `Replace.NONE`，
+
+====
+[source,java,subs="verbatim"]
+----
+import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DataJpaTest                                             // <1>
+@AutoConfigureTestDatabase(replace = Replace.NONE)       // <2>
+class MyRepositoryTests {
+
+    @Autowired
+    private UserRepository repository;
+
+    @Test
+    void testExample() throws Exception {
+        User user = this.repository.findByUsername("sboot");
+        assertThat(user.getUsername()).isEqualTo("sboot");
+        assertThat(user.getEmployeeNumber()).isEqualTo("1234");
+    }
+
+}
+----
+<1> @DataJpaTest已经继承了@AutoConfigureTestDatabase，所以如果不需要替换为真实数据源就不需要下面的 @AutoConfigureTestDatabase(replace = Replace.NONE)
+<2> 替换为 application.yml 中声明的真实数据源
+====
+
+WARNING: 尽管内存数据库与真实数据库的非常相似，但仍然有些真实数据库才支持的特性是内存数据库不具备的，所以在
+测试一些使用了比较生僻的关键字的sql语句时要特别注意，当然如果是使用JPA或者Hibernate这样的框架则不必担心，它们
+会在底层处理不同数据库的差异。
+
+`@TestContainer` 提供了一种使用代码管理容器的方法，它整合了Junit框架，也在测试执行前启动一个容器，这一特性在集成测试
+中非常有用，因为集成测试既要保证环境与真实环境一致但又不能影响真实环境。除了支持各类型数据库外，
+TestContainer也支持启动Kafka、 ELasticsearch、 Nginx、 RabbitMQ等主流中间件，详情参考其 https://www.testcontainers.org/[官方文档]。
+
+@TestContainer与@SpringBootTest https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto.testing.testcontainers[整合]示例如下
+
+====
+[source,java,subs="verbatim"]
+----
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Testcontainers
+public class UserAndRoleIntegrationTest {
+
+	private final String adminPassword = "123456";
+
+	@Container
+	static MySQLContainer<?> mySQLContainer = new MySQLContainer<>("mysql:8.0.28");             // <1>
+
+	@DynamicPropertySource
+	static void containerProperties(DynamicPropertyRegistry registry) {                         // <2>
+		registry.add("spring.datasource.url", mySQLContainer::getJdbcUrl);
+		registry.add("spring.datasource.driver-class-name", mySQLContainer::getDriverClassName);
+		registry.add("spring.datasource.username", mySQLContainer::getUsername);
+		registry.add("spring.datasource.password", mySQLContainer::getPassword);
+	}
+
+	@Test
+	void adminLogin(@Autowired TestRestTemplate testRestTemplate) {
+		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+		parameters.add("username", "admin");
+		parameters.add("password", RsaBasedPasswordEncoder.encryptPassword(adminPassword));
+		CommonResult loginResult = testRestTemplate.postForObject("/api/login", parameters, CommonResult.class);
+		assertEquals(CommonResult.SUCCESS, loginResult.getState());
+		assertEquals("登录成功", loginResult.getMessage());
+	}
+
+}
+----
+1. 启动一个容器
+2. 使用容器的信息作为数据源的属性
+====
+
+
+== MyBatis
+测试是整个应用构建过程中最耗时的阶段，为了提升应用构建效率，必须关注测试的执行时间。提升测试执行速度的一个重要方法是减少不必要的类加载或初始化，对使用Spring框架构建的
+应用来说就是只加载需要的Bean。 `spring-boot-test-autoconfigure` 模块提供了大量 `@...Test` 注解用于初始化Spring上下文并加载某一类Bean，常用的如 `@WebMvcTest`
+指定仅加载一个或多个 `Controller` 的Bean， `@DataJpaTest` 则只加载 Spring Data JPA 的 `Repository` 的Bean，完整的注解列表参考
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.testing.spring-boot-applications[官方文档]。
+
+MyBatis仿造此设计在 `mybatis-spring-boot-starter-test` 模块中提供了 `@MybatisTest` 注解用于测试 `Mapper` 接口。
+
+[source,java,subs="verbatim"]
+----
+
+@Mapper
+public interface CityMapper {
+
+    @Select("SELECT * FROM CITY WHERE state = #{state}")
+    City findByState(@Param("state") String state);
+
+}
+
+@MybatisTest
+public class CityMapperTest {
+
+    @Autowired
+    private CityMapper cityMapper;
+
+    @Test
+    public void findByStateTest() {
+        City city = cityMapper.findByState("CA");
+        assertThat(city.getName()).isEqualTo("San Francisco");
+        assertThat(city.getState()).isEqualTo("CA");
+        assertThat(city.getCountry()).isEqualTo("US");
+    }
+
+}
+----
+
+TIP: @MybatisTest也继承了上文的 @AutoConfigureTestDatabase ，默认会启动一个内存数据库作为数据源
+
+关于 `@MybatisTest` 的其他高级用法参考 http://mybatis.org/spring-boot-starter/mybatis-spring-boot-test-autoconfigure/[官方文档]
+
+== Mock外部服务
+
+测试中经常需要解决的问题是对外部环境或外部服务的依赖，`spring-test` 提供了一种 https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.testing.spring-boot-applications.autoconfigured-rest-client[Mock外部服务]的方法，可以在调用外部接口时返回Mock的数据，
+保证代码能顺利执行。
+
+[source,java,subs="verbatim"]
+----
+@Service
+public class MyService {
+
+    private final RestTemplate restTemplate;
+
+    public MyService(RestTemplateBuilder restTemplateBuilder) {
+        this.restTemplate = restTemplateBuilder.build();
+    }
+
+    public String invokeOutsideService() {
+        return restTemplate.getForObject("http://outside.com/hello", String.class);
+    }
+}
+
+@RestClientTest(MyService.class)
+public class MyServiceTest {
+
+    @Autowired
+    private MyService myService;
+
+    @Autowired
+    private MockRestServiceServer server;
+
+    @Test
+    void testInvokeOutsideService() {
+        server.expect(requestTo("http://outside.com/hello")).andRespond(withSuccess("world", MediaType.TEXT_PLAIN));
+        String hello = myService.hello();
+        assertEquals("world", hello);
+    }
+}
+----
+
+== 执行顺序
+
+大部分测试场景中我们都不需要关注测试方法的执行顺序，因为一个测试方法就是一个独立的运行单元，多个测试方法间不存在联系。
+但在集成测试中可能需要手动控制测试的执行顺序，例如其中一个测试用于验证新增用户功能正常，紧接着一个测试用于验证新增的用户能够
+用来登录系统。Junit中介绍了一种使用 https://junit.org/junit5/docs/current/user-guide/#writing-tests-test-execution-order[注解]
+控制测试执行顺序的方法，基础框架在集成测试中就应用了此方法。
+
+[source,java,subs="verbatim"]
+----
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+public class UserAndRoleIntegrationTest {
+
+    @Test
+	@Order(1)                            // <1>
+	void addUser() {
+
+	}
+
+	@Test
+	@Order(2)                            // <2>
+	void loginWithAddedUser() {
+
+	}
+}
+----
+1. 新增一个用户
+2. 使用上一步新增的用户登录
+
+== Spring Rest Docs
+
+接口开发完成后就要编写接口文档，目前主要的编写方法包括下面几种
+
+* 纯人工编写
+* 使用Swagger工具生成
+* 在 Yapi 等接口管理平台上编辑，需要时导出
+
+上面几种方案都存在一些问题，纯人工编写工作量较大，Swagger工具对代码侵入性太强，Yapi不能添加自定义内容。
+
+Spring Rest Docs是Spring团队开发的用于生成接口文档的框架，它利用 `spring-test` 提供的 `Spring MVC Test` 生成
+asciidoc格式的接口信息文档，再与手工编写的其他内容结合生成最终的接口文档。它的主要特点是对业务代码无侵入而且开发者能够自由
+地编辑文档内容，同时由于接口信息是使用测试生成的，可以保证接口信息与实际代码始终是一致的。
+
+[source,java,subs="verbatim"]
+----
+@WebMvcTest(DictController.class)
+@AutoConfigureRestDocs
+@ActiveProfiles("test")
+@Import({TestConfig.class, MockConfig.class, SecurityConfig.class})
+class DictControllerTest {
+
+	@Autowired
+	private WebApplicationContext context;
+
+	@Autowired
+	private MockMvc mockMvc;
+
+	@Autowired
+	private DictService dictService;
+
+	@Test
+	@WithMockCustomUser(authorities = "ROLE_admin")
+	void organization() throws Exception {
+		List<Dict> list = new ArrayList<>();
+		Dict d1 = new Dict();
+		d1.setId(1L);
+		d1.setName("dep1");
+		list.add(d1);
+		Dict d2 = new Dict();
+		d2.setId(2L);
+		d2.setName("dep2");
+		list.add(d2);
+		Mockito.when(dictService.organization(isA(Long.class))).thenReturn(list);
+		FieldDescriptor[] orgFields = new FieldDescriptor[]{fieldWithPath("name").description("单位或部门或科室名称"),
+				fieldWithPath("id").description("单位或部门或科室ID")};
+		this.mockMvc.perform(get("/api/dict/organization").param("pid", "3"))
+                .andExpect(status().isOk()).andDo(print())
+				.andDo(document("dict/organization",
+						relaxedRequestParameters(parameterWithName("pid").description("单位或部门ID，可以为空表示查询所有单位")),         // <1>
+						relaxedResponseFields(fieldWithPath("[]").description("组织架构数组")).andWithPrefix("[].",                  // <2>
+								orgFields)));
+
+	}
+
+}
+----
+<1> 请求参数说明
+<2> 响应字段说明
+
+== 覆盖率
+测试覆盖率用来衡量测试的完整性， https://www.jacoco.org/jacoco/[Jacoco]是目前最流行的测试覆盖率计算工具，它提供了非常美观的报告
+展示已经被测试执行过的代码和未执行过的代码。
+Jacoco支持多种运行方式如Java Agent、Ant、Maven，基础框架选择使用maven插件的方式运行，maven构建后在 target/site/jacoco 目录下
+会生成html格式的测试报告，可以直接在浏览器中打开查看。
+
+== 最佳实践
+
+* 测试方法名做到见名知意
+* 测试执行速度越快越好，减少不必要的初始化
+* 时间紧迫情况下只写集成测试
+* 经常修改的代码要写单元测试
+* 测试代码量比业务代码多是很正常的，因为一个业务方法可能需要三到五个测试方法保证其运行正常
+* 使用固定数据作为输入，例如 `new Date()` 是变化的输入
+* 不使用继承
+* 避免assertTrue和assertFalse
+* 使用参数测试减少重复代码
+* 不使用Spring依赖注入
+* 使用构造器注入

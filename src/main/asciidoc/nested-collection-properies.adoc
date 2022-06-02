@@ -1,0 +1,6 @@
+= nested-collection-properties
+
+https://github.com/spring-projects/spring-boot/issues/9894
+
+https://github.com/spring-projects/spring-boot/issues/9945
+
