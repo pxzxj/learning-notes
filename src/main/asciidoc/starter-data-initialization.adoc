@@ -1,5 +1,180 @@
-= SpringBoot Starter DataInitialization
+= Spring Boot Starter 数据库初始化
+pxzxj; pudge.zxj@gmail.com; 2022/06/08
 
-https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto.data-initialization.dependencies
+使用Spring Boot框架进行开发时通常会将可以复用的功能封装为一个独立的 `starter`，其他程序只需引入此starter即可使用相应功能。某些功能的starter必须依赖数据库
+中的表才能正常工作，例如 `spring-boot-starter-quartz` 就需要初始化许多 `quartz` 相关的表。一种选择是手动执行这些表对应的建表语句，但更理想的方式是由
+`starter` 自动初始化所需的表
 
-org.springframework.boot.autoconfigure.session.JdbcSessionDataSourceScriptDatabaseInitializer
+
+== Depend Upon an Initialized Database
+
+Spring Boot官方文档的 https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto.data-initialization.dependencies[Depend Upon an Initialized Database]
+章节描述了它对数据库初始化的支持。
+
+数据库初始化相关的Bean可以分为两类，一类是执行初始化的Bean，负责创建表插入数据等操作，另一类是依赖于初始化后数据库的Bean，
+这些Bean在创建过程中需要执行查询数据库等操作。 Spring Boot使用 `DatabaseInitializerDetector` 和 `DependsOnDatabaseInitializationDetector` 两个接口找到这两类Bean，
+找到后只要通过 `BeanDefinition#setDependsOn` 方法指定后者依赖前者就能保证第二类Bean一定在第一类Bean之后创建
+
+=== DatabaseInitializerDetector
+
+`DatabaseInitializerDetector` 的定义如下，`detect()` 方法返回用来初始化数据库的Bean名称，也就是上文第一类Bean的名称，
+`detectionComplete()` 是 `detect()` 完成的回调方法，`getOrder()` 控制 `DatabaseInitializerDetector` 多个实现的执行顺序
+
+[source,java,subs="verbatim"]
+----
+public interface DatabaseInitializerDetector extends Ordered {
+
+	/**
+	 * Detect beans defined in the given {@code beanFactory} that initialize a
+	 * {@link DataSource}.
+	 * @param beanFactory bean factory to examine
+	 * @return names of the detected {@code DataSource} initializer beans, or an empty set
+	 * if none were detected.
+	 */
+	Set<String> detect(ConfigurableListableBeanFactory beanFactory);
+
+	default void detectionComplete(ConfigurableListableBeanFactory beanFactory,
+			Set<String> dataSourceInitializerNames) {
+	}
+
+	@Override
+	default int getOrder() {
+		return 0;
+	}
+
+}
+----
+
+`DatabaseInitializerDetector` 默认包含如下实现，其中 `FlywayDatabaseInitializerDetector`、`FlywayMigrationInitializerDatabaseInitializerDetector`、`JpaDatabaseInitializerDetector`、
+`LiquibaseDatabaseInitializerDetector` 依赖特定框架或组件，通用性不足，而R2DBC目前应用也不广泛，因此本文仅介绍 `DataSourceScriptDatabaseInitializerDetector`
+
+* DataSourceScriptDatabaseInitializerDetector
+* FlywayDatabaseInitializerDetector
+* FlywayMigrationInitializerDatabaseInitializerDetector
+* JpaDatabaseInitializerDetector
+* LiquibaseDatabaseInitializerDetector
+* R2dbcScriptDatabaseInitializerDetector
+
+[[datasourceScriptDatabaseInitializerDetector]]
+==== DataSourceScriptDatabaseInitializerDetector
+
+`DataSourceScriptDatabaseInitializerDetector` 及其父类定义如下，可以看到它会将所有 `DataSourceScriptDatabaseInitializer` 类型的Bean作为数据库初始化的Bean，
+`DataSourceScriptDatabaseInitializer` 在 <<dataSourceScriptDatabaseInitializer,下文>>单独介绍
+
+[source,java,subs="verbatim"]
+----
+class DataSourceScriptDatabaseInitializerDetector extends AbstractBeansOfTypeDatabaseInitializerDetector {
+
+	static final int PRECEDENCE = Ordered.LOWEST_PRECEDENCE - 100;
+
+	@Override
+	protected Set<Class<?>> getDatabaseInitializerBeanTypes() {
+		return Collections.singleton(DataSourceScriptDatabaseInitializer.class);
+	}
+
+	@Override
+	public int getOrder() {
+		return PRECEDENCE;
+	}
+
+}
+
+public abstract class AbstractBeansOfTypeDatabaseInitializerDetector implements DatabaseInitializerDetector {
+
+	@Override
+	public Set<String> detect(ConfigurableListableBeanFactory beanFactory) {
+		try {
+			Set<Class<?>> types = getDatabaseInitializerBeanTypes();
+			return new BeansOfTypeDetector(types).detect(beanFactory);
+		}
+		catch (Throwable ex) {
+			return Collections.emptySet();
+		}
+	}
+
+	/**
+	 * Returns the bean types that should be detected as being database initializers.
+	 * @return the database initializer bean types
+	 */
+	protected abstract Set<Class<?>> getDatabaseInitializerBeanTypes();
+
+}
+----
+
+=== DependsOnDatabaseInitializationDetector
+
+`DependsOnDatabaseInitializationDetector` 的定义如下，它的 `detect()` 方法返回依赖于初始化后数据库的Bean的名称
+
+[source,java,subs="verbatim"]
+----
+public interface DependsOnDatabaseInitializationDetector {
+
+	/**
+	 * Detect beans defined in the given {@code beanFactory} that depend on database
+	 * initialization. If no beans are detected, an empty set is returned.
+	 * @param beanFactory bean factory to examine
+	 * @return names of any beans that depend upon database initialization
+	 */
+	Set<String> detect(ConfigurableListableBeanFactory beanFactory);
+
+}
+----
+
+`DependsOnDatabaseInitializationDetector` 默认包含如下实现，其中大部分都用于与其他框架整合，而 `AnnotationDependsOnDatabaseInitializationDetector` 则比较通用，在任意Bean的声明
+上添加 `@DependsOnDatabaseInitialization` 注解就可以使其成为一个依赖于初始化后数据库的Bean。
+
+* AnnotationDependsOnDatabaseInitializationDetector 返回声明了 `@DependsOnDatabaseInitialization` 注解的Bean
+* JdbcIndexedSessionRepositoryDependsOnDatabaseInitializationDetector 返回 `JdbcIndexedSessionRepository` 类型的Bean，用于与 `spring-session` 整合
+* JobRepositoryDependsOnDatabaseInitializationDetector 返回 `JobRepository` 类型的Bean，用于与 `spring-batch` 整合
+* JooqDependsOnDatabaseInitializationDetector 返回 `DSLContext` 类型的Bean，用于与 `JOOQ` 整合
+* JpaDependsOnDatabaseInitializationDetector 返回 `EntityManagerFactory` 和 `AbstractEntityManagerFactoryBean` 类型的Bean，用于与JPA整合
+* SchedulerDependsOnDatabaseInitializationDetector 返回 `Scheduler` 和 `SchedulerFactoryBean` 类型的Bean，用于与Quartz整合
+* SpringJdbcDependsOnDatabaseInitializationDetector 返回 `JdbcOperations` 和 `NamedParameterJdbcOperations` 类型的Bean
+
+
+[[dataSourceScriptDatabaseInitializer]]
+== DataSourceScriptDatabaseInitializer
+
+<<datasourceScriptDatabaseInitializerDetector, 上文>>介绍了 `DataSourceScriptDatabaseInitializerDetector` 会返回所有 `DataSourceScriptDatabaseInitializer` 类型的Bean，表示这些Bean用于数据库初始化
+
+`DataSourceScriptDatabaseInitializer` 用于执行特定脚本初始化数据库，它的构造器信息如下，第一个参数 `dataSource` 指定需要初始化的数据源，第二个参数 `settings` 指定脚本信息，包含 schema脚本位置、data脚本位置、是否错误继续、
+分隔符、编码、模式
+
+`DatabaseInitializationMode` 是一个枚举，包含 `ALWAYS、EMBEDDED、NEVER` 三个枚举值，`ALWAYS` 表示总是执行 `schemaLocations` 和 `dataLocations` 声明的脚本， `EMBEDDED` 表示只有是内存数据库才执行，`NEVER` 表示不执行。
+该字段的设置要特别注意，如果指定了 `ALWAYS` 就意味着每一次项目启动都会执行初始化脚本，如果数据源是 `MySQL` 等非内存数据库重复执行脚本很可能会报错，当然如果数据库支持 `CREATE IF NOT EXISTS` 语法可能不会报错
+
+[source,java,subs="verbatim"]
+----
+public class DataSourceScriptDatabaseInitializer extends AbstractScriptDatabaseInitializer {
+
+	private final DataSource dataSource;
+
+	public DataSourceScriptDatabaseInitializer(DataSource dataSource, DatabaseInitializationSettings settings) {
+		super(settings);
+		this.dataSource = dataSource;
+	}
+
+    //...
+}
+
+public class DatabaseInitializationSettings {
+
+	private List<String> schemaLocations;
+
+	private List<String> dataLocations;
+
+	private boolean continueOnError = false;
+
+	private String separator = ";";
+
+	private Charset encoding;
+
+	private DatabaseInitializationMode mode = DatabaseInitializationMode.EMBEDDED;
+
+    //getter,setter
+
+}
+----
+
+综上所述，只要在 `starter` 中声明 `DataSourceScriptDatabaseInitializer` 类型的Bean就能实现数据库的初始化，如果 `starter` 本身包含了配置类的话，还可以在其配置类中声明 `DatabaseInitializationSettings` 相关的属性，
+最终实现在 `application.yml` 中配置初始化脚本位置或者初始化模式等属性。
