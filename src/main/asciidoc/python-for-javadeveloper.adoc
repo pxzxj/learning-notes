@@ -54,6 +54,8 @@ Python中的列表(list)用于顺序存储结构。它可以方便、高效的�
 
 Python中的List时间复杂度与Java的ArrayList一样
 
+列表获取子列表比较简单可以使用list[0:2]的方式
+
 === 类
 Python所有变量都有对应的类，比如int类，没有Java中所谓的基础类型
 
@@ -66,6 +68,8 @@ Python支持多继承，多重继承时, 若多个父类中有相同的方法, �
 === 打印对象
 
 定义 `\\__str__` 函数，详情参考 https://docs.python.org/reference/datamodel.html#object.\\__str__[官方文档]
+
+id(object)查看对象的内存地址
 
 
 === 对象比较
