@@ -19,6 +19,6 @@ https://github.com/pxzxj/webservice-demo/tree/master/client[webservice-client] �
 6. 运行Client类 `java -cp bin;lib/* io.github.Client`
 7. 如果有异常则修改 `Client` 类或者新增其它类并重复5、6步
 
-NOTE: 在Linux环境下第6步 `-cp` 后的多个classpath使用分号连接
+NOTE: 在Linux环境下第6步 `-cp` 后的多个jar包路径使用分号连接，如果所有jar包都在同一目录内，可以使用 `find $your-jar-lib-fold  -name  *.jar | xargs | sed  "s/ /:/g"` 命令生成所有jar包的classpath结果
 
 NOTE: 不只是webservice，任何的java程序例如Spring Boot应用都可以使用这种方式在线上进行调试
