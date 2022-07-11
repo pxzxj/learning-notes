@@ -7,6 +7,9 @@ Python无需声明类型
 Python
 Python的Iterable对应Java的Iterable
 Python中的generator对应Java的Stream
+Python使用 `for in` 进行循环
+
+== 控制语句
 
 
 === generator
@@ -56,6 +59,12 @@ Python中的List时间复杂度与Java的ArrayList一样
 
 列表获取子列表比较简单可以使用list[0:2]的方式
 
+=== list vs tuple
+list与tuple都可以存储多个不同类型的数据，但tuple是不可变的。
+
+编写Java代码时有时希望方法能返回彼此关联的多个数据(例如返回一个人的性别和年龄)，一种方式是将这些数据封装为一个实体类，
+另一种方式是返回一个集合或者数组，这些方法实际上都不及tuple更合适。
+
 === 类
 Python所有变量都有对应的类，比如int类，没有Java中所谓的基础类型
 
@@ -82,4 +91,3 @@ id(object)查看对象的内存地址
 
 
 === 依赖管理
-

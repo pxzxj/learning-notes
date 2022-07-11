@@ -167,6 +167,7 @@
                             <relativeBaseDir>true</relativeBaseDir>
                             <preserveDirectories>true</preserveDirectories>
                             <attributes>
+                                <source-highlighter>highlight.js</source-highlighter>
                                 <sectanchors>true</sectanchors>
                                 <toc>left</toc>
                                 <docinfo>shared</docinfo>
