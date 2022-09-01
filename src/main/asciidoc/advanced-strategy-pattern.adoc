@@ -364,3 +364,53 @@ public interface HandlerMethodArgumentResolver {
 }
 ----
 ====
+
+
+== Spring中简化的高级策略模式
+
+`execute()` 方法有返回值时，可以使用它的返回值判断来代替 `supports()` 方法，典型的示例是SpringMVC中的 `org.springframework.web.servlet.HandlerMapping`
+
+[source,java,subs="verbatim"]
+----
+package org.springframework.web.servlet;
+
+public interface HandlerMapping {
+
+    /**
+    * Returns null if no match was found. This is not an error. The DispatcherServlet will query all registered HandlerMapping beans to find a match, and only decide there is an error if none can find a handler.
+    * @param request - current HTTP request
+    * @return a HandlerExecutionChain instance containing handler object and any interceptors, or null if no mapping found
+    * @throws Exception - if there is an internal error
+    */
+    @Nullable
+	HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception;     // <1>
+
+}
+----
+1. 注意方法添加了 `@Nullable` 注解表示它的返回值可能是null，并且在注释中说明了null返回值的意义，这些不是必须的，但确是最佳实践
+
+`HandlerMapping` 的调用者需要判断 `getHandler` 的返回值，非空则返回
+
+[source,java,subs="verbatim"]
+----
+package org.springframework.web.servlet;
+
+public class DispatcherServlet extends FrameworkServlet {
+
+	@Nullable
+	private List<HandlerMapping> handlerMappings;
+
+	@Nullable
+	protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+		if (this.handlerMappings != null) {
+			for (HandlerMapping mapping : this.handlerMappings) {
+				HandlerExecutionChain handler = mapping.getHandler(request);
+				if (handler != null) {
+					return handler;
+				}
+			}
+		}
+		return null;
+	}
+}
+----
