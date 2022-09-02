@@ -387,7 +387,7 @@ public interface HandlerMapping {
 
 }
 ----
-1. 注意方法添加了 `@Nullable` 注解表示它的返回值可能是null，并且在注释中说明了null返回值的意义，这些不是必须的，但确是最佳实践
+1. 注意方法添加了 `@Nullable` 注解表示它的返回值可能是null，并且在注释中说明了null返回值的意义，这些不是必须的，但却是最佳实践
 
 `HandlerMapping` 的调用者需要判断 `getHandler` 的返回值，非空则返回
 

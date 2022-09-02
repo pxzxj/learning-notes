@@ -5,27 +5,36 @@ pxzxj; pudge.zxj@gmail.com; 2022/06/09
 
 == 坐标规划
 
-坐标是 Maven 核心的核心，因此规划正确的坐标至关重要，如果你使用了模糊不清的坐标，那么你的用户就很难找到你的构件，或者即使找到了，也容易写错。错误的使用坐标，还会造成冲突，如果你使用 junit 这样的 groupId，那会发生什么？下面先看一些不是很规范的坐标使用方式。
+坐标是 Maven 的核心，正确的坐标不但使项目结构直观清晰，也给日常依赖管理带来极大便利，下文结合Spring的坐标介绍一种合理的坐标规划方式
 
-=== 坐标规划的原则
+=== groupId
 
-滥用坐标、错用坐标的样例比比皆是，在中央仓库中我们能看到SpringFramework 有两种坐标，其一是直接使用springframework 作为groupId，如springframework:spring-beans:1.2.6，另一种是用org.springframework 作为groupId，如org.springframework:spring-beans:2.5。细心看看，前一种方式显得比较随意，后一种方式则是基于域名衍生出来的，显然后者更合理，因为用户能一眼根据域名联想到其Maven 坐标，方便寻找。因此新版本的SpringFramework 构件都使用org.springframework 作为groupId。由这个例子我们可以看到坐标规划一个原则是 `基于项目域名衍生` 。其实很多流行的开源项目都破坏了这个原则，例如JUnit，这是因为Maven 社区在最开始接受构件并部署到中央仓库的时候，没有很很严格的限制，而对于这些流行的项目来说，一时间更改坐标会影响大量用户，因此也算是个历史遗留问题了。
+Spring项目的groupId有两种形式，一种是 `org.springframework`，Spring Framework的依赖都在此groupId下，例如spring-core、spring-beans、spring-context等，另一种是包含具体的项目名的如 `org.springframework.boot` 表示Spring Boot项目，`org.springframework.security` 表示Spring Security项目。可以发现使用 `org.springframework` 的都是些非常基础的模块，这些依赖被广泛使用在其它项目中。
 
-还有一个常见的问题是将groupId 直接匹配到公司或者组织名称，因为乍一看这是显而易见的。例如组织是zoo.com，有个项目是dog，那有些人就直接使用groupId com.zoo 了。如果项目只有一个模块，这是没有什么问题的，但现实世界的项目往往会有很多模块，Maven 的一大长处就是通过多模块的方式管理项目。那dog 项目可能会有很多模块，我们用坐标的哪个部分来定义模块呢？groupId 显然不对，version 也不可能是，那只有artifactId。因此要这里有了另外一个原则 `用artifactId 来定义模块而不是定义项目`。接下来，很显然的，项目就必须用groupId来定义。因此对于dog项目来说，应该使用groupId com.zoo.dog，不仅体现出这是zoo.com下的一个项目，而且可以与该组织下的其他项目如com.zoo.cat区分开来。
+一个企业中一般都有多个业务项目，这些项目也可以参考Spring项目进行groupId规划，不同项目间公共的依赖使用反写的企业域名作为groupId例如 `com.baidu`，具体业务项目的groupId再加上项目名称例如 `com.baidu.tieba`
 
-除此之外，artifactId 的定义也有最佳实践，我们常常可以看到一个项目有很多的模块，例如api，dao，service，web 等等。Maven 项目在默认情况下生成的构件，其名称不会是基于artifactId，version 和packaging 生成的，例如 api-1.0.jar，dao-1.0.jar等等，他们不会带有 groupId 的信息，这会造成一个问题，例如当我们把所有这些构件放到 Web 容器下的时候，你会发现项目 dog 有 api-1.0.jar，项目 cat 也有 api-1.0.jar，这就造成了冲突。更坏的情况是，dog 项目有 api-1.0.jar，cat 项目有 api-2.0.jar，其实两者没什么关系，可当放在一起的时候，却很容易让人混淆。为了让坐标更加清晰，又出现了一个原则，即在 `定义 artiafctId 时也加入项目的信息`，例如 dog 项目的 api 模块，那就使用 artifactId dog-api，其他就是 dog-dao，dao-service 等等。虽然连字号是不允许出现在 Java 的包名中的，但 Maven 没这个限制。现在 dog-api-1.0.jar，cat-2.0.jar 被放在一起时，就不容易混淆了。
+=== artifactId
 
-关于坐标，我们还没谈到 version，这里不再详述因为读者可以从 http://www.sonatype.com/books/mvnref-book/reference/pom-relationships-sect-pom-syntax.html#pom-relationships-sect-version-build-numbers[Maven: The Complete Guide] 中找到详细的解释，简言之就是使用这样一个格式：
+artifactId同样可以按照基础模块和具体项目来分类，Spring项目中的基础模块包括 `spring-core`、`spring-beans`等，而具体项目则包括 `spring-security-core`、`spring-security-config` 等，可以发现artifactId定义的规律，首先是企业名称，紧接着是项目名，最后一部分是项目下子项目名称，如果是基础模块则省略项目名。
 
-----
-< 主版本 >.< 次版本 >.< 增量版本 >-< 限定符 >
-----
+可以发现项目名既出现在了groupId中也出现在了artifactId中，貌似存在冗余，但这是有必要的。groupId中包含项目名不难理解，可以对同一项目下的多个子项目进行进一步分组，而artifactId包含的项目名则是考虑了项目打包后的问题，因为项目打包后生成的文件只包含artifactId，如果artifactId中没有项目名，那么不同项目的同一名称的子项目打包后生成的文件非常容易混淆。假设Spring Security和Spring Session都有一个子项目core，对应的坐标是 `org.springframework.security:core:1.0` 和 `org.springframework.session:core:2.0`，那么最终打包的后分别生成了core-1.0.jar和core-2.0.jar，这样的两个文件显然容易混淆，若是加上了项目名变成spring-security-core-1.0.jar和spring-session-core-2.0.jar就清楚多了
 
-其中主版本主要表示大型架构变更，次版本主要表示特性的增加，增量版本主要服务于 bug 修复，而限定符如 alpha、beta 等等是用来表示里程碑。当然不是每个项目的版本都要用到这些 4 个部分，根据需要选择性的使用即可。在此基础上 Maven 还引入了 SNAPSHOT 的概念，用来表示活动的开发状态，由于不涉及坐标规划，这里不进行详述。不过有点要提醒的是，由于 SNAPSHOT 的存在，自己显式地在 version 中使用时间戳字符串其实没有必要。
 
-=== Classifier
+=== version
 
-Classifier 可能是最容易被忽略的 Maven 特性，但它确实非常重要，我们也需要它来帮助规划坐标。设想这样一个情况，有一个 jar 项目，就说是dog-cli-1.0.jar吧，运行它用户就能在命令行上画一只小狗出来。现在用户的要求是希望你能提供一个 zip 包，里面不仅包含这个可运行的 jar，还得包含源代码和文档，换句话说，这是比较正式的分发包。这个文件名应该是怎样的呢？dog-cli-1.0.zip？不够清楚，仅仅从扩展名很难分辨什么是 Maven 默认生成的构件，什么是额外配置生成分发包。如果能是dog-cli-1.0-dist.zip就最好了。这里的 dist 就是 classifier，默认 Maven 只生成一个构件，我们称之为主构件，那 _ 当我们希望 Maven 生成其他附属构件的时候，就能用上 classifier_。常见的 classifier 还有如dog-cli-1.0-sources.jar表示源码包，dog-cli-1.0-javadoc.jar表示 JavaDoc 包等等。制作 classifier 的方式多种多样，其中最重要的一种是使用 http://maven.apache.org/plugins/maven-assembly-plugin/[Maven Assembly Plugin] ，感兴趣的读者可以进一步研究。
+Spring团队在2020年的一篇博文 https://spring.io/blog/2020/04/30/updates-to-spring-versions#project-module-version-changes[Updates to Spring Versions]中介绍了Spring项目的版本约定，简而言之，Spring项目的版本格式为 `MAJOR.MINOR.PATCH[-MODIFIER]` 其中各字段意义如下
+
+[horizontal]
+MAJOR  :: 增加时表示巨大变更，例如即将到来的Spring Framework 6就新增非常多新特性，并且Java版本要求也从上个版本的Java 8升级为Java 17
+MINOR  :: 增加时表示一小部分特性变更
+PATCH  :: 增加时表示小的补丁变更
+MODIFIER  ::  可选的修饰符表达额外信息，Spring项目使用M、RC、SNAPSHOT表示发布的不同阶段例如2.4.0-M1，正式发布时MODIFIER为空例如2.4.0
+
+实际的项目中可以参考Spring的版本号约定结合项目现状制定版本号规则，例如一些小型项目可以只保留 `MAJOR` 和 `MINOR` 版本号
+
+=== classifier
+
+Classifier 可能是最容易被忽略的 Maven 特性，但它确实非常重要。设想这样一个情况，有一个 jar 项目，就说是dog-cli-1.0.jar吧，运行它用户就能在命令行上画一只小狗出来。现在用户的要求是希望你能提供一个 zip 包，里面不仅包含这个可运行的 jar，还得包含源代码和文档，换句话说，这是比较正式的分发包。这个文件名应该是怎样的呢？dog-cli-1.0.zip？不够清楚，仅仅从扩展名很难分辨什么是 Maven 默认生成的构件，什么是额外配置生成分发包。如果能是dog-cli-1.0-dist.zip就最好了。这里的 dist 就是 classifier，默认 Maven 只生成一个构件，我们称之为主构件，那希望 Maven 生成其他附属构件的时候，就能用上 classifier。常见的 classifier 还有如dog-cli-1.0-sources.jar表示源码包，dog-cli-1.0-javadoc.jar表示 JavaDoc 包等等。制作 classifier 的方式多种多样，其中最重要的一种是使用 http://maven.apache.org/plugins/maven-assembly-plugin/[Maven Assembly Plugin]。
 
 == POM重构
 
