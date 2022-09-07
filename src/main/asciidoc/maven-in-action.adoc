@@ -9,16 +9,15 @@ pxzxj; pudge.zxj@gmail.com; 2022/06/09
 
 === groupId
 
-Spring项目的groupId有两种形式，一种是 `org.springframework`，Spring Framework的依赖都在此groupId下，例如spring-core、spring-beans、spring-context等，另一种是包含具体的项目名的如 `org.springframework.boot` 表示Spring Boot项目，`org.springframework.security` 表示Spring Security项目。可以发现使用 `org.springframework` 的都是些非常基础的模块，这些依赖被广泛使用在其它项目中。
+Spring项目的groupId有两种形式，一种是 `org.springframework`，Spring Framework的依赖都在此groupId下，例如spring-core、spring-beans、spring-context等，另一种是包含具体的项目名的如 `org.springframework.boot` 表示Spring Boot项目，`org.springframework.security` 表示Spring Security项目。可以发现使用 `org.springframework` 的都是些非常基础的项目，这些基础项目被广泛应用在其它特定功能的项目中。
 
 一个企业中一般都有多个业务项目，这些项目也可以参考Spring项目进行groupId规划，不同项目间公共的依赖使用反写的企业域名作为groupId例如 `com.baidu`，具体业务项目的groupId再加上项目名称例如 `com.baidu.tieba`
 
 === artifactId
 
-artifactId同样可以按照基础模块和具体项目来分类，Spring项目中的基础模块包括 `spring-core`、`spring-beans`等，而具体项目则包括 `spring-security-core`、`spring-security-config` 等，可以发现artifactId定义的规律，首先是企业名称，紧接着是项目名，最后一部分是项目下子项目名称，如果是基础模块则省略项目名。
+artifactId定义的一般规则是企业名称加项目名称，例如 `spring-boot`、`spring-security`，如果项目还包括多个子项目则再添加子项目名称如 `spring-security-core`、`spring-security-config`
 
-可以发现项目名既出现在了groupId中也出现在了artifactId中，貌似存在冗余，但这是有必要的。groupId中包含项目名不难理解，可以对同一项目下的多个子项目进行进一步分组，而artifactId包含的项目名则是考虑了项目打包后的问题，因为项目打包后生成的文件只包含artifactId，如果artifactId中没有项目名，那么不同项目的同一名称的子项目打包后生成的文件非常容易混淆。假设Spring Security和Spring Session都有一个子项目core，对应的坐标是 `org.springframework.security:core:1.0` 和 `org.springframework.session:core:2.0`，那么最终打包的后分别生成了core-1.0.jar和core-2.0.jar，这样的两个文件显然容易混淆，若是加上了项目名变成spring-security-core-1.0.jar和spring-session-core-2.0.jar就清楚多了
-
+可以发现项目名既出现在了groupId中也出现在了artifactId中，貌似存在冗余，但这是有必要的。groupId中包含项目名不难理解，而artifactId包含的项目名则是考虑了项目打包后的问题，因为项目打包后生成的文件只包含artifactId，如果artifactId中没有项目名，那么不同项目的同一名称的子项目打包后生成的文件非常容易混淆。假设Spring Security和Spring Session都有一个子项目core，artifactId不包含项目名的坐标是 `org.springframework.security:core:1.0` 和 `org.springframework.session:core:2.0`，那么最终打包的后分别生成了core-1.0.jar和core-2.0.jar，这样的两个文件显然容易混淆，若是加上了项目名变成spring-security-core-1.0.jar和spring-session-core-2.0.jar就清楚多了
 
 === version
 
@@ -34,15 +33,91 @@ MODIFIER  ::  可选的修饰符表达额外信息，Spring项目使用M、RC、
 
 === classifier
 
-Classifier 可能是最容易被忽略的 Maven 特性，但它确实非常重要。设想这样一个情况，有一个 jar 项目，就说是dog-cli-1.0.jar吧，运行它用户就能在命令行上画一只小狗出来。现在用户的要求是希望你能提供一个 zip 包，里面不仅包含这个可运行的 jar，还得包含源代码和文档，换句话说，这是比较正式的分发包。这个文件名应该是怎样的呢？dog-cli-1.0.zip？不够清楚，仅仅从扩展名很难分辨什么是 Maven 默认生成的构件，什么是额外配置生成分发包。如果能是dog-cli-1.0-dist.zip就最好了。这里的 dist 就是 classifier，默认 Maven 只生成一个构件，我们称之为主构件，那希望 Maven 生成其他附属构件的时候，就能用上 classifier。常见的 classifier 还有如dog-cli-1.0-sources.jar表示源码包，dog-cli-1.0-javadoc.jar表示 JavaDoc 包等等。制作 classifier 的方式多种多样，其中最重要的一种是使用 http://maven.apache.org/plugins/maven-assembly-plugin/[Maven Assembly Plugin]。
+有时除了可执行jar包外还需要提供其它格式的发行包，例如javadoc、source以及自定义的其它格式，这就需要用到classifier，制作特定classifier包的方法参考 http://maven.apache.org/plugins/maven-assembly-plugin/[Maven Assembly Plugin]
+
 
 == POM重构
 
+随着项目的成长，模块的增多，POM 的内容也会变多，这个时候，我们可以对 POM 进行重构，在保持构建成功的前提下，简化 POM 内容，使其更简洁易懂。
 
+如果没有单元测试为前提，对代码进行重构是非常危险的。同样，在重构 POM 之前，项目应该有足够的自动化测试保证 POM 重构不会破坏构建。例如，重构 POM 的时候可能会删除或添加依赖，造成依赖版本变化，依赖范围变化，插件版本变化等等，这些变化可能会导致项目编译失败，或者测试失败。
 
+有时候这个答案是很显然的，当你的 POM 中存在一些依赖或者插件配置，但实际代码没有用到这些配置的时候，应该尽早删掉它们以免给人带来困惑。
 
+还有一种常见的情况，我们可以删掉一些 POM 的元素，例如 POM 中配置了继承，当前模块与父模块使用同样的 groupId 和 version 时，就可以将和元素删除，因为它们可以从父模块继承而来，重复配置没有什么意义。
 
+除了删之外，有些时候我们还需要在 POM 中增加一些 XML 元素，目的是为了让 POM 更清晰易读，且保证 Maven 构建的稳定性。考虑如下的插件配置：
 
+[source,xml,subs="verbatim"]
+----
+
+<plugin>
+ <artifactId>maven-compiler-plugin</artifactId>
+ <configuration>
+   <source>1.5</source>
+   <target>1.5</target>
+ </configuration>
+</plugin>
+
+----
+
+虽然没有 groupId 及 version，但这段配置是完全合法的。当插件没有 groupId 配置的时候，Maven 会认为它是官方插件而自动使用 org.apache.maven.plugins 作为 groupId，当插件没有 version 配置的时候，Maven 则会使用最新的版本（Maven 2 会使用最新的版本，包括 SNAPSHOT，而 Maven 3 则只使用最新的非 SNAPSHOT 版本）。这段配置有两个问题，首先，如果让一个不熟悉 Maven 的开发者来看这段配置，他会感到费解，groupId 和 version 究竟是什么呢？这与不清晰的代码是一个意思，有时候一些程序员为了让代码更短，会采用一些奇怪的语法和变量名，虽然代码量是少了，但沟通成本增加了，得不偿失。其次，让 Maven 猜测版本会有潜在的风险，因为插件的最新版本可能会变化，而这种变化对于 Maven 使用者来说通常是隐藏的，特别是在 Maven 2 中，甚至可能引入 SNAPSHOT 版本的插件，这是非常危险的。基于这两个原因，使用插件的时候，我们应当配置清楚 groupId 和 version，如：
+
+[source,xml,subs="verbatim"]
+----
+
+<plugin>
+ <groupId>org.apache.maven.plugins</groupId>
+ <artifactId>maven-compiler-plugin</artifactId>
+ <version>2.3.2</version>
+ <configuration>
+   <source>1.5</source>
+   <target>1.5</target>
+ </configuration>
+</plugin>
+
+----
+
+基于类似的原因，在配置项目依赖的时候，我们也应当一直显式地写明依赖版本，以避免 Maven 在不同的时刻引入不同版本的依赖而导致项目构建的不稳定。
+
+除了上面提到的增删点之外，Maven 官方还提供了一个非常有用的 Maven Dependency Plugin 来帮助我们分析项目中哪些依赖配置应该删除，那些依赖配置应该增加。Maven Dependency Plugin 的 analyze 目标能够帮助分析项目依赖，例如运行命令 mvn dependency:analyze ，可以看到如下输出：
+
+----
+
+[INFO] --- maven-dependency-plugin:2.1:analyze (default-cli) @ sample-bar ---
+[WARNING] Used undeclared dependencies found:
+[WARNING]    org.springframework:spring-context:jar:2.5.6:compile
+[WARNING] Unused declared dependencies found:
+[WARNING]    org.springframework:spring-core:jar:2.5.6:compile
+[WARNING]    org.springframework:spring-beans:jar:2.5.6:compile
+[INFO] ------------------------------------------------------------------------
+
+----
+
+这里的 Used undeclared dependencies 是指那些在项目中直接使用到的，但没有在 POM 中配置的依赖。例如该例中可能项目中的一些类有关于 spring-context 的 Java import 声明，但 spring-context 这个依赖实际是通过传递性依赖进入 classpath 的，这就意味者潜在的风险。一般来说我们对直接依赖的版本变化会比较清楚，因为那是我们自己直接配置的，但对于传递性依赖的版本变化，就会比较模糊，当这种变化造成构建失败的时候，就很难找到原因。因此我们应当增加这些 Used undeclared dependencies 。
+
+依赖分析还提供了 Unused declared dependencies 供我们参考，这表示那些我们配置了，但并未直接使用的依赖。需要注意的时，对于这些依赖，我们不该直接简单地删除。由于 dependency:analyze 只分析编译主代码和测试代码使用的依赖，一些执行测试和运行时的依赖它发现不了，因此还需要人工分析。通常情况，Unused declared dependencies 还是能帮助我们发现一些无用的依赖配置。
+
+最后，还一些重要的 POM 内容通常被大多数项目所忽略，这些内容不会影响项目的构建，但能方便信息的沟通，它们包括项目 URL，开发者信息，SCM 信息，持续集成服务器信息等等，这些信息对于开源项目来说尤其重要。对于那些想了解项目的人来说，这些信息能他们帮助找到想要的信息，基于这些信息生成的 Maven 站点也更有价值。相关的 POM 配置很简单，如：
+
+[source,xml,subs="verbatim"]
+----
+
+<project>
+ <description>...</description>
+ <url>...</url>
+ <licenses>...</licenses>
+ <organization>...</organization>
+ <developers>...</developers>
+ <issueManagement>...</issueManagement>
+ <ciManagement>...</ciManagement>
+ <mailingLists>...</mailingLists>
+ <scm>...</scm>
+</project>
+
+----
+
+无论是对 POM 内容进行增还是删，其目的都是一样的，就是 _ 为了让 POM 更清晰易懂且让构建更稳定 _。从这点来说，POM 重构与一般的代码重构是类似的。需要谨记的是，重构的前提是完善的自动化测试和持续集成。本文介绍的单个 POM 规模的重构，下篇文章笔者会介绍多模块项目的 POM 重构等内容。
 
 == 打包的技巧
 
