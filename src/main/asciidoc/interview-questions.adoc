@@ -24,6 +24,36 @@
 18. 数据权限实现思路
 19. Spring Security框架原理(用过的话)
 20. OAuth2
+21. 什么是系统调用、物理内存与虚拟内存
+22. @Scheduled实现原理
+23. websocket连接过程
+24. SpringMVC请求处理过程
+25. spring-jdbc事务使用方式
+26. jdk中日期相关的类以及塔曼的区别
+27. 请求参数校验与Bean Validation
+28. 用户登录功能的实现过程
+29. SpringMVC的拦截器以及它的使用场景
+30. 常用的日志框架以及它们之间的关系
+31. CORS是什么
+32. GET与POST的区别
+33. Java中有哪些函数式接口
+34. http缓存机制与缓存相关的响应头
+35. SpringMVC用的哪个库实现Json序列号与反序列号，Jackson与Fastjson的比较
+36. http2新特性，Spring Boot支持使用http2吗
+37. Spring Boot常用的有哪些starter，分别用来做什么
+38. jdk中常用的排查问题工具
+39. Spring Boot Actuator的作用
+40. Maven同一个依赖多个版本怎么选择
+41. Spring Boot应用怎么修改日志级别
+42. Spring Boot默认用的什么日志框架
+43. Spring Boot怎么做国际化
+44. Spring Boot应用怎么打包成容器镜像
+45. Linux上用什么命令把文件中一个词替换成另一个词
+46. 怎么监控Spring Boot应用
+47. k8s中怎么暴露服务
+48. k8s中StorageClass是什么
+
+
 
 == ThreadLocal
 1. 使用WeakReference是因为ThreadLocal可能在线程结束之前就已经使用完了，如果不用弱引用，线程结束前ThreadLocal都不能被回收，这里与方法局部变量区别在于方法执行完成后其局部变量就能被回收，而ThreadLocal是Thread的属性，不用弱引用的话就只能等线程结束后再被回收；另一方面ThreadLocal是在多个线程中使用的，如果是强引用只要存在一个线程没结束ThreadLocal就不能被回收。
