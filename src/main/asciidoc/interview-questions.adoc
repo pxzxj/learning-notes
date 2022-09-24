@@ -35,7 +35,7 @@
 29. SpringMVC的拦截器以及它的使用场景
 30. 常用的日志框架以及它们之间的关系
 31. CORS是什么
-32. GET与POST的区别
+32. GET与POST的区别，都用POST会有问题吗
 33. Java中有哪些函数式接口
 34. http缓存机制与缓存相关的响应头
 35. SpringMVC用的哪个库实现Json序列号与反序列号，Jackson与Fastjson的比较
