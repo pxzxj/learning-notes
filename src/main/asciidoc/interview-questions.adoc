@@ -1,6 +1,7 @@
 = Interview-Questions
 
-
+== Type
+八股文   实战    问题处理  技术广度  基础与底层原理
 
 == Code
 
