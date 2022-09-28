@@ -68,7 +68,7 @@
 61. Spring Cloud中做负载均衡的子项目
 62. curl常用参数
 63. SpringMVC根据请求头路由怎么实现
-
+64. 日常学习途径
 
 == ThreadLocal
 1. 使用WeakReference是因为ThreadLocal可能在线程结束之前就已经使用完了，如果不用弱引用，线程结束前ThreadLocal都不能被回收，这里与方法局部变量区别在于方法执行完成后其局部变量就能被回收，而ThreadLocal是Thread的属性，不用弱引用的话就只能等线程结束后再被回收；另一方面ThreadLocal是在多个线程中使用的，如果是强引用只要存在一个线程没结束ThreadLocal就不能被回收。
