@@ -85,7 +85,7 @@ More test
 
 === Syntax
 
-AsciiDoc相关语法参考 xref:asciidoc-syntax.adoc[AsciiDoc语法介绍]或者 https://docs.asciidoctor.org/asciidoc/latest/[官方站点]
+AsciiDoc相关语法参考 https://docs.asciidoctor.org/asciidoc/latest/[官方站点]
 
 === AsciiDoc vs Markdown
 
