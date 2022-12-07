@@ -1,5 +1,7 @@
 = JDB(Java Debugger)
-pxzxj; pudge.zxj@gmail.com; 2022/05/23
+pxzxj; pudge.zxj@gmail.com
+:revnumber: v1.0
+:revdate: 2022/05/23
 
 调试器是软件开发领域最重要的工具之一，对Java开发来说，在开发环境可以使用Intellij IDEA进行debug从而快速解决问题，但在部署环境由于无法debug
 经常需要耗时费力地添加打印语句并替换部署包。实际上JDK已经提供了一个命令行debug工具jdb，可以在任何环境使用它实现快速有效地问题定位。
