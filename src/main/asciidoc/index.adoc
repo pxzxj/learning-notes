@@ -13,3 +13,5 @@ xref:spring-data-jpa.adoc[Spring Data JPA最佳实践] ::   2022/04/26
 xref:jdb.adoc[JDB(Java Debugger)] ::   2022/05/23
 xref:starter-data-initialization.adoc[Spring Boot Starter 数据库初始化] ::   2022/06/08
 xref:maven-in-action.adoc[Maven实战] :: 2022/08/18
+xref:programming-jiexi.adoc[编程中的解析(Parse vs Resolve vs Analyze)] :: 2023/02/23
+
