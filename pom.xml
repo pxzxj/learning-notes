@@ -23,14 +23,6 @@
         <pdf.cjk.kaigen.download.dir>${project.build.directory}/downloaded-resources</pdf.cjk.kaigen.download.dir>
     </properties>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>spring-release</id>
-            <name>Spring Releases</name>
-            <url>https://repo.spring.io/release</url>
-        </pluginRepository>
-    </pluginRepositories>
-
     <build>
         <plugins>
             <plugin>
@@ -206,7 +198,7 @@
                     <dependency>
                         <groupId>io.spring.asciidoctor.backends</groupId>
                         <artifactId>spring-asciidoctor-backends</artifactId>
-                        <version>0.0.3</version>
+                        <version>0.0.5</version>
                     </dependency>
                     <dependency>
                         <groupId>io.spring.asciidoctor</groupId>
