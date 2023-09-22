@@ -23,6 +23,7 @@
 - Project  alt + 1
 - run anything                          双击ctrl
 - insert live template  (Ctrl + Alt + Shift + J)
+* Ctrl + Shift + Enter Complete Current Statement  效果是马上跳转到行尾，并且如果行尾没有分号自动添加分号
 
 
 
