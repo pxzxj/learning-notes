@@ -1,28 +1,28 @@
 = IntelliJ IDEA Tips and Tricks
 
-- Scratch File
-- Scratch Buffer
-- 选择历史粘贴(ctrl + shift + v)
-- Select All Occurrences(找到所有与当前选中单次相同的单词并选中，然后可以进行批量修改)
-- Language Expression (Check Regexp)
-- parameter info
-- surround with
-- join line
-- Hide All Tool Window
-- Add or Remove Caret
-- Inspect Code
-- http文件
-- recent files(ctrl + e) show edited files
-- recent location (ctrl + shift + e)
-- go to Test(ctrl + shift + t)
-- navigate back/forward (ctrl + alt + 左右箭头)
-- find usage
-- next highlighted error   alt + N
-- Reformatting Code   Ctrl + Alt + L
-- Chained method calls  格式化长的方法调用，常用于stream或者lambda或者Builder
-- Project  alt + 1
-- run anything                          双击ctrl
-- insert live template  (Ctrl + Alt + Shift + J)
+* Scratch File
+* Scratch Buffer
+* 选择历史粘贴(ctrl + shift + v)
+* Select All Occurrences(找到所有与当前选中单次相同的单词并选中，然后可以进行批量修改)
+* Language Expression (Check Regexp)
+* parameter info
+* surround with
+* join line
+* Hide All Tool Window
+* Add or Remove Caret
+* Inspect Code
+* http文件
+* recent files(ctrl + e) show edited files
+* recent location (ctrl + shift + e)
+* go to Test(ctrl + shift + t)
+* navigate back/forward (ctrl + alt + 左右箭头)
+* find usage
+* next highlighted error   alt + N
+* Reformatting Code   Ctrl + Alt + L
+* Chained method calls  格式化长的方法调用，常用于stream或者lambda或者Builder
+* Project  alt + 1
+* run anything                          双击ctrl
+* insert live template  (Ctrl + Alt + Shift + J)
 * Ctrl + Shift + Enter Complete Current Statement  效果是马上跳转到行尾，并且如果行尾没有分号自动添加分号
 
 
