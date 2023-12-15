@@ -8,12 +8,11 @@ bilibili::BV12t411m7RV[]
 == 阅读官方文档关注官方社区
 
 * Spring文档虽然是英文但特意使用简单的单词和句子编写以使更多人能够看懂，这一点可以参考 https://github.com/spring-io/spring-asciidoctor-backends/blob/main/guides/style-guide.adoc[Spring文档规范]
-* Spring文档样式是精心设计过的，对开发者特别友好，包括黑夜模式、代码折叠、代码复制、多语言切换等
-* Spring文档由对应模块的开发者编写，准确性可以保证
-* Spring文档使用Issue和PR不断完善，质量可以保证
+* Spring文档样式是精心设计过的，对开发者特别友好，包括黑夜模式、代码折叠、代码复制、多语言切换等，还有很多超链接直接跳转引用的其他技术
+* Spring文档由对应模块的开发者编写并使用Issue和PR不断完善，质量超过任何书籍或者视频教程
 
 TIP: https://pxzxj.github.io/articles/documentation.html[技术文档编写指南]详细介绍了Spring文档的生成方法
 
 官方社区包括 https://spring.io/blog/[博客]和 https://www.youtube.com/@SpringSourceDev[YouTube频道]，不过也都是英文的
 
-TIP: 阅读源码当然也很重要，文档不可能包含所有细节，在开发过程中碰到的问题阅读官方文档仍然不能找到答案则可以在源码中找
+TIP: 阅读源码当然也很重要，文档不可能包含所有细节，在阅读文档过程中可以同步阅读源码相互印证，也可以在实际使用时debug源码
