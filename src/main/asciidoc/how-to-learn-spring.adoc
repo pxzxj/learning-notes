@@ -3,7 +3,7 @@ pxzxj; pudge.zxj@gmail.com; 2023/12/14
 
 本文简单介绍了学习Spring框架的方法，详细内容参考下面的视频
 
-bilibili::BV12t411m7RV[]
+bilibili::BV13a4y1r7T5[]
 
 == 阅读官方文档关注官方社区
 
