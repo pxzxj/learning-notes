@@ -83,7 +83,7 @@ image::images/sequencedcollectiondiagram20220216.jpg[]
 === 字符串增强
 
 * `String.splitWithDelimiters(String regex, int limit)` 用于分隔字符串，返回的数组包含匹配到的分隔符
-* `StringBuffer/StringBuilder.repeat(CharSequence cs, int count)` 最佳多个相同的字符串序列到末尾
+* `StringBuffer/StringBuilder.repeat(CharSequence cs, int count)` 追加多个相同的字符串序列到末尾
 * `String.repeat(int count)` 返回当前字符串重复count次后的字符串
 * `String.lines()` 返回字符串中所有行的流
 * `String.transform(Function<? super String, ? extends R> f)` 字符串转换为R
