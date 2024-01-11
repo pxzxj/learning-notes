@@ -13,3 +13,4 @@ xref:src/main/asciidoc/maven-in-action.adoc[Maven实战] ::   2022/08/18
 xref:src/main/asciidoc/programming-jiexi.adoc[编程中的解析(Parse vs Resolve vs Analyze)] ::   2023/02/23
 xref:src/main/asciidoc/spring-cloud-gateway-stateful-route.adoc[Spring Cloud Gateway有状态路由] ::   2023/03/08
 xref:src/main/asciidoc/how-to-learn-spring.adoc[Spring框架学习方法] :: 2023/12/14
+xref:src/main/asciidoc/java-feature-after8.adoc[Java 8之后新特性] :: 2023/12/22

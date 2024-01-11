@@ -1,0 +1,191 @@
+:toc:
+= java 8之后新特性
+pxzxj; pudge.zxj@gmail.com; 2023/12/22
+
+Java 21是最近的LTS版本，在今年10月份发布，包含了多个令人兴奋的新特性如虚拟线程等，本文用于总结Java9-21的重要特性，帮助还停留在Java 8的开发者迅速了解新版本并完成迁移
+
+== 关键特性
+
+Java架构师Brian Goetz写了如下几篇文章用于介绍关键新特性
+
+[horizontal]
+局部变量的类型推断  ::  https://www.infoq.cn/article/ET9ffWtGxErjvwexCl5G[Java 特性聚焦：局部变量的类型推断]
+封闭类   ::   https://www.infoq.cn/article/x66h5q2sPwSLsmbxkA1T[Java 新特性前瞻：封印类]
+记录类   ::   https://www.infoq.cn/article/bJrVTPcuXGG0cHQpSzae[Java 14 特性专题报道：记录]
+文本块   ::   https://www.infoq.cn/article/L53YgjdXISy793CfLjSI[Java 特性专题报道：文本块]
+模式匹配 ::   https://www.infoq.cn/article/1CB7jiLBmvU3Hbxw2ZO7[Java 新特性解析：模式匹配]
+面向数据编程  ::  https://www.infoq.cn/article/e0cVtyDv3LwKAvJ3076N[Java 中的面向数据编程]
+虚拟线程 ::   https://www.infoq.cn/article/YaBqqD7fd6kX97GbhkGm[虚拟线程：大规模 Java 应用的新基石]
+
+
+== switch优化
+
+switch 内部现在支持使用表达式，表达式的结果作为switch的返回值，使用表达式时不需要像之前那样添加break语句
+
+[source,java,subs="verbatim"]
+----
+int numLetters = switch (day) {
+    case MONDAY, FRIDAY, SUNDAY -> 6;
+    case TUESDAY                -> 7;
+    default      -> {
+      String s = day.toString();
+      int result = s.length();
+      yield result;
+    }
+};
+----
+
+== try-with-resources增强
+
+try-with-resources支持声明多个需要释放的资源
+
+[source,java,subs="verbatim"]
+----
+try (BufferedReader br1 = new BufferedReader(...);
+    BufferedReader br2 = new BufferedReader(...)) {
+    System.out.println(br1.readLine() + br2.readLine());
+}
+----
+
+可以明显感觉到这样的代码可读性很差，Java 9中对此进行了增强如下，注意此时br1和br2尽管没有显式声明为final但已经有了final的语义，不允许再修改
+
+[source,java,subs="verbatim"]
+----
+BufferedReader br1 = new BufferedReader(...);
+BufferedReader br2 = new BufferedReader(...);
+try (br1; br2) {
+    System.out.println(br1.readLine() + br2.readLine());
+}
+----
+
+== 新增API
+
+=== 集合增强
+
+Java 9新增了多个方法用于简化集合创建
+
+[source,java,subs="verbatim"]
+----
+Set<Integer> mySet = Set.of(1, 2, 3);
+List<Integer> myList = List.of(1, 2, 3);
+Map<String, Integer> myMap = Map.of("one", 1, "two", 2);
+----
+
+
+Java 21中新增了三个有序集合接口
+
+* SequencedCollection
+* SequencedSet
+* SequencedMap
+
+image::images/sequencedcollectiondiagram20220216.jpg[]
+
+=== 字符串增强
+
+* `String.splitWithDelimiters(String regex, int limit)` 用于分隔字符串，返回的数组包含匹配到的分隔符
+* `StringBuffer/StringBuilder.repeat(CharSequence cs, int count)` 最佳多个相同的字符串序列到末尾
+* `String.repeat(int count)` 返回当前字符串重复count次后的字符串
+* `String.lines()` 返回字符串中所有行的流
+* `String.transform(Function<? super String, ? extends R> f)` 字符串转换为R
+
+=== 数学运算增强
+
+为了使Java语言能够应用于机器学习等大规模数据计算场景中，新版本的Java增强了数学运算的API
+
+* `Math.clamp(long value, int min, int max)` 用于得到三个值的中间值
+* `Math.divideExact()` 用于long和int的除法，结果溢出时抛出异常
+* `BigInteger.parallelMultiply()` 更高性能的两个大数相乘
+
+
+=== HttpClient(`JDK 11`)
+
+[source,java,subs="verbatim"]
+----
+HttpClient httpClient = HttpClient.newBuilder().build();
+
+HttpRequest request =
+  HttpRequest.newBuilder()
+    .uri(URI.create("https://advancedweb.hu/"))
+    .GET()
+    .build();
+
+HttpResponse<String> response =
+  httpClient.send(request, BodyHandlers.ofString());
+----
+
+=== HexFormat(`JDK 17`)
+
+[source,java,subs="verbatim"]
+----
+HexFormat.of().toHexDigits(123);
+//  ==> "0000007b"
+HexFormat.of().fromHexDigits("0000007b");
+// ==> 123
+----
+
+=== Arrays
+
+* `mismatch()` 方法返回两个数组第一个不相同元素的索引
+
+=== UnixDomainSocketAddress(`JDK 16`)
+
+用于实现Unix domain socket的SocketAddress实现类
+
+=== Reactive Streams publish-subscribe framework(`JDK 9`)
+
+
+=== VarHandle(`JDK 9`)
+
+VarHandle API to replace the field and array related operations of java.util.concurrent.atomic and sun.misc.Unsafe in order to and provide low-level access mechamisms, e.g. atomic write.
+
+== 杂项
+
+* jwebserver启动一个简单的web服务，一般用于开发测试
+* 移除Nashorn
+* NullPointerException优化，提示导致空指针的变量
+
+== Preview
+
+=== String Templates(`JDK 21 Preview`)
+
+变量与字符串连接为一个新的字符串是代码非常频繁的操作，目前版本的Java可以使用加号连接、
+StringBuilder、String.format来实现，但这些都不如字符串模板来的简单直观
+
+[source,java,subs="verbatim"]
+----
+var name = "Duke";
+var info = STR."My name is \{name}";
+----
+
+=== Unnamed Variables(`JDK 21 Preview`)
+
+对于不会实际使用的变量可以把变量名或者变量类型与变量名声明为下划线
+
+[source,java,subs="verbatim"]
+----
+var _ = mySet.add(x); // ignore the return value
+
+try {
+  // ...
+} catch (Exception _) { // ignore the exception object
+  // ...
+}
+
+list.stream()
+  .map((_) -> /* ... */) // ignore the parameter
+  .toList();
+
+if (r instanceof Point(int x, _)) {
+  // work with x, ignore second parameter
+}
+----
+
+=== Unnamed Classes and Instance Main Methods(`JDK 21 Preview`)
+
+[source,java,subs="verbatim"]
+----
+// This is a complete and runnable program!
+void main() {
+  System.out.println("Hello, World!");
+}
+----
