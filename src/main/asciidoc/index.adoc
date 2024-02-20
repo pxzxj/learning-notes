@@ -18,3 +18,4 @@ xref:spring-cloud-gateway-stateful-route.adoc[Spring Cloud Gateway有状态路�
 xref:how-to-learn-spring.adoc[Spring框架学习方法] :: 2023/12/14
 xref:java-feature-after8.adoc[Java 8之后新特性]  ::  2023/12/22
 xref:annual-metting2023.adoc[年会2023]  ::  2024/01/29
+xref:resttemplate-bytearray-upload.adoc[RestTemplate使用字节数组实现文件上传]  :: 2024/02/20
