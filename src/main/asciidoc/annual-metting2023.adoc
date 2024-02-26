@@ -1,7 +1,7 @@
 = 年会2023
 pxzxj; pudge.zxj@gmail.com; 2024/1/29
 
-video::video/38711822-08FF-4B5E-9E8D-3C29A550F63A.MP4[width=600,height=450]
+// video::video/38711822-08FF-4B5E-9E8D-3C29A550F63A.MP4[width=600,height=450]
 
 == 签到
 
