@@ -1,7 +1,7 @@
 = 年会2023
 pxzxj; pudge.zxj@gmail.com; 2024/1/29
 
-video::video/38711822-08FF-4B5E-9E8D-3C29A550F63A.MP4[width=600,height=450]
+// video::video/38711822-08FF-4B5E-9E8D-3C29A550F63A.MP4[width=600,height=450]
 
 == 签到
 
@@ -20,7 +20,7 @@ image::images/annualmetting2023/R5ZP1860-opq733384530.jpg[]
 
 image::images/annualmetting2023/R5ZP2110-opq733812842.jpg[]
 
-补两张张上次年会徐总的照片吧
+补两张上次年会徐总的照片吧
 
 image::images/annualmetting2023/YJE_4345.JPG[]
 
