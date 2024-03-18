@@ -307,6 +307,35 @@ class Calculator {
 }
 ----
 
+=== 自动组合
+
+上一节使用组合模式时手动为每一个实现类创建实例并添加到 `CompositeBinaryOperation` 中，更好的方式是使用Spring的自动注入功能自动将所有实现类的实例添加到 `CompositeBinaryOperation` 中，后续新增其它实现时只需要添加其对应的Bean即可，这样更加符合 `面向新增开放面向修改关闭` 的原则，要注意的是此时Spring容器中存在多个 `BinaryOperation` 类型的Bean，因此在 `compositeBinaryOperation` 上添加 `@Primary` 注解表示自动装配时优先使用它
+
+[source,java,subs="verbatim"]
+----
+@Configuration
+public class OperationConfig {
+
+    @Bean
+    public BinaryOperation plusOperation(){
+        return new PlusOperation();
+    }
+
+    @Bean
+    public BinaryOperation minusOperation(){
+        return new MinusOperation();
+    }
+
+    @Bean
+    @Primary
+    public BinaryOperation compositeBinaryOperation(List<BinaryOperation> binaryOperations) {
+        return new CompositeBinaryOperation(binaryOperations);
+    }
+}
+----
+
+
+
 === 遍历顺序
 
 上面几节使用集合保存了多个 `BinaryOperation` 的实现使用时进行遍历，某些场景下还需要控制遍历顺序，此时考虑 `BinaryOperation` 继承Spring Framework提供的 `Ordered` 接口，遍历时按照不同实现的顺序进行遍历
