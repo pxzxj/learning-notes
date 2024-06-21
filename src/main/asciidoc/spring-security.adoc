@@ -1,0 +1,45 @@
+= spring-security
+:author: pxzxj
+:email: pudge.zxj@gmail.com
+
+== 争议
+
+spring-security在国内社区有较多 https://www.zhihu.com/question/460284894/answer/3080593874[争议]
+
+[horizontal]
+前spring-boot时代  ::   手动配置+xml配置
+spring-boot时代   ::   自动配置+java配置
+
+
+
+== 为什么用
+
+=== 安全是一件专业的事儿
+
+以 https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html[密码的存储]为例就经过了 `明文存储 -> 加密存储 -> 存储hash值` 这几个阶段，那么该使用什么hash算法？
+
+各种安全问题该怎么处理？例如CSRF攻击、XSS攻击、Sql注入攻击
+
+spring-security是由spring团队在众多安全领域的专家协助下开发完成的
+
+=== 多元化的认证要求
+
+* 单一的表单登录已经不能满足要求
+* 有些场景需要使用Basic认证，例如Eureka Server、Actuator接口
+* 使用其它平台（例如QQ、GitHub）账号登录需要使用OAuth2
+* 微服务需要使用OAuth2
+
+spring-security可以非常方便地实现各种认证功能，而且与spring-boot整合方便
+
+
+== 怎么用
+
+参考官方文档，spring文档的特点
+
+* 内容编排完善，由浅入深
+* 内容详尽
+* 英文简单，借助工具更简单
+* 随版本不断演进
+
+
+spring-ecurity文档内容非常多，需要根据个人需要有选择的看，另外阅读文档时同步阅读源码相互印证或者编写demo项目查看效果并debug
