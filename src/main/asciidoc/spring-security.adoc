@@ -4,13 +4,9 @@
 
 == 争议
 
-spring-security在国内社区有较多 https://www.zhihu.com/question/460284894/answer/3080593874[争议]
+spring-security在国内社区有较多 https://www.zhihu.com/question/460284894/answer/3080593874[争议]，一部分部分开发者认为spring-security功能强大，也有一部分开发者认为它过于复杂
 
-[horizontal]
-前spring-boot时代  ::   手动配置+xml配置
-spring-boot时代   ::   自动配置+java配置
-
-
+还有大量的开发者在纠结到底该不该使用它
 
 == 为什么用
 
@@ -29,12 +25,21 @@ spring-security是由spring团队在众多安全领域的专家协助下开发�
 * 使用其它平台（例如QQ、GitHub）账号登录需要使用OAuth2
 * 微服务需要使用OAuth2
 
-spring-security可以非常方便地实现各种认证功能，而且与spring-boot整合方便
+spring-security支持几乎所有认证功能
+
+=== 易用性
+
+spring-security与spring-boot整合方便
+
+[horizontal]
+前spring-boot时代  ::   手动配置+xml配置
+spring-boot时代   ::   自动配置+java配置
+
 
 
 == 怎么用
 
-参考官方文档，spring文档的特点
+参考 https://docs.spring.io/spring-security/reference/index.html[官方文档]，spring文档的特点
 
 * 内容编排完善，由浅入深
 * 内容详尽
