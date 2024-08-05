@@ -1,0 +1,166 @@
+= spring-data-jpa-samples
+
+== @MappedSuperclass
+[source,java,subs="verbatim"]
+----
+@MappedSuperclass
+public abstract class CucdCriteriaBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    private String showName;
+
+    @Enumerated(EnumType.STRING)
+    private CompareCondition compareCondition;
+
+    private String compareValue;
+
+    //getter、setter
+
+}
+
+@Entity
+@Table(name = "cucd_criteria_inspection")
+public class CucdCriteriaInspection extends CucdCriteriaBase {
+
+    private String type;
+
+    //getter、setter
+}
+----
+
+`@MappedSuperclass` 声明的父类不会对应数据库中的表，只有子类会跟数据库中的表对应
+
+== @OneToMany
+
+=== 级联删除
+
+[source,java,subs="verbatim"]
+----
+@Entity
+@Table(name = "cucd_criteria")
+public class CucdCriteria {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String deviceType;
+
+    private String company;
+
+    private String description;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "criteria_id")
+    private List<CucdCriteriaBackup> backups;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "criteria_id")
+    private List<CucdCriteriaMetrics> metrics;
+
+    //getter、setter
+}
+----
+
+=== 使用中间表关联
+
+[source,java,subs="verbatim"]
+----
+@Entity
+@Table(name = "cucd_criteria_part")
+public class CucdCriteriaPart {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToMany
+    @JoinTable(name = "cucd_criteria_part_backup", joinColumns = @JoinColumn(name = "part_id"), inverseJoinColumns = @JoinColumn(name = "backup_id"))
+    private List<CucdCriteriaBackup> backups;
+
+    @OneToMany
+    @JoinTable(name = "cucd_criteria_part_metrics", joinColumns = @JoinColumn(name = "part_id"), inverseJoinColumns = @JoinColumn(name = "metrics_id"))
+    private List<CucdCriteriaMetrics> metrics;
+
+    //getter、setter
+}
+----
+
+== @ElementCollection
+
+两个实体存在一对多关系且多的实体完全属于一的实体时使用，用DDD术语描述就是两个实体属于一个Aggregate并且一的实体是Aggregate Root
+
+[source,java,subs="verbatim"]
+----
+@Entity
+@Table(name = "cucd_formula")
+public class CucdFormula {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ElementCollection
+    @CollectionTable(name = "cucd_formula_device_name", joinColumns = @JoinColumn(name = "formula_id"))
+    @Column(name = "device_name")
+    private Set<String> deviceNames;
+
+    @ElementCollection
+    @CollectionTable(name = "cucd_formula_notify_type", joinColumns = @JoinColumn(name = "formula_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "notify_type")
+    private Set<NotifyType> notifyTypes;                        // <1>
+
+    @ElementCollection
+    @CollectionTable(name = "cucd_formula_notifier", joinColumns = @JoinColumn(name = "formula_id"))
+    private Set<Notifier> notifiers;                            // <2>
+
+    //getter、setter
+
+    @Embeddable
+    public static class Notifier {
+
+        private Integer userId;
+
+        private Integer orgId;
+
+        //getter、setter
+    }
+}
+----
+1. `cucd_formula_notify_type` 表有两列 `formula_id` 和 `notify_type`
+2. `cucd_formula_notifier` 表有三列 `formula_id`、`user_id` 和 `org_id`
+
+
+使用Criteria API根据 `@ElementCollection` 声明的属性进行模糊查询
+
+[source,java,subs="verbatim"]
+----
+public class CucdFormulaService {
+    public Page<CucdFormula> list(CucdFormula cucdFormula, Pageable pageable, String deviceName) {
+        Specification<CucdFormula> specification = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasText(cucdFormula.getName())) {
+                predicates.add(criteriaBuilder.like(root.get(CucdFormula_.NAME), "%" + cucdFormula.getName() + "%"));
+            }
+            if (StringUtils.hasText(deviceName)) {
+                Subquery<Long> subquery = criteriaBuilder.createQuery(CucdFormula.class).subquery(Long.class);
+                Root<CucdFormula> subRoot = subquery.from(CucdFormula.class);
+                subquery.select(criteriaBuilder.literal(1L))
+                        .where(criteriaBuilder.equal(root.get(CucdFormula_.ID), subRoot.get(CucdFormula_.ID)),
+                            criteriaBuilder.like(subRoot.join(CucdFormula_.DEVICE_NAMES), "%" + deviceName + "%"));
+                predicates.add(criteriaBuilder.exists(subquery));
+            }
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        return cucdFormulaRepository.findAll(specification, pageable);
+    }
+}
+----

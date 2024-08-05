@@ -20,3 +20,4 @@ xref:java-feature-after8.adoc[Java 8之后新特性]  ::  2023/12/22
 xref:annual-metting2023.adoc[年会2023]  ::  2024/01/29
 xref:resttemplate-bytearray-upload.adoc[RestTemplate使用字节数组实现文件上传]  :: 2024/02/20
 xref:concurrent-connect-troubleshooting.adoc[设备连接并发问题排查与解决]  :: 2024/05/28
+xref:why-use-jpa.adoc[为什么应该使用JPA]  :: 2024/08/05
