@@ -56,6 +56,7 @@ image::images/jpa-hibernate.png[]
 * 代码可读性高
 * 安全性高
 * 开发效率高
+* 移植性高
 * 与Spring Boot整合方便
 
 == 示例
@@ -114,6 +115,22 @@ public interface StudentRepository extends CrudRepository<Student, Long> {
 Hibernate: select student0_.id as id1_0_, student0_.age as age2_0_, student0_.gender as gender3_0_, student0_.name as name4_0_ from student student0_ where student0_.name like ? escape ?
 2024-08-05 13:35:28.935  INFO 20516 --- [           main] o.s.t.c.transaction.TransactionContext   : Rolled back transaction for test ...
 ----
+
+
+
+=== 自定义sql
+
+[source,java,subs="verbatim"]
+----
+public interface StudentRepository extends CrudRepository<Student, Long> {
+
+    @Query(value = "update student set age=?1", nativeQuery = true)
+    @Modifying
+    int updateAge(Integer age);
+
+}
+----
+
 
 更多特性参考 https://docs.spring.io/spring-data/jpa/reference/[官方文档]，源码参考 https://github.com/pxzxj/spring-data-jpa-sample[GitHub]
 
