@@ -1,6 +1,10 @@
 = 为什么应该使用Spring Data JPA
 pxzxj; pudge.zxj@gmail.com; 2024/08/05
 
+
+bilibili::BV1EMpreFE5Q[]
+
+
 == 现状
 
 image::images/java-data-access-technology.png[]
