@@ -1,4 +1,5 @@
 = spring-data-jpa-samples
+pxzxj; pudge.zxj@gmail.com; 2024/08/05
 
 == @MappedSuperclass
 [source,java,subs="verbatim"]
