@@ -8,7 +8,7 @@ pxzxj; pudge.zxj@gmail.com; 2024/12/29
 开发一个web服务时不可避免得会涉及到对其他服务的api调用，可能是内部开发的一个微服务也可能是外部供应商提供的服务
 
 调用其他服务给软件测试带来了困难，因为这些服务显然不是随时都能调用的，
-可能是因为测试环境与生产环境网络处于不同网络环境下也可能是因为调用相应的api会导致业务状态的变化
+可能是因为测试环境与生产环境处于不同网络环境下也可能是因为调用相应的api会导致业务状态的变化
 
 此时一个可行的方法就是在测试环境模拟这些被调用的 `api`，即 `mock`，
 
@@ -69,16 +69,16 @@ public class WiremockSample {
 
 === standalone
 
-访问 `wiremock` 的 https://wiremock.org/[官方网站]，在 `Downloas` 部分选择 `Standalone` 下载jar包并使用 `java -jar` 启动服务
+访问 `wiremock` 的 https://wiremock.org/[官方网站]，在 `Downloads` 部分选择 `Standalone` 下载jar包并使用 `java -jar` 启动服务
 
-`wiremock` 服务启动后jar包同级目录回创建 `mappings` 和 `__files` 两个文件夹，
+`wiremock` 服务启动后jar包同级目录会创建 `mappings` 和 `__files` 两个文件夹，
 <<quickstart, 上文>>定义的json文件放在 `mappings` 目录中重启服务访问 `http://localhost:8080/api/hello` 就能看到返回了 `Hello World`
 
 服务启动后还可以访问 `/__admin/mappings` 查看当前已经加载的mock数据
 
 ==== jsonBody
 
-如果响应是json格式则可以使用 `jsonBody` 声明相应内容避免json字符串转义，此时一般还需要使用 `headers` 配置响应头
+如果响应是json格式则可以使用 `jsonBody` 声明响应内容避免json字符串转义，此时一般还需要使用 `headers` 配置响应头
 
 [source,json,subs="verbatim"]
 ----
@@ -112,12 +112,17 @@ public class WiremockSample {
     },
     "response": {
         "status": 200,
-        "bodyFileName": "response.json"
+        "bodyFileName": "response.json",
+        "headers": {
+            "Content-Type": "application/json"
+        }
     }
 }
 ----
 
 ==== request mapping
+
+`wiremock` 的工作原理和 `spring mvc` 相似，是用请求信息和定义的mock配置进行匹配，如果匹配成功就返回mock配置中的响应，否则返回404
 
 上文的几个示例使用了请求方法和url匹配 `mappings` 文件夹中的mock配置，实际上 `wiremock` 还支持很多更复杂的匹配方式
 
@@ -249,7 +254,7 @@ public class WiremockSample {
 `wiremock` 中还有一个强大的工具 `recorder` ，使用它可以免去手动编写mock文件的过程，可以在服务启动后访问 `/__admin/recorder` 使用
 
 
-本质上 `recoder` 是一个类似于nginx的代理，它在目标服务返回响应后先在 `mappings` 文件夹中保存一份再返回给client，
+ `recoder` 的核心是一个代理，它在目标服务返回响应后先在 `mappings` 文件夹中保存一份再返回给client，
 今后client再发送同样的请求就可以直接使用已经保存的内容来响应
 
 image::images/wiremock-recorder.png[]
