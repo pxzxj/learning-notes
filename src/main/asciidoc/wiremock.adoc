@@ -254,7 +254,7 @@ public class WiremockSample {
 `wiremock` 中还有一个强大的工具 `recorder` ，使用它可以免去手动编写mock文件的过程，可以在服务启动后访问 `/__admin/recorder` 使用
 
 
- `recoder` 的核心是一个代理，它在目标服务返回响应后先在 `mappings` 文件夹中保存一份再返回给client，
+`recoder` 的核心是一个代理，它在目标服务返回响应后先在 `mappings` 文件夹中保存一份再返回给client，
 今后client再发送同样的请求就可以直接使用已经保存的内容来响应
 
 image::images/wiremock-recorder.png[]
