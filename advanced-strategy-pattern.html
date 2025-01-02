@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2021/12/6">
+<title>高级策略模式</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>高级策略模式</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2021/12/6</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_背景">1. 背景</a>
+<ul class="sectlevel2">
+<li><a href="#_策略模式回顾">1.1. 策略模式回顾</a></li>
+<li><a href="#_策略模式的问题">1.2. 策略模式的问题</a></li>
+</ul>
+</li>
+<li><a href="#_实例与分析">2. 实例与分析</a>
+<ul class="sectlevel2">
+<li><a href="#_枚举实现">2.1. 枚举实现</a></li>
+<li><a href="#_接口代替枚举">2.2. 接口代替枚举</a></li>
+<li><a href="#_提取判断逻辑到接口">2.3. 提取判断逻辑到接口</a></li>
+<li><a href="#_缩小访问范围">2.4. 缩小访问范围</a></li>
+<li><a href="#_使用组合模式减少重复代码">2.5. 使用组合模式减少重复代码</a></li>
+<li><a href="#_自动组合">2.6. 自动组合</a></li>
+<li><a href="#_遍历顺序">2.7. 遍历顺序</a></li>
+</ul>
+</li>
+<li><a href="#_模式结构">3. 模式结构</a></li>
+<li><a href="#_spring中的高级策略模式">4. Spring中的高级策略模式</a></li>
+<li><a href="#_spring中简化的高级策略模式">5. Spring中简化的高级策略模式</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_背景"><a class="anchor" href="#_背景"></a>1. 背景</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_策略模式回顾"><a class="anchor" href="#_策略模式回顾"></a>1.1. 策略模式回顾</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/Strategy_Pattern_in_UML.png" alt="Strategy Pattern in UML">
+</div>
+</div>
+<div class="paragraph">
+<p>策略模式是行为型设计模式的一种，UML图如上所示，<code>Context</code> 持有 <code>Strategy</code> 接口引用，实际调用时可以是 <code>ConcreteStrategyA</code> 也可以是 <code>ConcreteStrategyB</code></p>
+</div>
+<div class="paragraph">
+<p>策略模式与Spring Framework中的依赖注入类似，都是面向接口编程，实际使用时可以注入接口的任意实现，这种方法符合面向对象设计中的开闭原则、里氏替换原则和依赖倒转原则</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_策略模式的问题"><a class="anchor" href="#_策略模式的问题"></a>1.2. 策略模式的问题</h3>
+<div class="paragraph">
+<p><code>Strategy</code> 有多个实现，那么 <code>Context</code> 到底该使用哪个，策略模式中一般是使用一个配置文件配置一个具体实现的全类名，这意味着将决定权交给开发者，也意味着多个 <code>Strategy</code> 的实现无法同时使用</p>
+</div>
+<div class="paragraph">
+<p>然而实际业务场景中我们期望根据上下文参数或者请求参数动态选择 <code>Strategy</code> 的实现处理相关业务逻辑(伪代码如下)，因此考虑对策略模式进行增强，下面结合一个实例描述整个优化过程</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>if(conditionA) {
+    concreteStrategyA.execute();
+} else (conditionB) {
+    concreteStrategyB.execute();
+}</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_实例与分析"><a class="anchor" href="#_实例与分析"></a>2. 实例与分析</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>需求</strong>： 某厂商计算开发一个二元计算器，厂商默认支持加减乘除运算，同时允许用户扩展其它运算</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+实际业务场景中业务逻辑会比加减乘除复杂的多，但不影响整体模式设计
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_枚举实现"><a class="anchor" href="#_枚举实现"></a>2.1. 枚举实现</h3>
+<div class="paragraph">
+<p>加减乘除运算通常用来作为枚举抽象方法的示例如下</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public enum BinaryOperation {
+
+    PLUS("+") {
+        @Override
+        public double apply(double x, double y) {
+            return x + y;
+        }
+    };
+    // 省略减、乘、除
+
+    private String symbol;
+
+    BinaryOperation(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public abstract double apply(double x, double y);
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>使用枚举能够满足默认的加减乘除运算，但显然用户无法扩展其它运算</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_接口代替枚举"><a class="anchor" href="#_接口代替枚举"></a>2.2. 接口代替枚举</h3>
+<div class="paragraph">
+<p>为了允许用户扩展，定义一个二元运算接口以及默认的加减乘除实现</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface BinaryOperation {
+
+    double apply(double x, double y);
+}
+
+/**
+* 加法实现，减乘除省略
+*/
+public class PlusOperation implements BinaryOperation {
+    @Override
+    public double apply(double x, double y) {
+        return x + y;
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>将 <code>x</code> 、<code>y</code> 和要执行的运算封装在一个实体类 <code>CalculateRequest</code> 中并在计算器 <code>Calculator</code> 中根据不同计算类型选择 <code>BinaryOperation</code> 的不同实现</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">/**
+* 计算请求
+*/
+public class CalculateRequest {
+
+    private String symbol;
+
+    private double x;
+
+    private double y;
+
+    // getter， setter
+
+}
+
+/**
+* 计算器
+*/
+public class Calculator {
+
+    private final BinaryOperation PLUS = new PlusOperation();
+    private final BinaryOperation MINUS = new MinusOperation();
+    private final BinaryOperation MULTIPLY = new MultiplyOperation();
+    private final BinaryOperation DIVIDE = new DivideOperation();
+
+    public double calculate(CalculateRequest calculateRequest) {
+        String symbol = calculateRequest.getSymbol();
+        double x = calculateRequest.getX();
+        double y = calculateRequest.getY();
+        if(symbol.equals("+")) {
+            return PLUS.apply(x, y);
+        } else if(symbol.equals("-")) {
+            return MINUS.apply(x, y);
+        } else if(symbol.equals("*")) {
+            return MULTIPLY.apply(x, y);
+        } else if(symbol.equals("/")) {
+            return DIVIDE.apply(x, y);
+        } else {
+            throw new IllegalArgumentException(symbol);
+        }
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>将整个判断过程都在 <code>Calculator</code> 中实现显然不是好的实践，每次新增一类运算都需要修改 <code>Calculator</code> ，这违背了面向对象设计的开闭原则，
+而且该业务场景中运算是允许用户自行实现的，<code>Calculator</code> 中根本无法了解用户自行实现的运算</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_提取判断逻辑到接口"><a class="anchor" href="#_提取判断逻辑到接口"></a>2.3. 提取判断逻辑到接口</h3>
+<div class="paragraph">
+<p>针对上一节的问题可以将运算符判断的过程提取到 <code>BinaryOperation</code> 中，使用 <code>supports()</code> 方法判断是否支持特定计算请求，并重构原本的 <code>apply()</code> 方法，使用 <code>CalculateRequest</code> 作为方法参数</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface BinaryOperation {
+
+    boolean supports(CalculateRequest calculateRequest);
+
+    double apply(CalculateRequest calculateRequest);
+}
+
+/**
+* 加法实现，减乘除省略
+*/
+public class PlusOperation implements BinaryOperation {
+
+    @Override
+    public boolean supports(CalculateRequest calculateRequest) {
+        return "+".equals(calculateRequest.getSymbol());
+    }
+
+    @Override
+    public double apply(CalculateRequest calculateRequest) {
+        return calculateRequest.getX() + calculateRequest.getY();
+    }
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在 <code>Calculator</code> 中使用一个集合保存多个 <code>BinaryOperation</code> 的实现，计算时遍历选择 <code>supports()</code> 方法返回true的实现，并提供一个 <code>addOperation()</code> 方法允许向集合中添加新的操作</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class Calculator {
+
+    private final List&lt;BinaryOperation&gt; binaryOperations = new ArrayList&lt;&gt;();
+
+    public Calculator() {
+        binaryOperations.add(new PlusOperation());
+        binaryOperations.add(new MinusOperation());
+        binaryOperations.add(new MultiplyOperation());
+        binaryOperations.add(new DivideOperation());
+    }
+
+    public void addOperation(BinaryOperation binaryOperation) {
+        binaryOperations.add(binaryOperation);
+    }
+
+    public double calculate(CalculateRequest calculateRequest) {
+        for(BinaryOperation binaryOperation : binaryOperations) {
+            if(binaryOperation.supports(calculateRequest)) {
+                return binaryOperation.apply(calculateRequest);
+            }
+        }
+        throw new IllegalArgumentException(calculateRequest.getSymbol());
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>到此为止，我们的业务需求实际上已经实现了，并且 <code>BinaryOperation</code> 也已经展现了本文希望说明的高级策略模式，然而还存在优化空间</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_缩小访问范围"><a class="anchor" href="#_缩小访问范围"></a>2.4. 缩小访问范围</h3>
+<div class="paragraph">
+<p>上一节 <code>BinaryOperation</code> 的多个实现 <code>PlusOperation</code>、<code>MinusOperation</code> 都声明了 <code>public</code> ，允许所有类直接访问，实际上这是没必要的，
+不符合权限最小化的原则，jdk 1.8提供的接口静态方法可以对此进行优化，将 <code>PlusOperation</code>、<code>MinusOperation</code> 都改为默认包级别的访问，
+并在 <code>BinaryOperation</code> 接口中提供静态方法返回对应运算的实例</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">class PlusOperation implements BinaryOperation {
+
+    //...
+}
+
+public interface BinaryOperation {
+
+    boolean supports(CalculateRequest calculateRequest);
+
+    double apply(CalculateRequest calculateRequest);
+
+    static BinaryOperation plusOperation() {
+        return new PlusOperation();
+    }
+
+    // 减乘除省略
+}
+
+public class Calculator {
+
+    private final List&lt;BinaryOperation&gt; binaryOperations = new ArrayList&lt;&gt;();
+
+    public Calculator() {
+        binaryOperations.add(BinaryOperation.plusOperation());
+        binaryOperations.add(BinaryOperation.minusOperation());
+        binaryOperations.add(BinaryOperation.miltiplyOperation());
+        binaryOperations.add(BinaryOperation.divideOperation());
+    }
+
+    //...
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_使用组合模式减少重复代码"><a class="anchor" href="#_使用组合模式减少重复代码"></a>2.5. 使用组合模式减少重复代码</h3>
+<div class="paragraph">
+<p>本示例使用 <code>Calculator</code> 封装了多个 <code>BinaryOperator</code> 实现各类型运算，那么如果有另一个客户端类也希望使用 <code>BinaryOperator</code> 及其实现呢，它也需要使用一个集合属性添加所有 <code>BinaryOperator</code> 的实现，使用时不断遍历选择一个实现</p>
+</div>
+<div class="paragraph">
+<p>显然，添加默认实现以及遍历选择的代码都属于重复代码可以再次进行封装，一种方式是将它们封装在一个工具类中，然后更好的是使用组合模式</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class CompositeBinaryOperation implements BinaryOperation {
+
+    private Collection&lt;BinaryOperation&gt; binaryOperations;
+
+    public CompositeBinaryOperation() {
+        binaryOperations = new ArrayList&lt;&gt;();
+        binaryOperations.add(BinaryOperation.plusOperation());
+        binaryOperations.add(BinaryOperation.minusOperation());
+        binaryOperations.add(BinaryOperation.multiplyOperation());
+        binaryOperations.add(BinaryOperation.divideOperation());
+    }
+
+    public void addOperation(BinaryOperation binaryOperation) {
+        binaryOperations.add(binaryOperation);
+    }
+
+    @Override
+    public boolean supports(CalculateRequest calculateRequest) {
+        return binaryOperations.stream().anyMatch(op -&gt; op.supports(calculateRequest));
+    }
+
+    @Override
+    public double apply(CalculateRequest calculateRequest) {
+        return binaryOperations.stream()
+                            .filter(op -&gt; op.supports(calculateRequest))
+                            .findFirst()
+                            .orElseThrow(IllegalArgumentException::new)
+                            .apply(calculateRequest);
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>客户端代码中可以直接使用 <code>new</code> 创建 <code>CompositeBinaryOperation</code> ，不过更好的方式是结合Spring Framework使用，
+将 <code>CompositeBinaryOperation</code> 声明为一个Bean注入到客户端代码中，这样做的好处是客户端代码仍然可以面向接口 <code>BinaryOperation</code> 开发，遵循里氏代换原则和依赖倒转原则</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Configuration
+public class OperationConfig {
+
+    @Bean
+    public BinaryOperation compositeBinaryOperation() {
+        CompositeBinaryOperation compositeBinaryOperation = new CompositeBinaryOperation();
+        //添加其它运算符
+        compositeBinaryOperation.addOperation(new CustomOperation());
+        return compositeBinaryOperation;
+    }
+}
+
+@Service
+class Calculator {
+
+    private final BinaryOperation binaryOperation;
+
+    public Calculator(BinaryOperation binaryOperation) {
+        this.binaryOperation = binaryOperation;
+    }
+
+    public double calculate(CalculateRequest calculateRequest) throws OperationNotSupportedException {
+        return binaryOperation.apply(calculateRequest);
+    }
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_自动组合"><a class="anchor" href="#_自动组合"></a>2.6. 自动组合</h3>
+<div class="paragraph">
+<p>上一节使用组合模式时手动为每一个实现类创建实例并添加到 <code>CompositeBinaryOperation</code> 中，更好的方式是使用Spring的自动注入功能自动将所有实现类的实例添加到 <code>CompositeBinaryOperation</code> 中，后续新增其它实现时只需要添加其对应的Bean即可，这样更加符合 <code>面向新增开放面向修改关闭</code> 的原则，要注意的是此时Spring容器中存在多个 <code>BinaryOperation</code> 类型的Bean，因此在 <code>compositeBinaryOperation</code> 上添加 <code>@Primary</code> 注解表示自动装配时优先使用它</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Configuration
+public class OperationConfig {
+
+    @Bean
+    public BinaryOperation plusOperation(){
+        return new PlusOperation();
+    }
+
+    @Bean
+    public BinaryOperation minusOperation(){
+        return new MinusOperation();
+    }
+
+    @Bean
+    @Primary
+    public BinaryOperation compositeBinaryOperation(List&lt;BinaryOperation&gt; binaryOperations) {
+        return new CompositeBinaryOperation(binaryOperations);
+    }
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_遍历顺序"><a class="anchor" href="#_遍历顺序"></a>2.7. 遍历顺序</h3>
+<div class="paragraph">
+<p>上面几节使用集合保存了多个 <code>BinaryOperation</code> 的实现使用时进行遍历，某些场景下还需要控制遍历顺序，此时考虑 <code>BinaryOperation</code> 继承Spring Framework提供的 <code>Ordered</code> 接口，遍历时按照不同实现的顺序进行遍历</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface BinaryOperation extends Ordered {
+
+    boolean supports(CalculateRequest calculateRequest);
+
+    double apply(CalculateRequest calculateRequest);
+
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_模式结构"><a class="anchor" href="#_模式结构"></a>3. 模式结构</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>通过上面的示例可以总结高级策略模式主要是在原有策略模式接口上新增一个 <code>supports()</code> 方法，接口的实现类在 <code>supports()</code> 方法中添加判断逻辑，<code>supports()</code> 方法返回true时表示此实现可以处理当前请求</p>
+</div>
+<div class="paragraph">
+<p>上下文类 <code>Context</code> 以集合或者组合模式的方式持有多个策略接口的实现，执行业务操作时选择 <code>supports()</code> 方法返回true的实现</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/advanced-strategy-pattern.png" alt="advanced strategy pattern">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring中的高级策略模式"><a class="anchor" href="#_spring中的高级策略模式"></a>4. Spring中的高级策略模式</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring中也大量使用了高级策略模式，例如</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 1. org.springframework.validation.Validator</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface Validator {
+
+	boolean supports(Class&lt;?&gt; clazz);
+
+	void validate(Object target, Errors errors);
+
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="exampleblock">
+<div class="title">Example 2. org.springframework.web.method.support.HandlerMethodArgumentResolver</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface HandlerMethodArgumentResolver {
+
+	boolean supportsParameter(MethodParameter parameter);
+
+	@Nullable
+	Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+			NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception;
+
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring中简化的高级策略模式"><a class="anchor" href="#_spring中简化的高级策略模式"></a>5. Spring中简化的高级策略模式</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>execute()</code> 方法有返回值时，可以使用它的返回值判断来代替 <code>supports()</code> 方法，典型的示例是SpringMVC中的 <code>org.springframework.web.servlet.HandlerMapping</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">package org.springframework.web.servlet;
+
+public interface HandlerMapping {
+
+    /**
+    * Returns null if no match was found. This is not an error. The DispatcherServlet will query all registered HandlerMapping beans to find a match, and only decide there is an error if none can find a handler.
+    * @param request - current HTTP request
+    * @return a HandlerExecutionChain instance containing handler object and any interceptors, or null if no mapping found
+    * @throws Exception - if there is an internal error
+    */
+    @Nullable
+	HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception;     <i class="conum" data-value="1"></i><b>(1)</b>
+
+}
+</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>注意方法添加了 <code>@Nullable</code> 注解表示它的返回值可能是null，并且在注释中说明了null返回值的意义，这些不是必须的，但却是最佳实践</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><code>HandlerMapping</code> 的调用者需要判断 <code>getHandler</code> 的返回值，非空则返回</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">package org.springframework.web.servlet;
+
+public class DispatcherServlet extends FrameworkServlet {
+
+	@Nullable
+	private List&lt;HandlerMapping&gt; handlerMappings;
+
+	@Nullable
+	protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+		if (this.handlerMappings != null) {
+			for (HandlerMapping mapping : this.handlerMappings) {
+				HandlerExecutionChain handler = mapping.getHandler(request);
+				if (handler != null) {
+					return handler;
+				}
+			}
+		}
+		return null;
+	}
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

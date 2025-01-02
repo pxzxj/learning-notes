@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<title>Camunda</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Camunda</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_企业版破解方法">1. 企业版破解方法</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Camunda是通用的流程编排引擎</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_企业版破解方法"><a class="anchor" href="#_企业版破解方法"></a>1. 企业版破解方法</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Camunda Platform企业版功能比社区版更完善，不过企业版默认仅能试用30天，按照如下方法可以突破此限制长期使用。</p>
+</div>
+<div class="paragraph">
+<p>首先在 <a href="https://camunda.com/download/">Camunda下载页面</a>选择 <code>30-Day Trial Enterprise Edition</code> 填写相关信息后下载企业版，
+注意邮箱必须填写真实邮箱，因为Camunda会向邮箱发送一个试用账号和License，只有使用此账号才能下载。</p>
+</div>
+<div class="paragraph">
+<p>下载并解压后的Camunda目录结构如下所示，在internal/webapps目录下有一个名称为 <code>camunda-license-check</code> 的jar包，
+这个jar包就负责校验license，后续步骤会替换jar包根目录下的公钥 <code>unified_public_key.der</code></p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>configuration/
+internal/
+--example/
+--rest/
+--swaggerui/
+--webapps/</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>下一步执行如下如下Java类生成密钥对和签名，注意修改main方法中的 <code>privateKeyPath</code> 和 <code>publicKeyPath</code> 两个参数为电脑上存在的目录。
+这个类运行后会打印一个无限期使用的license字符串，保存下来在下一步使用。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block hide-when-folded">import org.apache.commons.codec.binary.Base64;
+import org.springframework.util.FileCopyUtils;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+
+</span><span class="fold-block">public class Camunda {
+
+    private static final Base64 BASE64 = new Base64(0);
+
+    /**
+     * 生成密钥对
+     * @param privateKeyPath  私钥文件
+     * @param publicKeyPath   公钥文件
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     */
+    private static void generateKeyPair(String privateKeyPath, String publicKeyPath) throws NoSuchAlgorithmException, IOException {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(4096);
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        PrivateKey aPrivate = keyPair.getPrivate();
+        PublicKey aPublic = keyPair.getPublic();
+        byte[] publicEncoded = aPublic.getEncoded();
+        byte[] privateEncoded = aPrivate.getEncoded();
+        FileCopyUtils.copy(publicEncoded, new FileOutputStream(publicKeyPath));
+        FileCopyUtils.copy(privateEncoded, new FileOutputStream(privateKeyPath));
+    }
+
+    private static String sign(String privateKeyPath) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PKCS8EncodedKeySpec keySpec1 = new PKCS8EncodedKeySpec(FileCopyUtils.copyToByteArray(new File(privateKeyPath)));
+        PrivateKey privateKey = keyFactory.generatePrivate(keySpec1);
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initSign(privateKey);
+        String licenseBody = "customer = jd;expiryDate = unlimited;cawemo = true;optimize = true;camundaBPM = true;";
+        signature.update(licenseBody.getBytes());
+        byte[] sign = signature.sign();
+        String encodedSign = BASE64.encodeToString(sign);
+        encodedSign = encodedSign + ";\n" + "customer = jd;\nexpiryDate = unlimited;\ncawemo = true;\noptimize = true;\ncamundaBPM = true;";
+        return encodedSign;
+    }
+
+    public static void main(String[] args) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        String privateKeyPath = "C:/Users/pxzxj1/Desktop/private_key.pem";
+        String publicKeyPath = "C:/Users/pxzxj1/Desktop/unified_public_key.der";
+        generateKeyPair(privateKeyPath, publicKeyPath);
+        String signature = sign(privateKeyPath);
+        System.out.println(signature);
+    }
+
+}
+</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>使用上一步生成的unified_public_key.der公钥替换 <code>camunda-license-check</code> jar包中的对应公钥后就可以启动服务。启动后在License Key菜单中输入上一步生成的
+License字符串，保存后会提示 <span class="green">Your license key has unlimited validity. It will not expire.</span> 表示已经破解成功。</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

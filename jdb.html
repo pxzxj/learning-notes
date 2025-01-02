@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com">
+<title>JDB(Java Debugger)</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>JDB(Java Debugger)</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="revnumber">version v1.0,</span>
+<span id="revdate">2022/05/23</span>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_简介">1. 简介</a></li>
+<li><a href="#_用法">2. 用法</a></li>
+<li><a href="#option">3. 选项</a></li>
+<li><a href="#example">4. 示例</a>
+<ul class="sectlevel2">
+<li><a href="#_创建项目">4.1. 创建项目</a></li>
+<li><a href="#_启动项目">4.2. 启动项目</a></li>
+<li><a href="#_添加断点">4.3. 添加断点</a></li>
+<li><a href="#_断点调试">4.4. 断点调试</a>
+<ul class="sectlevel3">
+<li><a href="#_step">4.4.1. step</a></li>
+<li><a href="#_next">4.4.2. next</a></li>
+<li><a href="#_step_up">4.4.3. step up</a></li>
+<li><a href="#_stepi">4.4.4. stepi</a></li>
+<li><a href="#_查看变量和源码">4.4.5. 查看变量和源码</a></li>
+</ul>
+</li>
+<li><a href="#_清除断点">4.5. 清除断点</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>调试器是软件开发领域最重要的工具之一，对Java开发来说，在开发环境可以使用Intellij IDEA进行debug从而快速解决问题，但在部署环境由于无法debug
+经常需要耗时费力地添加打印语句并替换部署包。实际上JDK已经提供了一个命令行debug工具jdb，可以在任何环境使用它实现快速有效地问题定位。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_简介"><a class="anchor" href="#_简介"></a>1. 简介</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Java Debugger (<a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jdb.html">JDB</a>) 是一个简单的命令行调试工具，
+使用它可以像Intellij IDEA一样进行添加断点、单步执行、变量查看等操作，实际上jdb和Intellij IDEA底层都利用了
+Java Platform Debugger Architecture (<a href="http://docs.oracle.com/javase/8/docs/technotes/guides/jpda/index.html">JDBA</a>)
+实现调试功能，只是展现方式不同而已。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_用法"><a class="anchor" href="#_用法"></a>2. 用法</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>jdk的bin目录下包含了jdb，jdb命令的基础语法是 <code><strong>jdb</strong> [options] [classname] [arguments]</code>，其中 <code>options</code> 是命令的选项，<code>classname</code> 和 <code>arguments</code> 是要调试的main类名和main方法参数。</p>
+</div>
+<div class="paragraph">
+<p>可以注意到jdb命令的 <code>classname</code> 和 <code>arguments</code> 都使用了中括号，表示它们都不是必须的，因为jdb还可以attache到一个已经在运行的JVM上，方法与普通的 <code>Remote Debug</code> 相同，调试Spring Boot应用时使用这种方法更方便。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">#启动时添加debug参数
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -jar app.jar
+
+#attach到已经启动的JVM上
+jdb -attach 5005
+
+#与attach效果相同，attach失败时可以使用此命令
+jdb -connect com.sun.jdi.SocketAttach:hostname=127.0.0.1,port=5005</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>jdb执行成功后会进入到一个交互式shell页面中，后续的调试操作都在此shell中进行，具体调试方法参考<a href="#example">示例</a>章节</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/jdb-connect.png" alt="jdb connect">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="option"><a class="anchor" href="#option"></a>3. 选项</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>使用help可以查看jdb的选项，不同版本JDK的选项有所不同，Windows下jdk8支持如下选项</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/jdb-options.png" alt="jdb options">
+</div>
+</div>
+<div class="paragraph">
+<p>进入调试shell后可以查看debug相关命令，<a href="#example">示例</a>章节会演示主要的添加断点、单步执行等命令</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/jdb-options2.png" alt="jdb options2">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="example"><a class="anchor" href="#example"></a>4. 示例</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>本节演示如下比较常用的调试命令</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">命令</th>
+<th class="tableblock halign-left valign-top">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>stop in &lt;class id&gt;.&lt;method&gt;[(argument_type,&#8230;&#8203;)]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">在方法中设置断点</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>stop at &lt;class id&gt;:&lt;line&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">在行中设置断点</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>clear</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">查看所有断点</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>clear &lt;class id&gt;.&lt;method&gt;[(argument_type,&#8230;&#8203;)]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">清除方法中的断点</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>clear &lt;class id&gt;:&lt;line&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">清除行中的断点</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>step</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">执行当前行</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>step up</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">一直执行, 直到当前方法返回到其调用方</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>stepi</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">执行当前指令</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>next</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">步进一行 (步过调用)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cont</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">从断点处继续执行</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>locals</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">输出当前堆栈帧中的所有本地变量</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>print &lt;expr&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">输出表达式的值</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dump &lt;expr&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">输出所有对象信息</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>eval &lt;expr&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">对表达式求值 (与 print 相同)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>list [line number|method]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">输出源代码</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>methods &lt;class id&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">列出类的方法</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fields &lt;class id&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">列出类的字段</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>!!</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">重复执行最后一个命令</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>&lt;n&gt; &lt;command&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">将命令重复执行 n 次</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect2">
+<h3 id="_创建项目"><a class="anchor" href="#_创建项目"></a>4.1. 创建项目</h3>
+<div class="paragraph">
+<p>创建一个Spring Boot项目添加 <code>starter-web</code> 依赖，并添加如下Controller</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block">package io.github.c;
+
+</span><span class="fold-block hide-when-folded">import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+</span><span class="fold-block">@RestController
+public class A {
+
+    private int counter = 0;
+
+    @GetMapping("/s")
+    public String s() {
+        counter++;
+        System.out.println("counter = " + counter);
+        return a();
+    }
+
+    public String a() {
+        String b = b();
+        for(int i = 0; i &lt; 3; i++) {
+            b += i;
+        }
+        return b;
+    }
+
+    public String b() {
+        String s = "b";
+        s += "d";
+        return s;
+    }
+}
+</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_启动项目"><a class="anchor" href="#_启动项目"></a>4.2. 启动项目</h3>
+<div class="paragraph">
+<p>项目打包后使用如下命令启动</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -jar app.jar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在另一个shell中使用jdb命令attach到启动的JVM上，注意命令末尾使用 <code>-sourcepath</code> 参数指定了项目的源码位置，这样在调试时可以查看对应的源码</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">jdb -connect com.sun.jdi.SocketAttach:hostname=127.0.0.1,port=5005 -sourcepath D:\ideaprojects\boottest\src\main\java</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_添加断点"><a class="anchor" href="#_添加断点"></a>4.3. 添加断点</h3>
+<div class="paragraph">
+<p>使用 <code>stop in io.github.c.A.s</code> 添加断点，然后调用 <code>/s</code> 接口可以看到jdb会话中出现断点命中的提升并自动进入
+对应线程，使用 <code>cont</code> 可以继续执行</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/breakpoint1.gif" alt="breakpoint1">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_断点调试"><a class="anchor" href="#_断点调试"></a>4.4. 断点调试</h3>
+<div class="paragraph">
+<p>断点调试的命令有 <code>step</code>、<code>step up</code>、<code>next</code>、<code>stepi</code> 这几条，下面演示其不同效果</p>
+</div>
+<div class="sect3">
+<h4 id="_step"><a class="anchor" href="#_step"></a>4.4.1. step</h4>
+<div class="paragraph">
+<p>step命令调试的效果如下所示，可以看到如果存在方法调用，step会自动进入调用的方法一步步执行，这也是它与下面的next命令的主要区别</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/breakpoint3.gif" alt="breakpoint3">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_next"><a class="anchor" href="#_next"></a>4.4.2. next</h4>
+<div class="paragraph">
+<p>next命令调试效果如下所示，可以看到即使存在方法调用它也不会进入调用的方法</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/breakpoint4.gif" alt="breakpoint4">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_step_up"><a class="anchor" href="#_step_up"></a>4.4.3. step up</h4>
+<div class="paragraph">
+<p>step up命令会执行完成当前方法并返回，效果如下所示</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/breakpoint5.gif" alt="breakpoint5">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_stepi"><a class="anchor" href="#_stepi"></a>4.4.4. stepi</h4>
+<div class="paragraph">
+<p>stepi命令不是按照源码中的语句执行的，而是按照编译后的字节码指令执行的，所以会看到
+连续多次都在执行 <code>counter++</code>，但后面的 <code>bci</code> 不断增加，bci是字节码序号(byte code index)的缩写</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/breakpoint6.gif" alt="breakpoint6">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_查看变量和源码"><a class="anchor" href="#_查看变量和源码"></a>4.4.5. 查看变量和源码</h4>
+<div class="paragraph">
+<p>print命令和list命令使用效果如下</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/breakpoint7.gif" alt="breakpoint7">
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_清除断点"><a class="anchor" href="#_清除断点"></a>4.5. 清除断点</h3>
+<div class="paragraph">
+<p>使用 <code>clear</code> 查看已经添加的断点，使用 <code>clear &lt;class&gt;:&lt;line_number&gt;</code> 或者 <code>clear &lt;class&gt;.&lt;method_name&gt;[(argument_type,&#8230;&#8203;)]</code>
+删除已经添加的断点</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/breakpoint2.gif" alt="breakpoint2">
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Version v1.0<br>
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

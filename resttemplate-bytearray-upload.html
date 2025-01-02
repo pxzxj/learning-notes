@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2024/02/20">
+<title>RestTemplate使用字节数组实现文件上传</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>RestTemplate使用字节数组实现文件上传</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2024/02/20</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_工程准备">1. 工程准备</a></li>
+<li><a href="#file-upload">2. 上传本地文件</a></li>
+<li><a href="#_上传字节数组">3. 上传字节数组</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>RestTemplate</code> 是Spring提供的一个执行Http请求的工具类，使用它可以发送文件上传请求但必须依赖本地文件，本文介绍一种直接使用字节数组创建文件上传请求的方法</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_工程准备"><a class="anchor" href="#_工程准备"></a>1. 工程准备</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>假设存在如下服务端代码用于接收上传的文件</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">	@PostMapping("/create")
+	public void create(String pathname, @RequestParam("file") MultipartFile multipartFile) {
+		//...
+	}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="file-upload"><a class="anchor" href="#file-upload"></a>2. 上传本地文件</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在网络上搜索使用RestTemplate上传文件都会得到类似如下代码的答案，其中的关键点一是使用 <code>MultiValueMap</code>，二是使用 <code>FileSystemResource</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">		MultiValueMap&lt;String, Object&gt; multiValueMap = new inkedMultiValueMap&lt;&gt;();
+        File file = new File(filepath);
+		multiValueMap.add("file", new FileSystemResource(file));
+		multiValueMap.add("pathname", pathname);
+        restTemplate.postForEntity(url, new HttpEntity&lt;&gt;(multiValueMap), String.class);
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_上传字节数组"><a class="anchor" href="#_上传字节数组"></a>3. 上传字节数组</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在很多场景下上传的内容不是来自于本地文件，可能是代码中生成或者从其它服务读取到，不论来源如何都可以转换为字节数组，如果按照 <a href="#file-upload">上面</a>的方案就需要先将字节数组存储为本地文件再次读取为 <code>FileSystemResource</code> 对象，在已经拥有文件内容数组的情况下再把它保存为文件再读取出来显然是多此一举，那么能不能直接使用已有的字节数组来创建文件上传请求呢？刚好存在一个类似的 <code>ByteArrayResource</code>，是不是只要把 <code>new FileSystemResource(file)</code> 替换为 <code>new ByteArrayResource(bytes)</code> 就可以了呢？</p>
+</div>
+<div class="paragraph">
+<p>此处省去调试的过程直接介绍最终的结论，直接替换是不行的，<code>FileSystemResource</code> 和 <code>ByteArrayResource</code> 都实现了 <code>org.springframework.core.io.Resource</code> 接口，而 <code>Resource</code> 接口有一个方法 <code>@Nullable String getFilename();</code>，<code>FileSystemResource</code> 接口的次方法会返回底层的文件名，而 <code>ByteArrayResource</code> 仅返回null</p>
+</div>
+<div class="paragraph">
+<p><code>RestTemplate</code> 执行文件上传请求时会调用 <code>FormHttpMessageConverter.writePart</code> 方法来构建请求信息，方法内部会调用 <code>Resource.getFilename()</code> 来生成 <code>Content-Disposition</code> 请求头，<code>getFilename()</code> 方法返回null时 <code>Content-Disposition</code> 请求头就不包含 <code>filename</code> 信息，进一步服务端不会将其识别为文件</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/form-converter.png" alt="form converter">
+</div>
+</div>
+<div class="paragraph">
+<p>明确了不能直接替换的原因后解决方案也很简单，只需要让 <code>ByteArrayResource</code> 的 <code>getFilename()</code> 方法返回一个非null的值即可</p>
+</div>
+<div class="listingblock">
+<div class="title">ByteArrayWithNameResource.java</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">class ByteArrayWithNameResource extends ByteArrayResource {
+
+		private String name = "useless";
+
+		ByteArrayWithNameResource(byte[] byteArray) {
+			super(byteArray);
+		}
+
+		ByteArrayWithNameResource(byte[] byteArray, String description) {
+			super(byteArray, description);
+		}
+
+		ByteArrayWithNameResource(String name, byte[] byteArray) {
+			super(byteArray);
+			this.name = name;
+
+		}
+
+		ByteArrayWithNameResource(String name, byte[] byteArray, String description) {
+			super(byteArray, description);
+			this.name = name;
+		}
+
+		@Override
+		public String getFilename() {
+			return name;
+		}
+	}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>MultiValueMap</code> 中添加 <code>ByteArrayWithNameResource</code> 对象即可</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">multiValueMap.add("file", new ByteArrayWithNameResource("my.txt", bytes));
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

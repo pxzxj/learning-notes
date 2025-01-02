@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<title>Test</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Test</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_单元测试_vs_集成测试">1. 单元测试 vs 集成测试</a></li>
+<li><a href="#_快速开始">2. 快速开始</a></li>
+<li><a href="#_框架">3. 框架</a></li>
+<li><a href="#_junit">4. JUnit</a>
+<ul class="sectlevel2">
+<li><a href="#_参数测试">4.1. 参数测试</a></li>
+</ul>
+</li>
+<li><a href="#_mokito">5. Mokito</a>
+<ul class="sectlevel2">
+<li><a href="#_mock_vs_spy">5.1. mock vs spy</a></li>
+<li><a href="#_mock静态方法">5.2. mock静态方法</a></li>
+</ul>
+</li>
+<li><a href="#_测试controller">6. 测试Controller</a></li>
+<li><a href="#_数据库">7. 数据库</a></li>
+<li><a href="#_mybatis">8. MyBatis</a></li>
+<li><a href="#_mock外部服务">9. Mock外部服务</a></li>
+<li><a href="#_集成测试">10. 集成测试</a></li>
+<li><a href="#_spring_rest_docs">11. Spring Rest Docs</a></li>
+<li><a href="#_覆盖率">12. 覆盖率</a></li>
+<li><a href="#_最佳实践">13. 最佳实践</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>测试是软件开发中很重要的一部分工作，良好的测试可以在早期就发现系统存在的漏洞，保障系统发布后运行稳定。</p>
+</div>
+<div class="paragraph">
+<p>测试领域有着众多的方法论：单元测试、集成测试、功能测试、性能测试、压力测试、安全测试、回归测试、验收测试、全链路测试、混沌工程等等，
+即使是有多年工作经验的测试人员也经常不能分辨清楚这么多概念。本文也不会对这些内容做过多说明，主要还是介绍对开发人员来说
+比较重要的单元测试何集成测试方法</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/level-of-testing.png" alt="level of testing">
+</div>
+</div>
+<div class="paragraph">
+<p>之所以会要求开发掌握一定的测试能力是因为完全依赖测试人员人工测试是低效的也是不可靠的。在业务系统不断迭代过程中测试人员通常只会对新开发
+的功能做测试，但新开发的功能是有可能影响到原来的功能的，最终导致客户使用过程中发现原来正常的功能突然又不可用了。
+或者是开发人员盲目自信认为小的bug修复不会影响原有功能直接跳过了测试，结果上线运行后才发现异常。使用单元测试或者集成测试可以在项目构建时就发现问题，不论项目后期如何迭代，只要
+原来的测试仍然能够执行通过就可以保证功能是正常的。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_单元测试_vs_集成测试"><a class="anchor" href="#_单元测试_vs_集成测试"></a>1. 单元测试 vs 集成测试</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>有些测试只对一些特殊的业务系统才有必要，但单元测试和集成测试是最通用的测试方法，任何业务系统都可以使用单元测试和集成测试来实现系统稳定性。</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">类型</th>
+<th class="tableblock halign-left valign-top">定义</th>
+<th class="tableblock halign-left valign-top">优点</th>
+<th class="tableblock halign-left valign-top">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">单元测试</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">验证特定代码部分的功能的测试，最小的单元测试可能只是测试一个构造方法或者get/set方法，方法内存在if分支时通常会写多个单元测试去执行不同分支的代码</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">能保证某一部分代码完全正确，而且执行速度快</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">无法保证多个正确的代码段能否协同工作，而且每次对原方法修改后对应的单元测试都要修改，工作量比较大，还有涉及数据库操作的单元测试会使用内存数据库代替真实数据库，无法保证测试通过的代码在真实数据库上也能运行正常</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">集成测试</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">将各个代码块按照系统设计组合成完整的系统后进行的测试</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">更接近生产环境，在涉及数据库操作的系统中体现在会使用与生产环境一样的数据库进行集成测试，而且不需要经常重构，无论业务代码内部逻辑怎样变化，只要输入数据和预期的输出不变那么集成测试就不需要调整</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">执行速度慢，它要初始化系统的各个模块，调用时也需要执行各个模块的代码，正因为执行的代码更多，不能获得预期输出时定位问题也更难</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>综上，单元测试和集成测试各有优缺点，二者需要结合使用。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_快速开始"><a class="anchor" href="#_快速开始"></a>2. 快速开始</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>一个使用Junit 5开发的测试用例如下所示</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">class RoleServiceTest {
+
+    @Test                                                                                        <i class="conum" data-value="1"></i><b>(1)</b>
+	@DisplayName("测试用户组分页查询")                                                              <i class="conum" data-value="2"></i><b>(2)</b>
+	void testFindRolePager() {
+		Page&lt;Role&gt; rolePager = roleService.findRolePager(new Role(), PageRequest.of(0, 10));     <i class="conum" data-value="3"></i><b>(3)</b>
+		assertEquals(2, rolePager.getTotalElements());                                           <i class="conum" data-value="4"></i><b>(4)</b>
+	}
+}
+</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>使用 <code>@Test</code> 注解声明这是一个测试方法</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>使用 <code>@DisplayName</code> 注解描述测试内容，这不是必须的，使用方法名称描述是更好的选择</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>执行业务方法</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>执行断言方法</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_框架"><a class="anchor" href="#_框架"></a>3. 框架</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://junit.org/junit5/">Junit 5</a>   基础测试框架</p>
+</li>
+<li>
+<p><a href="https://testng.org/doc/">TestNG</a>     基础测试框架</p>
+</li>
+<li>
+<p><a href="https://site.mockito.org/">Mockito</a>     用于生成Mock对象</p>
+</li>
+<li>
+<p><a href="https://github.com/wiremock/wiremock">wiremock</a>  用于服务端Mock</p>
+</li>
+<li>
+<p><a href="https://docs.spring.io/spring-framework/docs/current/reference/html/testing.html">Spring Test</a> 与Spring Framework配合使用的测试框架</p>
+</li>
+<li>
+<p><a href="https://docs.spring.io/spring-security/reference/servlet/test/index.html">Spring Security Test</a> 与Spring Security配合使用的测试工具，主要测试认证授权等功能</p>
+</li>
+<li>
+<p><a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.testing">Spring Boot Test</a> Spring Boot 提供的测试模块，配置更少，功能更强大</p>
+</li>
+<li>
+<p><a href="https://www.testcontainers.org/">TestContainer</a> 用于在测试中创建容器</p>
+</li>
+<li>
+<p>&#8230;&#8203;</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+很多Java框架在核心模块之外都会提供一个单独的测试模块用来测试使用此框架实现的业务功能，所以在学习相关框架时也要关注它对测试的支持
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>眼花缭乱的测试框架也增加了编写测试的难度，所以建议从模仿做起，模仿开源项目的测试编写自己的业务测试，在使用中再去了解相关细节。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_junit"><a class="anchor" href="#_junit"></a>4. JUnit</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_参数测试"><a class="anchor" href="#_参数测试"></a>4.1. 参数测试</h3>
+<div class="paragraph">
+<p>很多业务方法都是关于输入输出的，以特定的输入执行方法判断能否返回预期的输出，这种场景非常适合使用 <a href="https://junit.org/junit5/docs/current/user-guide/#writing-tests-parameterized-tests">参数测试</a></p>
+</div>
+<div class="paragraph">
+<p>下面是一个使用 <code>@ValueSource</code> 做参数测试的示例，<code>strings</code> 数组的值会分别作为参数执行测试方法</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">class MyTest {
+    @ParameterizedTest
+	@ValueSource(strings = { "racecar", "radar", "able was I ere I saw elba" })
+	void containsA(String candidate) {
+		assertTrue(candidate.contains("a"));
+	}
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>执行结果如下所示，三个参数的测试结果都是✔，表示测试通过</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>palindromes(String) ✔
+├─ [1] candidate=racecar ✔
+├─ [2] candidate=radar ✔
+└─ [3] candidate=able was I ere I saw elba ✔</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>方法参数并不总是像上面示例那么简单，复杂参数列表可以使用 <code>@MethodSource</code> 实现</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">class MyTest {
+    @ParameterizedTest
+    @MethodSource("stringIntAndListProvider")                    <i class="conum" data-value="1"></i><b>(1)</b>
+    void testWithMultiArgMethodSource(String str, int num, List&lt;String&gt; list) {
+        assertEquals(5, str.length());
+        assertTrue(num &gt;=1 &amp;&amp; num &lt;=2);
+        assertEquals(2, list.size());
+    }
+
+    static Stream&lt;Arguments&gt; stringIntAndListProvider() {
+        return Stream.of(
+            arguments("apple", 1, Arrays.asList("a", "b")),
+            arguments("lemon", 2, Arrays.asList("x", "y"))
+        );
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>使用静态方法stringIntAndListProvider的返回值作为方法参数</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mokito"><a class="anchor" href="#_mokito"></a>5. Mokito</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_mock_vs_spy"><a class="anchor" href="#_mock_vs_spy"></a>5.1. mock vs spy</h3>
+<div class="paragraph">
+<p>spy是mock和真实对象的结合，可以mock真实对象的部分方法，实际用的比较少</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mock静态方法"><a class="anchor" href="#_mock静态方法"></a>5.2. mock静态方法</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">MockedStatic&lt;ExternalTaskClient&gt; mockedStatic = mockStatic(ExternalTaskClient.class);
+ExternalTaskClientBuilder clientBuilder = mock(ExternalTaskClientBuilder.class, RETURNS_SELF);
+when(ExternalTaskClient.create()).thenReturn(clientBuilder);
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_测试controller"><a class="anchor" href="#_测试controller"></a>6. 测试Controller</h2>
+<div class="sectionbody">
+
+</div>
+</div>
+<div class="sect1">
+<h2 id="_数据库"><a class="anchor" href="#_数据库"></a>7. 数据库</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在测试涉及数据库操作的方法时选择合适的数据库很重要，目前比较主流的方法是在单元测试中使用内存数据库保证执行速度，
+在集成测试中使用与生产环境相同的数据库容器。</p>
+</div>
+<div class="paragraph">
+<p>Spring Boot提供了
+<a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.testing.spring-boot-applications.autoconfigured-spring-data-jpa"><code>@AutoConfigureTestDatabase</code></a>
+注解自动配置一个测试的 <code>DataSource</code> 替换应用中声明的 <code>DataSource</code>，
+这个 <code>DataSource</code> 会根据classpath中的数据库驱动启动一个内存数据库。如果想使用真实数据库而不是内存数据库，可以设置注解的 <code>replace</code> 属性为 <code>Replace.NONE</code>，</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block hide-when-folded">import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+</span><span class="fold-block">@DataJpaTest                                             <i class="conum" data-value="1"></i><b>(1)</b>
+@AutoConfigureTestDatabase(replace = Replace.NONE)       <i class="conum" data-value="2"></i><b>(2)</b>
+class MyRepositoryTests {
+
+    @Autowired
+    private UserRepository repository;
+
+    @Test
+    void testExample() throws Exception {
+        User user = this.repository.findByUsername("sboot");
+        assertThat(user.getUsername()).isEqualTo("sboot");
+        assertThat(user.getEmployeeNumber()).isEqualTo("1234");
+    }
+
+}
+</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>@DataJpaTest已经继承了@AutoConfigureTestDatabase，所以如果不需要替换为真实数据源就不需要下面的 @AutoConfigureTestDatabase(replace = Replace.NONE)</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>替换为 application.yml 中声明的真实数据源</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+尽管内存数据库与真实数据库的非常相似，但仍然有些真实数据库才支持的特性是内存数据库不具备的，所以在
+测试一些使用了比较生僻的关键字的sql语句时要特别注意，当然如果是使用JPA或者Hibernate这样的框架则不必担心，它们
+会在底层处理不同数据库的差异。
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><code>@TestContainer</code> 提供了一种使用代码管理容器的方法，它整合了Junit框架，也在测试执行前启动一个容器，这一特性在集成测试
+中非常有用，因为集成测试既要保证环境与真实环境一致但又不能影响真实环境。除了支持各类型数据库外，
+TestContainer也支持启动Kafka、 ELasticsearch、 Nginx、 RabbitMQ等主流中间件，详情参考其 <a href="https://www.testcontainers.org/">官方文档</a>。</p>
+</div>
+<div class="paragraph">
+<p>@TestContainer与@SpringBootTest <a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto.testing.testcontainers">整合</a>示例如下</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Testcontainers
+public class UserAndRoleIntegrationTest {
+
+	private final String adminPassword = "123456";
+
+	@Container
+	static MySQLContainer&lt;?&gt; mySQLContainer = new MySQLContainer&lt;&gt;("mysql:8.0.28");             <i class="conum" data-value="1"></i><b>(1)</b>
+
+	@DynamicPropertySource
+	static void containerProperties(DynamicPropertyRegistry registry) {                         <i class="conum" data-value="2"></i><b>(2)</b>
+		registry.add("spring.datasource.url", mySQLContainer::getJdbcUrl);
+		registry.add("spring.datasource.driver-class-name", mySQLContainer::getDriverClassName);
+		registry.add("spring.datasource.username", mySQLContainer::getUsername);
+		registry.add("spring.datasource.password", mySQLContainer::getPassword);
+	}
+
+	@Test
+	void adminLogin(@Autowired TestRestTemplate testRestTemplate) {
+		MultiValueMap&lt;String, String&gt; parameters = new LinkedMultiValueMap&lt;&gt;();
+		parameters.add("username", "admin");
+		parameters.add("password", RsaBasedPasswordEncoder.encryptPassword(adminPassword));
+		CommonResult loginResult = testRestTemplate.postForObject("/api/login", parameters, CommonResult.class);
+		assertEquals(CommonResult.SUCCESS, loginResult.getState());
+		assertEquals("登录成功", loginResult.getMessage());
+	}
+
+}
+</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>启动一个容器</p>
+</li>
+<li>
+<p>使用容器的信息作为数据源的属性</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mybatis"><a class="anchor" href="#_mybatis"></a>8. MyBatis</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>测试是整个应用构建过程中最耗时的阶段，为了提升应用构建效率，必须关注测试的执行时间。提升测试执行速度的一个重要方法是减少不必要的类加载或初始化，对使用Spring框架构建的
+应用来说就是只加载需要的Bean。 <code>spring-boot-test-autoconfigure</code> 模块提供了大量 <code>@&#8230;&#8203;Test</code> 注解用于初始化Spring上下文并加载某一类Bean，常用的如 <code>@WebMvcTest</code>
+指定仅加载一个或多个 <code>Controller</code> 的Bean， <code>@DataJpaTest</code> 则只加载 Spring Data JPA 的 <code>Repository</code> 的Bean，完整的注解列表参考
+<a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.testing.spring-boot-applications">官方文档</a>。</p>
+</div>
+<div class="paragraph">
+<p>MyBatis仿造此设计在 <code>mybatis-spring-boot-starter-test</code> 模块中提供了 <code>@MybatisTest</code> 注解用于测试 <code>Mapper</code> 接口。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Mapper
+public interface CityMapper {
+
+    @Select("SELECT * FROM CITY WHERE state = #{state}")
+    City findByState(@Param("state") String state);
+
+}
+
+@MybatisTest
+public class CityMapperTest {
+
+    @Autowired
+    private CityMapper cityMapper;
+
+    @Test
+    public void findByStateTest() {
+        City city = cityMapper.findByState("CA");
+        assertThat(city.getName()).isEqualTo("San Francisco");
+        assertThat(city.getState()).isEqualTo("CA");
+        assertThat(city.getCountry()).isEqualTo("US");
+    }
+
+}
+</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+@MybatisTest也继承了上文的 @AutoConfigureTestDatabase ，默认会启动一个内存数据库作为数据源
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>关于 <code>@MybatisTest</code> 的其他高级用法参考 <a href="http://mybatis.org/spring-boot-starter/mybatis-spring-boot-test-autoconfigure/">官方文档</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mock外部服务"><a class="anchor" href="#_mock外部服务"></a>9. Mock外部服务</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>测试中经常需要解决的问题是对外部环境或外部服务的依赖，<code>spring-test</code> 提供了一种 <a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.testing.spring-boot-applications.autoconfigured-rest-client">Mock外部服务</a>的方法，可以在调用外部接口时返回Mock的数据，
+保证代码能顺利执行。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Service
+public class MyService {
+
+    private final RestTemplate restTemplate;
+
+    public MyService(RestTemplateBuilder restTemplateBuilder) {
+        this.restTemplate = restTemplateBuilder.build();
+    }
+
+    public String invokeOutsideService() {
+        return restTemplate.getForObject("http://outside.com/hello", String.class);
+    }
+}
+
+@RestClientTest(MyService.class)
+public class MyServiceTest {
+
+    @Autowired
+    private MyService myService;
+
+    @Autowired
+    private MockRestServiceServer server;
+
+    @Test
+    void testInvokeOutsideService() {
+        server.expect(requestTo("http://outside.com/hello")).andRespond(withSuccess("world", MediaType.TEXT_PLAIN));
+        String hello = myService.invokeOutsideService();
+        assertEquals("world", hello);
+    }
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_集成测试"><a class="anchor" href="#_集成测试"></a>10. 集成测试</h2>
+<div class="sectionbody">
+
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring_rest_docs"><a class="anchor" href="#_spring_rest_docs"></a>11. Spring Rest Docs</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>接口开发完成后就要编写接口文档，目前主要的编写方法包括下面几种</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>纯人工编写</p>
+</li>
+<li>
+<p>使用Swagger工具生成</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>上面几种方案都存在一些问题，纯人工编写工作量较大，Swagger工具对代码侵入性太强</p>
+</div>
+<div class="paragraph">
+<p>Spring Rest Docs是Spring团队开发的用于生成接口文档的框架，它利用 <code>spring-test</code> 提供的 <code>Spring MVC Test</code> 生成
+asciidoc格式的接口信息文档，再与手工编写的其他内容结合生成最终的接口文档。它的主要特点是对业务代码无侵入而且开发者能够自由
+地编辑文档内容，同时由于接口信息是使用测试生成的，可以保证接口信息与实际代码始终是一致的。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_覆盖率"><a class="anchor" href="#_覆盖率"></a>12. 覆盖率</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>测试覆盖率用来衡量测试的完整性， <a href="https://www.jacoco.org/jacoco/">Jacoco</a>是目前最流行的测试覆盖率计算工具，它提供了非常美观的报告
+展示已经被测试执行过的代码和未执行过的代码。
+Jacoco支持多种运行方式如Java Agent、Ant、Maven，Maven是最常用的方法，Maven构建后在 target/site/jacoco 目录下
+会生成html格式的测试报告，可以直接在浏览器中打开查看。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_最佳实践"><a class="anchor" href="#_最佳实践"></a>13. 最佳实践</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>测试方法名做到见名知意</p>
+</li>
+<li>
+<p>测试执行速度越快越好，减少不必要的初始化</p>
+</li>
+<li>
+<p>时间紧迫情况下只写集成测试</p>
+</li>
+<li>
+<p>经常修改的代码要写单元测试</p>
+</li>
+<li>
+<p>测试代码量比业务代码多是很正常的，因为一个业务方法可能需要三到五个测试方法保证其运行正常</p>
+</li>
+<li>
+<p>使用固定数据作为输入，例如 <code>new Date()</code> 是变化的输入</p>
+</li>
+<li>
+<p>避免 <code>assertTrue</code> 和 <code>assertFalse</code></p>
+</li>
+<li>
+<p>使用参数测试减少重复代码</p>
+</li>
+<li>
+<p>不使用Spring依赖注入</p>
+</li>
+<li>
+<p>使用构造器注入</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

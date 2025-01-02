@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2022/06/08">
+<title>Spring Boot Starter 数据库初始化</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Spring Boot Starter 数据库初始化</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2022/06/08</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_depend_upon_an_initialized_database">1. Depend Upon an Initialized Database</a>
+<ul class="sectlevel2">
+<li><a href="#_databaseinitializerdetector">1.1. DatabaseInitializerDetector</a>
+<ul class="sectlevel3">
+<li><a href="#datasourceScriptDatabaseInitializerDetector">1.1.1. DataSourceScriptDatabaseInitializerDetector</a></li>
+</ul>
+</li>
+<li><a href="#_dependsondatabaseinitializationdetector">1.2. DependsOnDatabaseInitializationDetector</a></li>
+</ul>
+</li>
+<li><a href="#dataSourceScriptDatabaseInitializer">2. DataSourceScriptDatabaseInitializer</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>使用Spring Boot框架进行开发时通常会将可以复用的功能封装为一个独立的 <code>starter</code>，其他程序只需引入此starter即可使用相应功能。某些功能的starter必须依赖数据库
+中的表才能正常工作，例如 <code>spring-boot-starter-quartz</code> 就需要初始化许多 <code>quartz</code> 相关的表。一种选择是手动执行这些表对应的建表语句，但更理想的方式是由
+<code>starter</code> 自动初始化所需的表</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_depend_upon_an_initialized_database"><a class="anchor" href="#_depend_upon_an_initialized_database"></a>1. Depend Upon an Initialized Database</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Boot官方文档的 <a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto.data-initialization.dependencies">Depend Upon an Initialized Database</a>
+章节描述了它对数据库初始化的支持。</p>
+</div>
+<div class="paragraph">
+<p>数据库初始化相关的Bean可以分为两类，一类是执行初始化的Bean，负责创建表插入数据等操作，另一类是依赖于初始化后数据库的Bean，
+这些Bean在创建过程中需要执行查询数据库等操作。 Spring Boot使用 <code>DatabaseInitializerDetector</code> 和 <code>DependsOnDatabaseInitializationDetector</code> 两个接口找到这两类Bean，
+找到后只要通过 <code>BeanDefinition#setDependsOn</code> 方法指定后者依赖前者就能保证第二类Bean一定在第一类Bean之后创建</p>
+</div>
+<div class="sect2">
+<h3 id="_databaseinitializerdetector"><a class="anchor" href="#_databaseinitializerdetector"></a>1.1. DatabaseInitializerDetector</h3>
+<div class="paragraph">
+<p><code>DatabaseInitializerDetector</code> 的定义如下，<code>detect()</code> 方法返回用来初始化数据库的Bean名称，也就是上文第一类Bean的名称，
+<code>detectionComplete()</code> 是 <code>detect()</code> 完成的回调方法，<code>getOrder()</code> 控制 <code>DatabaseInitializerDetector</code> 多个实现的执行顺序</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface DatabaseInitializerDetector extends Ordered {
+
+	/**
+	 * Detect beans defined in the given {@code beanFactory} that initialize a
+	 * {@link DataSource}.
+	 * @param beanFactory bean factory to examine
+	 * @return names of the detected {@code DataSource} initializer beans, or an empty set
+	 * if none were detected.
+	 */
+	Set&lt;String&gt; detect(ConfigurableListableBeanFactory beanFactory);
+
+	default void detectionComplete(ConfigurableListableBeanFactory beanFactory,
+			Set&lt;String&gt; dataSourceInitializerNames) {
+	}
+
+	@Override
+	default int getOrder() {
+		return 0;
+	}
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>DatabaseInitializerDetector</code> 默认包含如下实现，其中 <code>FlywayDatabaseInitializerDetector</code>、<code>FlywayMigrationInitializerDatabaseInitializerDetector</code>、<code>JpaDatabaseInitializerDetector</code>、
+<code>LiquibaseDatabaseInitializerDetector</code> 依赖特定框架或组件，通用性不足，而R2DBC目前应用也不广泛，因此本文仅介绍 <code>DataSourceScriptDatabaseInitializerDetector</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>DataSourceScriptDatabaseInitializerDetector</p>
+</li>
+<li>
+<p>FlywayDatabaseInitializerDetector</p>
+</li>
+<li>
+<p>FlywayMigrationInitializerDatabaseInitializerDetector</p>
+</li>
+<li>
+<p>JpaDatabaseInitializerDetector</p>
+</li>
+<li>
+<p>LiquibaseDatabaseInitializerDetector</p>
+</li>
+<li>
+<p>R2dbcScriptDatabaseInitializerDetector</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="datasourceScriptDatabaseInitializerDetector"><a class="anchor" href="#datasourceScriptDatabaseInitializerDetector"></a>1.1.1. DataSourceScriptDatabaseInitializerDetector</h4>
+<div class="paragraph">
+<p><code>DataSourceScriptDatabaseInitializerDetector</code> 及其父类定义如下，可以看到它会将所有 <code>DataSourceScriptDatabaseInitializer</code> 类型的Bean作为数据库初始化的Bean，
+<code>DataSourceScriptDatabaseInitializer</code> 在 <a href="#dataSourceScriptDatabaseInitializer">下文</a>单独介绍</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">class DataSourceScriptDatabaseInitializerDetector extends AbstractBeansOfTypeDatabaseInitializerDetector {
+
+	static final int PRECEDENCE = Ordered.LOWEST_PRECEDENCE - 100;
+
+	@Override
+	protected Set&lt;Class&lt;?&gt;&gt; getDatabaseInitializerBeanTypes() {
+		return Collections.singleton(DataSourceScriptDatabaseInitializer.class);
+	}
+
+	@Override
+	public int getOrder() {
+		return PRECEDENCE;
+	}
+
+}
+
+public abstract class AbstractBeansOfTypeDatabaseInitializerDetector implements DatabaseInitializerDetector {
+
+	@Override
+	public Set&lt;String&gt; detect(ConfigurableListableBeanFactory beanFactory) {
+		try {
+			Set&lt;Class&lt;?&gt;&gt; types = getDatabaseInitializerBeanTypes();
+			return new BeansOfTypeDetector(types).detect(beanFactory);
+		}
+		catch (Throwable ex) {
+			return Collections.emptySet();
+		}
+	}
+
+	/**
+	 * Returns the bean types that should be detected as being database initializers.
+	 * @return the database initializer bean types
+	 */
+	protected abstract Set&lt;Class&lt;?&gt;&gt; getDatabaseInitializerBeanTypes();
+
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dependsondatabaseinitializationdetector"><a class="anchor" href="#_dependsondatabaseinitializationdetector"></a>1.2. DependsOnDatabaseInitializationDetector</h3>
+<div class="paragraph">
+<p><code>DependsOnDatabaseInitializationDetector</code> 的定义如下，它的 <code>detect()</code> 方法返回依赖于初始化后数据库的Bean的名称</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface DependsOnDatabaseInitializationDetector {
+
+	/**
+	 * Detect beans defined in the given {@code beanFactory} that depend on database
+	 * initialization. If no beans are detected, an empty set is returned.
+	 * @param beanFactory bean factory to examine
+	 * @return names of any beans that depend upon database initialization
+	 */
+	Set&lt;String&gt; detect(ConfigurableListableBeanFactory beanFactory);
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>DependsOnDatabaseInitializationDetector</code> 默认包含如下实现，其中大部分都用于与其他框架整合，而 <code>AnnotationDependsOnDatabaseInitializationDetector</code> 则比较通用，在任意Bean的声明
+上添加 <code>@DependsOnDatabaseInitialization</code> 注解就可以使其成为一个依赖于初始化后数据库的Bean。</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>AnnotationDependsOnDatabaseInitializationDetector 返回声明了 <code>@DependsOnDatabaseInitialization</code> 注解的Bean</p>
+</li>
+<li>
+<p>JdbcIndexedSessionRepositoryDependsOnDatabaseInitializationDetector 返回 <code>JdbcIndexedSessionRepository</code> 类型的Bean，用于与 <code>spring-session</code> 整合</p>
+</li>
+<li>
+<p>JobRepositoryDependsOnDatabaseInitializationDetector 返回 <code>JobRepository</code> 类型的Bean，用于与 <code>spring-batch</code> 整合</p>
+</li>
+<li>
+<p>JooqDependsOnDatabaseInitializationDetector 返回 <code>DSLContext</code> 类型的Bean，用于与 <code>JOOQ</code> 整合</p>
+</li>
+<li>
+<p>JpaDependsOnDatabaseInitializationDetector 返回 <code>EntityManagerFactory</code> 和 <code>AbstractEntityManagerFactoryBean</code> 类型的Bean，用于与JPA整合</p>
+</li>
+<li>
+<p>SchedulerDependsOnDatabaseInitializationDetector 返回 <code>Scheduler</code> 和 <code>SchedulerFactoryBean</code> 类型的Bean，用于与Quartz整合</p>
+</li>
+<li>
+<p>SpringJdbcDependsOnDatabaseInitializationDetector 返回 <code>JdbcOperations</code> 和 <code>NamedParameterJdbcOperations</code> 类型的Bean</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="dataSourceScriptDatabaseInitializer"><a class="anchor" href="#dataSourceScriptDatabaseInitializer"></a>2. DataSourceScriptDatabaseInitializer</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#datasourceScriptDatabaseInitializerDetector">上文</a>介绍了 <code>DataSourceScriptDatabaseInitializerDetector</code> 会返回所有 <code>DataSourceScriptDatabaseInitializer</code> 类型的Bean，表示这些Bean用于数据库初始化</p>
+</div>
+<div class="paragraph">
+<p><code>DataSourceScriptDatabaseInitializer</code> 用于执行特定脚本初始化数据库，它的构造器信息如下，第一个参数 <code>dataSource</code> 指定需要初始化的数据源，第二个参数 <code>settings</code> 指定脚本信息，包含 schema脚本位置、data脚本位置、是否错误继续、
+分隔符、编码、模式</p>
+</div>
+<div class="paragraph">
+<p><code>DatabaseInitializationMode</code> 是一个枚举，包含 <code>ALWAYS、EMBEDDED、NEVER</code> 三个枚举值，<code>ALWAYS</code> 表示总是执行 <code>schemaLocations</code> 和 <code>dataLocations</code> 声明的脚本， <code>EMBEDDED</code> 表示只有是内存数据库才执行，<code>NEVER</code> 表示不执行。
+该字段的设置要特别注意，如果指定了 <code>ALWAYS</code> 就意味着每一次项目启动都会执行初始化脚本，如果数据源是 <code>MySQL</code> 等非内存数据库重复执行脚本很可能会报错，当然如果数据库支持 <code>CREATE IF NOT EXISTS</code> 语法可能不会报错</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class DataSourceScriptDatabaseInitializer extends AbstractScriptDatabaseInitializer {
+
+	private final DataSource dataSource;
+
+	public DataSourceScriptDatabaseInitializer(DataSource dataSource, DatabaseInitializationSettings settings) {
+		super(settings);
+		this.dataSource = dataSource;
+	}
+
+    //...
+}
+
+public class DatabaseInitializationSettings {
+
+	private List&lt;String&gt; schemaLocations;
+
+	private List&lt;String&gt; dataLocations;
+
+	private boolean continueOnError = false;
+
+	private String separator = ";";
+
+	private Charset encoding;
+
+	private DatabaseInitializationMode mode = DatabaseInitializationMode.EMBEDDED;
+
+    //getter,setter
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>综上所述，只要在 <code>starter</code> 中声明 <code>DataSourceScriptDatabaseInitializer</code> 类型的Bean就能实现数据库的初始化，如果 <code>starter</code> 本身包含了配置类的话，还可以在其配置类中声明 <code>DatabaseInitializationSettings</code> 相关的属性，
+最终实现在 <code>application.yml</code> 中配置初始化脚本位置或者初始化模式等属性。</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

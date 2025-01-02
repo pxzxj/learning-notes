@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2023/02/23">
+<title>编程中的解析(Parse vs Resolve vs Analyze)</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>编程中的解析(Parse vs Resolve vs Analyze)</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2023/02/23</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_parse">1. Parse</a></li>
+<li><a href="#_resolve">2. Resolve</a></li>
+<li><a href="#_analyze">3. Analyze</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>解析</code> 是软件开发中的一个高频词汇，但在英文中表达 <code>解析</code> 语义的单词却很多，本文结合Spring Framework源码对比常用的三个表达解析的单词深层的不同以帮助开发者做出正确选择。</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/jiexi.png" alt="jiexi">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parse"><a class="anchor" href="#_parse"></a>1. Parse</h2>
+<div class="sectionbody">
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>to separate a sentence into grammatical parts, such as subject, verb, etc.</p>
+</div>
+</blockquote>
+<div class="attribution">
+&#8212; dictionary.cambridge.org
+</div>
+</div>
+<div class="paragraph">
+<p>Spring Framework中 <code>Parse</code> 相关的有如下接口</p>
+</div>
+<div class="listingblock">
+<div class="title">org.springframework.format.Parser</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@FunctionalInterface
+public interface Parser&lt;T&gt; {
+
+	/**
+	 * 将文本根据不同语系解析为T的实例
+	 */
+	T parse(String text, Locale locale) throws ParseException;
+
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">org.springframework.expression.ExpressionParser</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface ExpressionParser {
+
+	/**
+	 * 将表达式解析为可执行的Expression对象
+	 */
+	Expression parseExpression(String expressionString) throws ParseException;
+
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">org.springframework.beans.factory.xml.BeanDefinitionParser</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface BeanDefinitionParser {
+
+	/**
+	 * 将Xml元素解析为BeanDefinition对象
+	 */
+	@Nullable
+	BeanDefinition parse(Element element, ParserContext parserContext);
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>综合 <code>Parse</code> 的定义与Spring Framework中的实践可以将它的使用场景归纳为：<code>Parse</code> 用于内容已知但需要对它的格式、表现形式或存储方式做一定转换并且转换过程中可能需要对内容按照特定语法做拆分的场景，例如Xml解析、Json解析、Excel解析都应该使用 <code>Parse</code> 表示</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_resolve"><a class="anchor" href="#_resolve"></a>2. Resolve</h2>
+<div class="sectionbody">
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>to solve or end a problem or difficulty</p>
+</div>
+</blockquote>
+<div class="attribution">
+&#8212; dictionary.cambridge.org
+</div>
+</div>
+<div class="paragraph">
+<p>Spring Framework中 <code>Resolve</code> 相关的有如下接口</p>
+</div>
+<div class="listingblock">
+<div class="title">org.springframework.expression.BeanResolver</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface BeanResolver {
+
+	/**
+	 * 根据Bean的名称查找并返回对应的Bean实例
+	 */
+	Object resolve(EvaluationContext context, String beanName) throws AccessException;
+
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">org.springframework.web.servlet.LocaleResolver</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface LocaleResolver {
+
+	/**
+	 * 从请求中解析Locale
+	 */
+	Locale resolveLocale(HttpServletRequest request);
+
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">org.springframework.web.servlet.HandlerExceptionResolver</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface HandlerExceptionResolver {
+
+	/**
+	 * SpringMVC执行过程中将异常解析为错误页面
+	 */
+	@Nullable
+	ModelAndView resolveException(
+			HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex);
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>综合 <code>Resolve</code> 的定义与Spring Framework中的实践可以将它的使用场景归纳为：需要对原始内容做一定的业务处理和计算后生成与原始内容相关但完全不同的目标内容的场景，例如DNS解析需要访问DNS服务器查询域名对应的IP地址，域名与IP是相关的但它们的内容却完全不同，因此需要使用 <code>Resolve</code> 表示，甚至Linux的DNS服务器配置文件名也是 <code>resolv.conf</code></p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<code>Resolve</code> 虽然可以翻译为解析，但它的重点在于能够以某种方式使用原始内容解决问题，这一点在它的英文释义中也有体现
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_analyze"><a class="anchor" href="#_analyze"></a>3. Analyze</h2>
+<div class="sectionbody">
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>to study or examine something in detail, in order to discover more about it</p>
+</div>
+</blockquote>
+<div class="attribution">
+&#8212; dictionary.cambridge.org
+</div>
+</div>
+<div class="paragraph">
+<p>Spring Boot中 <code>Analyze</code> 相关的有如下接口</p>
+</div>
+<div class="listingblock">
+<div class="title">org.springframework.boot.diagnostics.FailureAnalyzer</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@FunctionalInterface
+public interface FailureAnalyzer {
+
+	/**
+	 * Returns an analysis of the given {@code failure}, or {@code null} if no analysis
+	 * was possible.
+	 * @param failure the failure
+	 * @return the analysis or {@code null}
+	 */
+	FailureAnalysis analyze(Throwable failure);
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>综合 <code>Analyze</code> 的定义与Spring Boot中的实践可以将它的使用场景归纳为：通过对原始内容做深层研究和剖析生成更有价值或更直观的目标内容的场景，例如上面的 <code>FailureAnalyzer</code> 通过分析异常返回失败原因</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<code>Resolve</code> 和 <code>Analyze</code> 的主要区别在于 <code>Analyze</code> 强调对原始内容本身的深层分析产生结果，而 <code>Resolve</code> 则是使用原始内容进行业务逻辑处理后产生结果
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

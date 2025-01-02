@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2024/12/29">
+<title>wiremock</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>wiremock</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2024/12/29</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_why">1. why</a></li>
+<li><a href="#quickstart">2. quickstart</a></li>
+<li><a href="#_how">3. how</a>
+<ul class="sectlevel2">
+<li><a href="#_unit_test">3.1. unit test</a></li>
+<li><a href="#_standalone">3.2. standalone</a>
+<ul class="sectlevel3">
+<li><a href="#_jsonbody">3.2.1. jsonBody</a></li>
+<li><a href="#_bodyfile">3.2.2. bodyFile</a></li>
+<li><a href="#_request_mapping">3.2.3. request mapping</a></li>
+<li><a href="#_response_template">3.2.4. response template</a></li>
+<li><a href="#_single_file_multiple_mappings">3.2.5. single file multiple mappings</a></li>
+<li><a href="#_simulating_faults">3.2.6. simulating faults</a></li>
+<li><a href="#_recorder">3.2.7. recorder</a></li>
+<li><a href="#_command_line_options">3.2.8. command line options</a></li>
+</ul>
+</li>
+<li><a href="#_api_template_library">3.3. api template library</a></li>
+<li><a href="#_extensibility">3.4. extensibility</a></li>
+<li><a href="#_ui">3.5. ui</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="videoblock"><div class="content">
+<iframe width="640" height="480" src="https://player.bilibili.com/player.html?bvid=BV1WA6VYSEYF&high_quality=1&page=1"  border="0" frameborder="no" framespacing="0" scrolling="no" allowfullscreen="true"></iframe>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why"><a class="anchor" href="#_why"></a>1. why</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>开发一个web服务时不可避免得会涉及到对其他服务的api调用，可能是内部开发的一个微服务也可能是外部供应商提供的服务</p>
+</div>
+<div class="paragraph">
+<p>调用其他服务给软件测试带来了困难，因为这些服务显然不是随时都能调用的，
+可能是因为测试环境与生产环境处于不同网络环境下也可能是因为调用相应的api会导致业务状态的变化</p>
+</div>
+<div class="paragraph">
+<p>此时一个可行的方法就是在测试环境模拟这些被调用的 <code>api</code>，即 <code>mock</code>，</p>
+</div>
+<div class="paragraph">
+<p><code>wiremock</code> 就是一个非常流行非常强大的 api mock工具</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/wiremock.png" alt="wiremock">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="quickstart"><a class="anchor" href="#quickstart"></a>2. quickstart</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>wiremock</code> 支持使用配置来定义需要 mock的api，例如下面的配置就模拟了一个地址为 <code>/api/hello</code> 请求方法为 <code>GET</code> 的接口，
+接口响应为 <code>Hello World</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+    "request": {
+        "method": "GET",
+        "url": "/api/hello"
+    },
+    "response": {
+        "status": 200,
+        "body": "Hello world"
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how"><a class="anchor" href="#_how"></a>3. how</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>wiremock</code> 一般有两种使用方法， <code>unit test</code> 和 <code>standalone</code></p>
+</div>
+<div class="sect2">
+<h3 id="_unit_test"><a class="anchor" href="#_unit_test"></a>3.1. unit test</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block hide-when-folded">import com.github.tomakehurst.wiremock.WireMockServer;
+import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestTemplate;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+</span><span class="fold-block">public class WiremockSample {
+
+    @Test
+    void test() {
+        WireMockServer wireMockServer = new WireMockServer();
+        wireMockServer.start();
+        wireMockServer.addStubMapping(
+                stubFor(get("/api/hello").willReturn(ok("Hello World"))));
+        RestTemplate restTemplate = new RestTemplate();
+        String response = restTemplate.getForObject(wireMockServer.url("/api/hello"), String.class);
+        assertEquals("Hello World", response);
+        wireMockServer.stop();
+    }
+}
+</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_standalone"><a class="anchor" href="#_standalone"></a>3.2. standalone</h3>
+<div class="paragraph">
+<p>访问 <code>wiremock</code> 的 <a href="https://wiremock.org/">官方网站</a>，在 <code>Downloads</code> 部分选择 <code>Standalone</code> 下载jar包并使用 <code>java -jar</code> 启动服务</p>
+</div>
+<div class="paragraph">
+<p><code>wiremock</code> 服务启动后jar包同级目录会创建 <code>mappings</code> 和 <code>__files</code> 两个文件夹，
+<a href="#quickstart">上文</a>定义的json文件放在 <code>mappings</code> 目录中重启服务访问 <code><a href="http://localhost:8080/api/hello" class="bare">http://localhost:8080/api/hello</a></code> 就能看到返回了 <code>Hello World</code></p>
+</div>
+<div class="paragraph">
+<p>服务启动后还可以访问 <code>/__admin/mappings</code> 查看当前已经加载的mock数据</p>
+</div>
+<div class="sect3">
+<h4 id="_jsonbody"><a class="anchor" href="#_jsonbody"></a>3.2.1. jsonBody</h4>
+<div class="paragraph">
+<p>如果响应是json格式则可以使用 <code>jsonBody</code> 声明响应内容避免json字符串转义，此时一般还需要使用 <code>headers</code> 配置响应头</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+    "request": {
+        "method": "GET",
+        "url": "/api/hello"
+    },
+    "response": {
+        "status": 200,
+        "jsonBody": {
+            "Hello": "World"
+        },
+        "headers": {
+            "Content-Type": "application/json"
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bodyfile"><a class="anchor" href="#_bodyfile"></a>3.2.2. bodyFile</h4>
+<div class="paragraph">
+<p>如果响应内容比较多还可以使用 <code>bodyFileName</code> 声明响应内容的文件，文件在 <code>__files</code> 文件夹中</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+    "request": {
+        "method": "GET",
+        "url": "/body-file"
+    },
+    "response": {
+        "status": 200,
+        "bodyFileName": "response.json",
+        "headers": {
+            "Content-Type": "application/json"
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_request_mapping"><a class="anchor" href="#_request_mapping"></a>3.2.3. request mapping</h4>
+<div class="paragraph">
+<p><code>wiremock</code> 的工作原理和 <code>spring mvc</code> 相似，是用请求信息和定义的mock配置进行匹配，如果匹配成功就返回mock配置中的响应，否则返回404</p>
+</div>
+<div class="paragraph">
+<p>上文的几个示例使用了请求方法和url匹配 <code>mappings</code> 文件夹中的mock配置，实际上 <code>wiremock</code> 还支持很多更复杂的匹配方式</p>
+</div>
+<div class="listingblock">
+<div class="title">url正则匹配</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "request": {
+    "urlPattern": "/your/([a-z]*)\\?and=query",
+    ...
+  },
+  ...
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">仅匹配url路径，忽略请求参数</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "request": {
+    "urlPath": "/your/url",
+    ...
+  },
+  ...
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">url参数匹配</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "request" : {
+    "urlPathTemplate" : "/v1/contacts/{contactId}/addresses/{addressId}",
+    "method" : "GET",
+    "pathParameters" : {
+      "contactId" : {
+        "equalTo" : "12345"
+      },
+      "addressId" : {
+        "equalTo" : "99876"
+      }
+    }
+  },
+  "response" : {
+    "status" : 200
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>更多复杂匹配方式参考 <a href="https://wiremock.org/docs/request-matching/">官方文档</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_response_template"><a class="anchor" href="#_response_template"></a>3.2.4. response template</h4>
+<div class="paragraph">
+<p>上文示例的响应都是静态内容不会随着请求变化，而 <code>response template</code> 则能赋予响应一定的动态能力</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+    "request": {
+        "urlPathPattern": "/static/.*",
+        "method": "GET"
+    },
+    "response": {
+        "status": 200,
+        "jsonBody": {
+            "file": "{{request.pathSegments.[1]}}",
+            "time": "{{now}}"
+        },
+        "transformers": ["response-template"]
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>{{request.pathSegments.[1]}}</code> 和 <code>{{now}}</code> 都是 <code>wiremock</code> 支持的特殊语法分别表示url第二段和当前时间，
+更多语法细节参考 <a href="https://wiremock.org/docs/response-templating/">官方文档</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_single_file_multiple_mappings"><a class="anchor" href="#_single_file_multiple_mappings"></a>3.2.5. single file multiple mappings</h4>
+<div class="paragraph">
+<p><code>mappings</code> 文件夹中一个文件可以声明多个mock的api</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+    "mappings": [
+        {
+            "request": {
+                "method": "GET",
+                "url": "/one"
+            },
+            "response": {
+                "status": 200
+            }
+        },
+        {
+            "id": "8c5db8b0-2db4-4ad7-a99f-38c9b00da3f7",
+            "request": {
+                "url": "/two"
+            },
+            "response": {
+                "body": "Updated"
+            }
+        }
+    ]
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_simulating_faults"><a class="anchor" href="#_simulating_faults"></a>3.2.6. simulating faults</h4>
+<div class="paragraph">
+<p><code>wiremock</code> 还支持模拟api请求时的故障场景，例如响应太慢</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+    "request": {
+        "method": "GET",
+        "url": "/delayed"
+    },
+    "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 2000
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>更多故障场景参考 <a href="https://wiremock.org/docs/simulating-faults/">官方文档</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_recorder"><a class="anchor" href="#_recorder"></a>3.2.7. recorder</h4>
+<div class="paragraph">
+<p><code>wiremock</code> 中还有一个强大的工具 <code>recorder</code> ，使用它可以免去手动编写mock文件的过程，可以在服务启动后访问 <code>/__admin/recorder</code> 使用</p>
+</div>
+<div class="paragraph">
+<p><code>recoder</code> 的核心是一个代理，它在目标服务返回响应后先在 <code>mappings</code> 文件夹中保存一份再返回给client，
+今后client再发送同样的请求就可以直接使用已经保存的内容来响应</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/wiremock-recorder.png" alt="wiremock recorder">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_command_line_options"><a class="anchor" href="#_command_line_options"></a>3.2.8. command line options</h4>
+<div class="paragraph">
+<p>使用 <code>java -jar</code> 启动 <code>wiremock</code> 服务时支持很多命令行参数，此次列举常用的几个，
+完整参数列表参考 <a href="https://wiremock.org/docs/standalone/java-jar/">官方文档</a></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">--port  </dt>
+<dd>
+<p>服务端口号，例如 <code>--port 9999</code></p>
+</dd>
+<dt class="hdlist1">--root-dir  </dt>
+<dd>
+<p><code>__files</code> 和 <code>mappings</code> 目录所属的根目录</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_api_template_library"><a class="anchor" href="#_api_template_library"></a>3.3. api template library</h3>
+<div class="paragraph">
+<p>从上面对 <code>wiremock</code> 的介绍可以看出最重要的就是编写mock配置文件，
+如果多个客户端服务请求的是同一个目标服务那就可以相同的mock配置文件，
+因此 <code>wiremock</code> 为很多大型的服务供应商都已经提供了现成的mock配置文件，
+例如 <code>GitHub</code>、<code>Twitter</code>、<code>Amazon Cloud</code> 等，
+如果使用了这些供应商的api就可以直接在 <a href="https://library.wiremock.org/cloud/">api template library</a> 上下载想应的mock配置文件</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_extensibility"><a class="anchor" href="#_extensibility"></a>3.4. extensibility</h3>
+<div class="paragraph">
+<p><code>wiremock</code> 支持使用 <code>Extension</code> api 实现更复杂的功能，详情参考 <a href="https://wiremock.org/docs/extending-wiremock/">官方文档</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ui"><a class="anchor" href="#_ui"></a>3.5. ui</h3>
+<div class="paragraph">
+<p>访问 <a href="https://qadoc.cn/wiremock/stubs" class="bare">https://qadoc.cn/wiremock/stubs</a> 添加 <code>wiremock</code> 的服务地址后可以可视化地查看mock配置</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/wiremock-ui.png" alt="wiremock ui">
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

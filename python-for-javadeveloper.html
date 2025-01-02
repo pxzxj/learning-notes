@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<title>给Java开发者的Python入门指南</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>给Java开发者的Python入门指南</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_features">1. features</a></li>
+<li><a href="#_控制语句">2. 控制语句</a>
+<ul class="sectlevel2">
+<li><a href="#_generator">2.1. generator</a></li>
+<li><a href="#_查看类型">2.2. 查看类型</a></li>
+<li><a href="#_数据类型">2.3. 数据类型</a></li>
+<li><a href="#_下划线开头">2.4. 下划线开头</a></li>
+<li><a href="#_init_与_call">2.5. __init__与 __call__</a></li>
+<li><a href="#_列表与数组">2.6. 列表与数组</a></li>
+<li><a href="#_list_vs_tuple">2.7. list vs tuple</a></li>
+<li><a href="#_类">2.8. 类</a></li>
+<li><a href="#_打印对象">2.9. 打印对象</a></li>
+<li><a href="#_对象比较">2.10. 对象比较</a></li>
+<li><a href="#_import">2.11. Import</a></li>
+<li><a href="#_依赖管理">2.12. 依赖管理</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_features"><a class="anchor" href="#_features"></a>1. features</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Python无需声明类型
+Python
+Python的Iterable对应Java的Iterable
+Python中的generator对应Java的Stream
+Python使用 <code>for in</code> 进行循环</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_控制语句"><a class="anchor" href="#_控制语句"></a>2. 控制语句</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_generator"><a class="anchor" href="#_generator"></a>2.1. generator</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_查看类型"><a class="anchor" href="#_查看类型"></a>2.2. 查看类型</h3>
+<div class="paragraph">
+<p>Python使用type()函数查看对象类型，Java使用.getClass()</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_数据类型"><a class="anchor" href="#_数据类型"></a>2.3. 数据类型</h3>
+<div class="paragraph">
+<p>布尔类型表示为bool，而不是Java的boolean</p>
+</div>
+<div class="paragraph">
+<p>bool类型的值为首字母大写的True或False</p>
+</div>
+<div class="paragraph">
+<p>isinstance(obj, type) 同Java的instanceOf()</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_下划线开头"><a class="anchor" href="#_下划线开头"></a>2.4. 下划线开头</h3>
+<div class="paragraph">
+<p>__foo__: 这只是一个约定，是 Python 系统使用不会与用户名冲突的名称的一种方式</p>
+</div>
+<div class="paragraph">
+<p>_foo: 这只是一个约定，是程序员指示变量是私有的（无论在 Python 中是什么意思）的一种方式</p>
+</div>
+<div class="paragraph">
+<p>__foo: 这具有真正的意义：解释器用 _classname__foo 替换这个名称，以确保该名称不会与另一个类中的相似名称重叠。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_init_与_call"><a class="anchor" href="#_init_与_call"></a>2.5. __init__与 __call__</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_列表与数组"><a class="anchor" href="#_列表与数组"></a>2.6. 列表与数组</h3>
+<div class="paragraph">
+<p>Python也支持列表(list)类型和数组(array)类型</p>
+</div>
+<div class="paragraph">
+<p>列表是由一系列按特定顺序排列的元素组成，可以将任何东西加入列表中，其中的元素之间没有任何关系；</p>
+</div>
+<div class="paragraph">
+<p>Python中的列表(list)用于顺序存储结构。它可以方便、高效的的添加删除元素，并且列表中的元素可以是多种类型。</p>
+</div>
+<div class="paragraph">
+<p>数组也就是一个同一类型的数据的有限集合。</p>
+</div>
+<div class="paragraph">
+<p>列表list与数组array的相同点是都可以根据索引来取其中的元素</p>
+</div>
+<div class="paragraph">
+<p>列表list与数组array的不同点：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>列表list中的元素的数据类型可以不一样。数组array里的元素的数据类型必须一样；</p>
+</li>
+<li>
+<p>相对于array，列表会使用更多的存储空间</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>实际开发中很少使用array，需要数组的场景中更多地会使用Numpy的数组</p>
+</div>
+<div class="paragraph">
+<p>Python中的List时间复杂度与Java的ArrayList一样</p>
+</div>
+<div class="paragraph">
+<p>列表获取子列表比较简单可以使用list[0:2]的方式</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_list_vs_tuple"><a class="anchor" href="#_list_vs_tuple"></a>2.7. list vs tuple</h3>
+<div class="paragraph">
+<p>list与tuple都可以存储多个不同类型的数据，但tuple是不可变的。</p>
+</div>
+<div class="paragraph">
+<p>编写Java代码时有时希望方法能返回彼此关联的多个数据(例如返回一个人的性别和年龄)，一种方式是将这些数据封装为一个实体类，
+另一种方式是返回一个集合或者数组，这些方法实际上都不及tuple更合适。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_类"><a class="anchor" href="#_类"></a>2.8. 类</h3>
+<div class="paragraph">
+<p>Python所有变量都有对应的类，比如int类，没有Java中所谓的基础类型</p>
+</div>
+<div class="paragraph">
+<p>没有访问限定符，依靠方法名实现，.以<em>开头的变量(\</em>var<em>特殊变量除外) 不能直接用名字访问; 以_开头的变量暗示不要去访问,但不限制直接访问. 以</em>开头的变量其实可以用_className__var来访问</p>
+</div>
+<div class="paragraph">
+<p>Python支持多继承，多重继承时, 若多个父类中有相同的方法, 则排在前的父类将覆盖后面的,则越靠前越”主类”. 即使主类的方法源自父类的父类, 也依然优先.</p>
+</div>
+<div class="paragraph">
+<p>同样object类是所有类的父类</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_打印对象"><a class="anchor" href="#_打印对象"></a>2.9. 打印对象</h3>
+<div class="paragraph">
+<p>定义 <code>__str__</code> 函数，详情参考 <a href="https://docs.python.org/reference/datamodel.html#object.__str__">官方文档</a></p>
+</div>
+<div class="paragraph">
+<p>id(object)查看对象的内存地址</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_对象比较"><a class="anchor" href="#_对象比较"></a>2.10. 对象比较</h3>
+<div class="paragraph">
+<p>内存地址相等和值相等</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_import"><a class="anchor" href="#_import"></a>2.11. Import</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_依赖管理"><a class="anchor" href="#_依赖管理"></a>2.12. 依赖管理</h3>
+
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

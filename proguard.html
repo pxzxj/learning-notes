@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2022/02/19">
+<title>ProGuard Reference</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>ProGuard Reference</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2022/02/19</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_简介">1. 简介</a>
+<ul class="sectlevel2">
+<li><a href="#_基本功能">1.1. 基本功能</a></li>
+<li><a href="#_入口点entry_points">1.2. 入口点(Entry Points)</a></li>
+<li><a href="#_反射reflection">1.3. 反射(Reflection)</a></li>
+</ul>
+</li>
+<li><a href="#_用法">2. 用法</a>
+<ul class="sectlevel2">
+<li><a href="#_下载">2.1. 下载</a></li>
+<li><a href="#_参数">2.2. 参数</a>
+<ul class="sectlevel3">
+<li><a href="#_输入输出选项inputoutput_options">2.2.1. 输入输出选项(Input/Output Options)</a></li>
+<li><a href="#_保持选项keep_option">2.2.2. 保持选项(keep Option)</a></li>
+<li><a href="#_压缩选项shrinking_options">2.2.3. 压缩选项(Shrinking Options)</a></li>
+<li><a href="#_优化选项optimization_options">2.2.4. 优化选项(Optimization Options)</a></li>
+<li><a href="#_通用选项general_options">2.2.5. 通用选项(General options)</a></li>
+</ul>
+</li>
+<li><a href="#_示例">2.3. 示例</a></li>
+<li><a href="#_常见错误及原因">2.4. 常见错误及原因</a></li>
+</ul>
+</li>
+<li><a href="#_实践">3. 实践</a>
+<ul class="sectlevel2">
+<li><a href="#_入口点分析">3.1. 入口点分析</a></li>
+<li><a href="#_编写配置文件">3.2. 编写配置文件</a></li>
+<li><a href="#_其它说明">3.3. 其它说明</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_简介"><a class="anchor" href="#_简介"></a>1. 简介</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_基本功能"><a class="anchor" href="#_基本功能"></a>1.1. 基本功能</h3>
+<div class="paragraph">
+<p>ProGuard是一个压缩、优化和混淆Java字节码文件的免费的工具，压缩步骤它会检测并移除不会使用的类、方法、字段和class属性，优化步骤会分析和优化方法的字节码，以更高效的语法实现原有逻辑，混淆步骤使用简短无意义的字母序列重命名类、方法、字段；这三步完成后还会对生成的字节码做预验证并添加预验证信息保证文件格式正确。最终处理后的字节码比原文件小但执行更高效且很难反向工程。</p>
+</div>
+<div class="paragraph">
+<p>ProGuard的处理流程可以用下图来表示，通常将待混淆的所有类打成jar包进行处理，最终也输出为jar包，需要注意的是整个处理过程需要依赖库的参与，如常见的WEB-INF/lib下的所有jar包或者pom.xml中的所有dependency，也就是下图中的Library jars，依赖库在处理前后不发生变化。</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/proguard.png" alt="proguard">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_入口点entry_points"><a class="anchor" href="#_入口点entry_points"></a>1.2. 入口点(Entry Points)</h3>
+<div class="paragraph">
+<p>为了告知ProGuard哪些代码是需要保留的哪些是需要丢弃或者混淆的，你需要指定一些入口点，典型的入口点包括main方法、Servlet、Controller等。<br>
+压缩步骤中，ProGuard从这些入口点出发，根据方法和属性的调用关系确定其它需要保留的类或属性，最终未被引用的类或成员被移除。<br>
+优化步骤中，ProGuard尽力优化代码，上一步中保留下来的类或方法除入口点外会被声明为final，未使用的方法参数会被移除，多个方法的逻辑可能会合并到一个方法内实现。<br>
+混淆步骤中，ProGuard重命名类和成员，主要针对上一步中保留下来的除入口点外的类和成员，通常是使用一个简短的英文字母进行重命名，当然也可以手动指定重命名前后的名称映射关系。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_反射reflection"><a class="anchor" href="#_反射reflection"></a>1.3. 反射(Reflection)</h3>
+<div class="paragraph">
+<p>反射是Java语言的强大特性之一，但也经常会带来一些特殊问题，一个常见场景是将全类名声明在配置文件中，在代码中使用Class.forName()生成实例对象，为了保证对应的类不会在压缩步骤中被删除必须将其声明为入口点。
+然而ProGuard也能自动探测并处理下面几种反射语法：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Class.forName("SomeClass")</p>
+</li>
+<li>
+<p>SomeClass.class</p>
+</li>
+<li>
+<p>SomeClass.class.getField("someField")</p>
+</li>
+<li>
+<p>SomeClass.class.getDeclaredField("someField")</p>
+</li>
+<li>
+<p>SomeClass.class.getMethod("someMethod", null)</p>
+</li>
+<li>
+<p>SomeClass.class.getMethod("someMethod", new Class[] { A.class,&#8230;&#8203; })</p>
+</li>
+<li>
+<p>SomeClass.class.getDeclaredMethod("someMethod", null)</p>
+</li>
+<li>
+<p>SomeClass.class.getDeclaredMethod("someMethod", new Class[] { A.class,&#8230;&#8203; })</p>
+</li>
+<li>
+<p>AtomicIntegerFieldUpdater.newUpdater(SomeClass.class, "someField")</p>
+</li>
+<li>
+<p>AtomicLongFieldUpdater.newUpdater(SomeClass.class, "someField")</p>
+</li>
+<li>
+<p>AtomicReferenceFieldUpdater.newUpdater(SomeClass.class, SomeType.class, "someField")</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>上述示例虽然使用了反射，但类名或者方法名、属性名都已经确定，ProGuard会识别这些类或成员进行保留，在混淆步骤中如果对应类或成员被重命名，这些反射代码也被相应更新。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_用法"><a class="anchor" href="#_用法"></a>2. 用法</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_下载"><a class="anchor" href="#_下载"></a>2.1. 下载</h3>
+<div class="paragraph">
+<p>在 <a href="https://sourceforge.net/projects/proguard/">sourceforge</a> 页面中点击Download下载ProGuard
+解压后的文件夹中bin目录有proguard.bat和proguardgui.bat两个脚本可以在windows下运行, 前者是在命令行下运行，后者可以打开一个图形界面；类似的有Unix环境下运行的.sh脚本</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_参数"><a class="anchor" href="#_参数"></a>2.2. 参数</h3>
+<div class="paragraph">
+<p>要用ProGuard处理一个web项目需要用到它的诸多参数，还要指定多个类和对应的方法，这些配置内容较多所以通常会将其写在一个文件中供ProGuard使用，最终执行命令如下，</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">bin/proguard @myconfig.pro</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>其中 <code>myconfig.pro</code> 就是包含所有配置的文件，文件中可以按行指定不同的配置参数，#开头的行为注释信息。<br>
+ProGuard的参数主要可分为如下几组, 这部分建议访参考 <a href="https://www.guardsquare.com/en/products/proguard/manual/usage">官方网站</a></p>
+</div>
+<div class="sect3">
+<h4 id="_输入输出选项inputoutput_options"><a class="anchor" href="#_输入输出选项inputoutput_options"></a>2.2.1. 输入输出选项(Input/Output Options)</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">@filename </dt>
+<dd>
+<p>-include filename的缩写形式</p>
+</dd>
+<dt class="hdlist1">-include filename </dt>
+<dd>
+<p>读取文件中所有选项, filename为绝对路径或相对路径, 相对路径可以和下面的-basedirectory配合使用<br>
+filename也能以尖括号的方式使用Java系统属性, 如&lt;java.home&gt;/lib/rt.jar, &lt;user.home&gt;指用户家目录, &lt;user.dir&gt;表示当前目录</p>
+</dd>
+<dt class="hdlist1">-basedirectory directoryname </dt>
+<dd>
+<p>指定文件所在的目录名, 此参数必须在-include前使用</p>
+</dd>
+<dt class="hdlist1">-injars class_path </dt>
+<dd>
+<p>class_path由多个个体(entrty)组成, 每个个体可以是class文件的任何表示形式, 如常见的class目录、apk文件、jar文件、aar文件、war文件、ear文件、jmod文件、zip文件, 多个个体使用路径分隔符分隔(Unix使用冒号:,Windows使用分号;), entry的顺序决定了它的优先级</p>
+</dd>
+<dt class="hdlist1">-outjars class_path </dt>
+<dd>
+<p>同上, 多个injar可以聚合为一个outjar, 同样一个injar也可以通过filter拆分为多个outjar</p>
+</dd>
+<dt class="hdlist1">-libraryjars class_path </dt>
+<dd>
+<p>injar需要依赖的jar包</p>
+</dd>
+<dt class="hdlist1">-skipnonpubliclibraryclasses </dt>
+<dd>
+<p>跳过-libraryjars中非public的类, 这样可以提升处理速度和减少Proguard的内存占用。 默认Proguard会读取-libraryjars中所有的类, 但通常非public的类不会和injars中的类直接相关</p>
+</dd>
+<dt class="hdlist1">-dontskipnonpubliclibraryclasses </dt>
+<dd>
+<p>4.5版本后这是默认设置</p>
+</dd>
+<dt class="hdlist1">-dontskipnonpubliclibraryclassmembers </dt>
+<dd>
+<p>是否跳过非public的属性和方法, 默认会跳过</p>
+</dd>
+<dt class="hdlist1">-keepdirectories [directory_filter] </dt>
+<dd>
+<p>为了减小jar文件体积, 默认所有目录都会被删除, 仅指定-keepdirectories则所有目录都会保留, 指定directory_filter时仅保留filter筛选的目录</p>
+</dd>
+<dt class="hdlist1">-target version </dt>
+<dd>
+<p>指定目标class文件的版本号, 可以是1.0,&#8230;&#8203;, 1.9, 或者是简短的5,&#8230;&#8203;, 12, 默认版本号保持不变</p>
+</dd>
+<dt class="hdlist1">-forceprocessing </dt>
+<dd>
+<p>强制处理, 即使outjar已经存在</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_保持选项keep_option"><a class="anchor" href="#_保持选项keep_option"></a>2.2.2. 保持选项(keep Option)</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">-keep [,modifier,&#8230;&#8203;] class_specification </dt>
+<dd>
+<p>modifier包括如下类型</p>
+<div class="ulist">
+<ul>
+<li>
+<p>includedescriptorclasses： -keep选项声明的所有属性和方法归属的类不做任何修改</p>
+</li>
+<li>
+<p>includecode： -keep选项声明的方法的所有属性都不做任何修改, 例如不能被优化和混淆</p>
+</li>
+<li>
+<p>allowshrinking： -keep选项声明的入口点能被移除，但不能优化或混淆</p>
+</li>
+<li>
+<p>allowoptimization：-keep选项声明的入口点能被优化，但不能移除或混淆</p>
+</li>
+<li>
+<p>allowobfuscation：-keep选项声明的入口点能被混淆，但不能移除或优化</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">示例</div>
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keep public class * extends android.app.Activity
+-keep public class * implements javax.servlet.Servlet
+-keep public class * {
+public protected *;
+}</code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">-keepclassmembers [,modifier,&#8230;&#8203;] class_specification </dt>
+<dd>
+<p>保留类成员不变</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">示例</div>
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keepclassmembers class * implements java.io.Serializable {
+private static final java.io.ObjectStreamField[] serialPersistentFields;
+private void writeObject(java.io.ObjectOutputStream);
+private void readObject(java.io.ObjectInputStream);
+java.lang.Object writeReplace();
+java.lang.Object readResolve();
+}</code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">-keepclasseswithmembers [,modifier,&#8230;&#8203;] class_specification </dt>
+<dd>
+<p>保留满足条件的类</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">示例</div>
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keepclasseswithmembers public class * {
+public static void main(java.lang.String[]);
+}</code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">-keepnames class_specification </dt>
+<dd>
+<p>-keep,allowshrinkingclass_specification的缩写形式</p>
+</dd>
+<dt class="hdlist1">-keepclassmembernames class_specification </dt>
+<dd>
+<p>-keepclassmembers,allowshrinkingclass_specification的缩写形式</p>
+</dd>
+<dt class="hdlist1">-keepclasseswithmembernames class_specification </dt>
+<dd>
+<p>-keepclasseswithmembers,allowshrinkingclass_specification的缩写形式，保留类和成员的名称</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">示例</div>
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keepclasseswithmembernames,includedescriptorclasses class * {
+native &lt;methods&gt;;
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_压缩选项shrinking_options"><a class="anchor" href="#_压缩选项shrinking_options"></a>2.2.3. 压缩选项(Shrinking Options)</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">-dontshrink </dt>
+<dd>
+<p>不压缩, 默认会移除没用的类或成员, 每个优化步骤完成后都会执行一次收缩</p>
+</dd>
+<dt class="hdlist1">-printusage [filename] </dt>
+<dd>
+<p>把没用的代码输出到文件或标准输出</p>
+</dd>
+<dt class="hdlist1">-whyareyoukeeping class_specification </dt>
+<dd>
+<p>输出保留类的原因</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_优化选项optimization_options"><a class="anchor" href="#_优化选项optimization_options"></a>2.2.4. 优化选项(Optimization Options)</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">-dontoptimize </dt>
+<dd>
+<p>不优化, 内联并且合并类或成员, 在字节码级别上优化所有方法</p>
+</dd>
+<dt class="hdlist1">-optimizations [optimization_filter] </dt>
+<dd>
+<p>更细粒度级别上指定优化打开和关闭, 这是高级选项</p>
+</dd>
+<dt class="hdlist1">-optimizationpasses n </dt>
+<dt class="hdlist1">-assumenosideeffects class_specification </dt>
+<dt class="hdlist1">-assumenoexternalsideeffects class_specification </dt>
+<dt class="hdlist1">-assumenoescapingparameters class_specification </dt>
+<dt class="hdlist1">-assumenoexternalreturnvalues class_specification </dt>
+<dt class="hdlist1">-assumevalues class_specification </dt>
+<dt class="hdlist1">-allowaccessmodification </dt>
+<dd>
+<p>优化时允许扩大权限实现内联, 如修改属性为public删除get/set方法, 此选项需谨慎使用</p>
+</dd>
+<dt class="hdlist1">-mergeinterfacesaggressively </dt>
+<dd>
+<p>==== 混淆选项(Obfuscation options)</p>
+</dd>
+<dt class="hdlist1">-dontobfuscate </dt>
+<dd>
+<p>不混淆, 默认会混淆</p>
+</dd>
+<dt class="hdlist1">-printmapping [filename] </dt>
+<dd>
+<p>打印新旧名称的对应关系</p>
+</dd>
+<dt class="hdlist1">-applymapping filename </dt>
+<dd>
+<p>根据文件中指定的对应关系进行重命名，通常是在-printmapping生成文件基础上修改</p>
+</dd>
+<dt class="hdlist1">-obfuscationdictionary filename </dt>
+<dt class="hdlist1">-classobfuscationdictionary filename </dt>
+<dt class="hdlist1">-packageobfuscationdictionary filename </dt>
+<dt class="hdlist1">-overloadaggressively </dt>
+<dt class="hdlist1">-useuniqueclassmembernames </dt>
+<dt class="hdlist1">-dontusemixedcaseclassnames </dt>
+<dt class="hdlist1">-keeppackagenames [package_filter] </dt>
+<dt class="hdlist1">-flattenpackagehierarchy [package_name] </dt>
+<dt class="hdlist1">-repackageclasses [package_name] </dt>
+<dd>
+<p>重命名包名, 使代码更难理解, package_name没有值或值为''时包名会完全移除, 类中基于包名获取资源文件的代码会因此失效, 如Freemarker模板, 需谨慎使用</p>
+</dd>
+<dt class="hdlist1">-keepattributes [attribute_filter] </dt>
+<dd>
+<p>保留一些可选属性, 混淆时生效, 常见可选属性包括</p>
+<div class="ulist">
+<ul>
+<li>
+<p>InnerClasses： 类和内部类的链接关系</p>
+</li>
+<li>
+<p>MethodParameters： 方法参数名和参数修饰符</p>
+</li>
+<li>
+<p>Exceptions： 方法可能抛出的异常</p>
+</li>
+<li>
+<p>LineNumberTable： 方法 的行号</p>
+</li>
+<li>
+<p>RuntimeVisibleAnnotations： 运行时生效的注解</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">示例</div>
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keepattributes Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,\*Annotation*,EnclosingMethod</code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">-keepparameternames </dt>
+<dd>
+<p>保持方法的参数名和参数类型不变, 仅在混淆时生效, 通常在处理类库jar包使用, 因为一些IDE会根据参数名和参数类型给开发者相应帮助, 如自动补全等</p>
+</dd>
+<dt class="hdlist1">-renamesourcefileattribute [string] </dt>
+<dd>
+<p>修改SourceFile和SourceDir的属性值为一个常量, 与keepattributes一起使用</p>
+</dd>
+<dt class="hdlist1">-adaptclassstrings [class_filter] </dt>
+<dt class="hdlist1">-adaptresourcefilenames [file_filter] </dt>
+<dt class="hdlist1">-adaptresourcefilecontents [file_filter] </dt>
+<dd>
+<p>==== 预验证选项(Preverification options)</p>
+</dd>
+<dt class="hdlist1">-dontpreverify </dt>
+<dd>
+<p>不对class文件预验证, 不常用</p>
+</dd>
+<dt class="hdlist1">-microedition </dt>
+<dt class="hdlist1">-android </dt>
+<dd>
+<p>表示class文件是基于安卓平台的, ProGuard处理时会考虑诸多安卓相关的特性</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_通用选项general_options"><a class="anchor" href="#_通用选项general_options"></a>2.2.5. 通用选项(General options)</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>-verbose</p>
+</li>
+<li>
+<p>-dontnote [class_filter]</p>
+</li>
+<li>
+<p>-dontwarn [class_filter]</p>
+</li>
+<li>
+<p>-ignorewarnings</p>
+</li>
+<li>
+<p>-printconfiguration [filename]</p>
+</li>
+<li>
+<p>-dump [filename]</p>
+</li>
+<li>
+<p>-addconfigurationdebugging</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_示例"><a class="anchor" href="#_示例"></a>2.3. 示例</h3>
+<div class="paragraph">
+<p>本节主要从官网Examples部分选取部分JavaEE相关示例，可以在官网查看 <a href="https://www.guardsquare.com/en/products/proguard/manual/examples">完整示例</a></p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 1. 保留所有Servlet</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-injars      in.jar
+-outjars     out.jar
+-libraryjars &lt;java.home&gt;/lib/rt.jar
+-libraryjars /usr/local/java/servlet/servlet.jar
+-printseeds
+
+-keep public class * implements javax.servlet.Servlet</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="exampleblock">
+<div class="title">Example 2. 保留枚举的values()和valueOf()方法</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keepclassmembers,allowoptimization enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="exampleblock">
+<div class="title">Example 3. 保留序列化的类的重要方法</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keepclassmembers class * implements java.io.Serializable {
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="exampleblock">
+<div class="title">Example 4. 保留POJO的方法</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keep class mybeans.** {
+    void set*(***);
+    void set*(int, ***);
+
+    boolean is*();
+    boolean is*(int);
+
+    *** get*();
+    *** get*(int);
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="exampleblock">
+<div class="title">Example 5. 保留注解信息</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keepattributes *Annotation*</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="exampleblock">
+<div class="title">Example 6. 保留依赖注入信息</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-keepclassmembers class * {
+    @org.springframework.beans.factory.annotation.Autowired *;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_常见错误及原因"><a class="anchor" href="#_常见错误及原因"></a>2.4. 常见错误及原因</h3>
+<div class="paragraph">
+<p>命令执行出错时可优先在官网的 <a href="https://www.guardsquare.com/en/products/proguard/manual/troubleshooting">Troubleshooting</a>章节查询对应错误，找不到时再到其它站点搜索</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_实践"><a class="anchor" href="#_实践"></a>3. 实践</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>本章以一个简单的ssm项目为例来说明使用ProGuard完成代码混淆的基本流程</p>
+</div>
+<div class="sect2">
+<h3 id="_入口点分析"><a class="anchor" href="#_入口点分析"></a>3.1. 入口点分析</h3>
+<div class="paragraph">
+<p>从上一节对用法的介绍可以看出使用ProGuard的关键就是配置文件的编写，而配置文件中最重要的部分就是入口点选择，如果不能选对入口点，会使关键的类或成员被移除或重命名，最终处理后的项目无法正常运行。</p>
+</div>
+<div class="paragraph">
+<p>本项目使用了SpringMVC + Spring + Mybatis + Shiro框架进行构建，所以在代码混淆时要注意以下入口点</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Controller类的方法用于处理@RequestMapping注解URL对应的请求，所以Controller类和它的所有方法都要保留</p>
+</li>
+<li>
+<p>Controller类的方法名可以变化，但方法参数名不能变化，否则无法完成参数赋值</p>
+</li>
+<li>
+<p>AOP声明中涉及的类的包名和方法名不能变化，此项目中AOP主要用于声明式事务，对Service类的add、update、delete开头的方法做事务控制，这些类和对应的方法名必须声明为入口点</p>
+</li>
+<li>
+<p>Mybatis使用的Mapper接口名、包名、方法名不能变化，sql查询结果映射的实体类名、属性名不能变化，这些也需要声明为入口点</p>
+</li>
+<li>
+<p>web.xml中声明的过滤器、监听器以及Spring配置文件中涉及的其它Bean定义都需要声明为入口点</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_编写配置文件"><a class="anchor" href="#_编写配置文件"></a>3.2. 编写配置文件</h3>
+<div class="paragraph">
+<p>根据第一步的入口点分析编写如下配置文件</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">-injars      example.jar
+-outjars     example_out.jar
+-libraryjars &lt;java.home&gt;/lib/rt.jar
+#jdk中加密相关的jar包
+-libraryjars &lt;java.home&gt;/lib/jce.jar
+#所有maven依赖的目录
+-libraryjars mavenlibs
+#tomcat中的依赖库, 主要是servlet-api
+-libraryjars tomcatlibs
+-printseeds
+#混淆使用的映射文件
+-applymapping classname.map
+-printmapping baseframe.map
+#不提示通知信息
+-dontnote
+#优化时不修饰类或方法为final, 否则无法使用cglib代理
+-optimizations !class/marking/final,!method/marking/final
+
+-renamesourcefileattribute SourceFile
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,*Annotation*,EnclosingMethod,LocalVariableTable,LocalVariableTypeTable
+
+-keepclassmembers enum  * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+#Controller类的属性和方法都保留, 但可以重命名
+-keep,allowobfuscation @org.springframework.web.bind.annotation.RestController public class * {
+	&lt;fields&gt;;
+	&lt;methods&gt;;
+}
+#保留无参构造器, 否则无法实例化为bean, 保留@Autowired声明的属性
+-keepclassmembers class * {
+	&lt;init&gt;();
+	@org.springframework.beans.factory.annotation.Autowired *;
+}
+#保留参数名, 否则Controller方法参数赋值存在问题
+-keepparameternames
+#保留service的包名, 否则声明式事务失效
+-keeppackagenames io.github.**.service
+#保留service中事务相关的方法名, 否则声明式事务失效
+-keepclassmembernames class io.github.**.service.* {
+	*** add*(...);
+	*** save*(...);
+	*** insert*(...);
+	*** update*(...);
+	*** del*(...);
+	*** get*(...);
+	*** find*(...);
+}
+#保留Mapper接口
+-keep interface io.github.**.dao.*Mapper {
+	 &lt;methods&gt;;
+}
+#保留实体类不变化, 否则sql数据映射和Controller参数映射失效
+-keep class io.github.**.entity.* {
+    *;
+}
+#保留Servlet
+-keep,allowoptimization public class * implements javax.servlet.Servlet
+#保留SpringMVC拦截器
+-keep,allowoptimization public class * extends org.springframework.web.servlet.handler.HandlerInterceptorAdapter
+#保留Shiro过滤器
+-keep,allowoptimization public class * extends org.apache.shiro.web.servlet.AdviceFilter
+#保留Shiro的Realm
+-keep,allowoptimization public class * extends org.apache.shiro.realm.AuthorizingRealm
+#保留SpringMVC的过滤器
+-keep public class * extends org.springframework.web.filter.OncePerRequestFilter {
+	*;
+}
+
+# 移除不会产生边际效用的方法
+# Remove - System method calls. Remove all invocations of System
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.System {
+    public static long currentTimeMillis();
+    static java.lang.Class getCallerClass();
+    public static int identityHashCode(java.lang.Object);
+    public static java.lang.SecurityManager getSecurityManager();
+    public static java.util.Properties getProperties();
+    public static java.lang.String getProperty(java.lang.String);
+    public static java.lang.String getenv(java.lang.String);
+    public static java.lang.String mapLibraryName(java.lang.String);
+    public static java.lang.String getProperty(java.lang.String,java.lang.String);
+}
+
+# Remove - Math method calls. Remove all invocations of Math
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.Math {
+    public static double sin(double);
+    public static double cos(double);
+    public static double tan(double);
+    public static double asin(double);
+    public static double acos(double);
+    public static double atan(double);
+    public static double toRadians(double);
+    public static double toDegrees(double);
+    public static double exp(double);
+    public static double log(double);
+    public static double log10(double);
+    public static double sqrt(double);
+    public static double cbrt(double);
+    public static double IEEEremainder(double,double);
+    public static double ceil(double);
+    public static double floor(double);
+    public static double rint(double);
+    public static double atan2(double,double);
+    public static double pow(double,double);
+    public static int round(float);
+    public static long round(double);
+    public static double random();
+    public static int abs(int);
+    public static long abs(long);
+    public static float abs(float);
+    public static double abs(double);
+    public static int max(int,int);
+    public static long max(long,long);
+    public static float max(float,float);
+    public static double max(double,double);
+    public static int min(int,int);
+    public static long min(long,long);
+    public static float min(float,float);
+    public static double min(double,double);
+    public static double ulp(double);
+    public static float ulp(float);
+    public static double signum(double);
+    public static float signum(float);
+    public static double sinh(double);
+    public static double cosh(double);
+    public static double tanh(double);
+    public static double hypot(double,double);
+    public static double expm1(double);
+    public static double log1p(double);
+}
+
+# Remove - Number method calls. Remove all invocations of Number
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.* extends java.lang.Number {
+    public static java.lang.String toString(byte);
+    public static java.lang.Byte valueOf(byte);
+    public static byte parseByte(java.lang.String);
+    public static byte parseByte(java.lang.String,int);
+    public static java.lang.Byte valueOf(java.lang.String,int);
+    public static java.lang.Byte valueOf(java.lang.String);
+    public static java.lang.Byte decode(java.lang.String);
+    public int compareTo(java.lang.Byte);
+    public static java.lang.String toString(short);
+    public static short parseShort(java.lang.String);
+    public static short parseShort(java.lang.String,int);
+    public static java.lang.Short valueOf(java.lang.String,int);
+    public static java.lang.Short valueOf(java.lang.String);
+    public static java.lang.Short valueOf(short);
+    public static java.lang.Short decode(java.lang.String);
+    public static short reverseBytes(short);
+    public int compareTo(java.lang.Short);
+    public static java.lang.String toString(int,int);
+    public static java.lang.String toHexString(int);
+    public static java.lang.String toOctalString(int);
+    public static java.lang.String toBinaryString(int);
+    public static java.lang.String toString(int);
+    public static int parseInt(java.lang.String,int);
+    public static int parseInt(java.lang.String);
+    public static java.lang.Integer valueOf(java.lang.String,int);
+    public static java.lang.Integer valueOf(java.lang.String);
+    public static java.lang.Integer valueOf(int);
+    public static java.lang.Integer getInteger(java.lang.String);
+    public static java.lang.Integer getInteger(java.lang.String,int);
+    public static java.lang.Integer getInteger(java.lang.String,java.lang.Integer);
+    public static java.lang.Integer decode(java.lang.String);
+    public static int highestOneBit(int);
+    public static int lowestOneBit(int);
+    public static int numberOfLeadingZeros(int);
+    public static int numberOfTrailingZeros(int);
+    public static int bitCount(int);
+    public static int rotateLeft(int,int);
+    public static int rotateRight(int,int);
+    public static int reverse(int);
+    public static int signum(int);
+    public static int reverseBytes(int);
+    public int compareTo(java.lang.Integer);
+    public static java.lang.String toString(long,int);
+    public static java.lang.String toHexString(long);
+    public static java.lang.String toOctalString(long);
+    public static java.lang.String toBinaryString(long);
+    public static java.lang.String toString(long);
+    public static long parseLong(java.lang.String,int);
+    public static long parseLong(java.lang.String);
+    public static java.lang.Long valueOf(java.lang.String,int);
+    public static java.lang.Long valueOf(java.lang.String);
+    public static java.lang.Long valueOf(long);
+    public static java.lang.Long decode(java.lang.String);
+    public static java.lang.Long getLong(java.lang.String);
+    public static java.lang.Long getLong(java.lang.String,long);
+    public static java.lang.Long getLong(java.lang.String,java.lang.Long);
+    public static long highestOneBit(long);
+    public static long lowestOneBit(long);
+    public static int numberOfLeadingZeros(long);
+    public static int numberOfTrailingZeros(long);
+    public static int bitCount(long);
+    public static long rotateLeft(long,int);
+    public static long rotateRight(long,int);
+    public static long reverse(long);
+    public static int signum(long);
+    public static long reverseBytes(long);
+    public int compareTo(java.lang.Long);
+    public static java.lang.String toString(float);
+    public static java.lang.String toHexString(float);
+    public static java.lang.Float valueOf(java.lang.String);
+    public static java.lang.Float valueOf(float);
+    public static float parseFloat(java.lang.String);
+    public static boolean isNaN(float);
+    public static boolean isInfinite(float);
+    public static int floatToIntBits(float);
+    public static int floatToRawIntBits(float);
+    public static float intBitsToFloat(int);
+    public static int compare(float,float);
+    public boolean isNaN();
+    public boolean isInfinite();
+    public int compareTo(java.lang.Float);
+    public static java.lang.String toString(double);
+    public static java.lang.String toHexString(double);
+    public static java.lang.Double valueOf(java.lang.String);
+    public static java.lang.Double valueOf(double);
+    public static double parseDouble(java.lang.String);
+    public static boolean isNaN(double);
+    public static boolean isInfinite(double);
+    public static long doubleToLongBits(double);
+    public static long doubleToRawLongBits(double);
+    public static double longBitsToDouble(long);
+    public static int compare(double,double);
+    public boolean isNaN();
+    public boolean isInfinite();
+    public int compareTo(java.lang.Double);
+    public byte byteValue();
+    public short shortValue();
+    public int intValue();
+    public long longValue();
+    public float floatValue();
+    public double doubleValue();
+    public int compareTo(java.lang.Object);
+    public boolean equals(java.lang.Object);
+    public int hashCode();
+    public java.lang.String toString();
+}
+
+# Remove - String method calls. Remove all invocations of String
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.String {
+    public static java.lang.String copyValueOf(char[]);
+    public static java.lang.String copyValueOf(char[],int,int);
+    public static java.lang.String valueOf(boolean);
+    public static java.lang.String valueOf(char);
+    public static java.lang.String valueOf(char[]);
+    public static java.lang.String valueOf(char[],int,int);
+    public static java.lang.String valueOf(double);
+    public static java.lang.String valueOf(float);
+    public static java.lang.String valueOf(int);
+    public static java.lang.String valueOf(java.lang.Object);
+    public static java.lang.String valueOf(long);
+    public boolean contentEquals(java.lang.StringBuffer);
+    public boolean endsWith(java.lang.String);
+    public boolean equalsIgnoreCase(java.lang.String);
+    public boolean equals(java.lang.Object);
+    public boolean matches(java.lang.String);
+    public boolean regionMatches(boolean,int,java.lang.String,int,int);
+    public boolean regionMatches(int,java.lang.String,int,int);
+    public boolean startsWith(java.lang.String);
+    public boolean startsWith(java.lang.String,int);
+    public byte[] getBytes();
+    public byte[] getBytes(java.lang.String);
+    public char charAt(int);
+    public char[] toCharArray();
+    public int compareToIgnoreCase(java.lang.String);
+    public int compareTo(java.lang.Object);
+    public int compareTo(java.lang.String);
+    public int hashCode();
+    public int indexOf(int);
+    public int indexOf(int,int);
+    public int indexOf(java.lang.String);
+    public int indexOf(java.lang.String,int);
+    public int lastIndexOf(int);
+    public int lastIndexOf(int,int);
+    public int lastIndexOf(java.lang.String);
+    public int lastIndexOf(java.lang.String,int);
+    public int length();
+    public java.lang.CharSequence subSequence(int,int);
+    public java.lang.String concat(java.lang.String);
+    public java.lang.String replaceAll(java.lang.String,java.lang.String);
+    public java.lang.String replace(char,char);
+    public java.lang.String replaceFirst(java.lang.String,java.lang.String);
+    public java.lang.String[] split(java.lang.String);
+    public java.lang.String[] split(java.lang.String,int);
+    public java.lang.String substring(int);
+    public java.lang.String substring(int,int);
+    public java.lang.String toLowerCase();
+    public java.lang.String toLowerCase(java.util.Locale);
+    public java.lang.String toString();
+    public java.lang.String toUpperCase();
+    public java.lang.String toUpperCase(java.util.Locale);
+    public java.lang.String trim();
+}
+
+# Remove - StringBuffer method calls. Remove all invocations of StringBuffer
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.StringBuffer {
+    public java.lang.String toString();
+    public char charAt(int);
+    public int capacity();
+    public int codePointAt(int);
+    public int codePointBefore(int);
+    public int indexOf(java.lang.String,int);
+    public int lastIndexOf(java.lang.String);
+    public int lastIndexOf(java.lang.String,int);
+    public int length();
+    public java.lang.String substring(int);
+    public java.lang.String substring(int,int);
+}
+
+# Remove - StringBuilder method calls. Remove all invocations of StringBuilder
+# methods without side effects whose return values are not used.
+-assumenosideeffects public class java.lang.StringBuilder {
+    public java.lang.String toString();
+    public char charAt(int);
+    public int capacity();
+    public int codePointAt(int);
+    public int codePointBefore(int);
+    public int indexOf(java.lang.String,int);
+    public int lastIndexOf(java.lang.String);
+    public int lastIndexOf(java.lang.String,int);
+    public int length();
+    public java.lang.String substring(int);
+    public java.lang.String substring(int,int);
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_其它说明"><a class="anchor" href="#_其它说明"></a>3.3. 其它说明</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>@myconfig.pro最好搭配-basedirectory选项使用且-basedirectory在前，这样配置中的所有文件都可以使用相对路径，最终执行混淆命令如下<br>
+<code>proguard -basedirectory C:/Users/abc/Desktop/proguard6.1.0/test/example @example.pro</code></p>
+</li>
+<li>
+<p>web项目在部署时会将项目内容打包为war形式，因为web容器能够自动解压部署，但ProGuard主要是用于处理字节码文件且要求包名和文件夹路径一致，所以需要将所有class文件打包为jar形式并指定依赖库进行处理，可以在target/classes目录下执行如下命令完成打包<br>
+<code>jar -cvf example.jar io</code></p>
+</li>
+<li>
+<p>由于SpringMVC大量使用注解创建Bean，而Bean的名称默认是类名首字母小写，混淆后的class在不同包下存在大量的重复类名如下图，这样会出现Bean名称冲突的问题，由于ProGuard并未提供保证类名唯一的选项，所以需要使用-applymapping参数指定混淆前后类名的对应关系如下，从而保证混淆后的类名不重复，不过此文件内容也不必完全自行编写，可以在-printmapping生成的文件基础上修改即可</p>
+</li>
+<li>
+<p>org.slf4j.Logger属性必须声明为static或final如下，否则不能正确处理</p>
+</li>
+<li>
+<p>在入口点分析一节中已经分析了必须保持Controller的方法参数名不变才能实现参数赋值，实际上SpringMVC也支持名称不同时的参数赋值，即给方法参数添加@RequestParam注解，注解中声明请求参数名，所以只要在开发时简单类型的参数都使用@RequestParam注解，那么方法的参数名也可以变化</p>
+</li>
+<li>
+<p>在入口点分析一节中已经分析了Mybatis的Mapper文件对应的接口不能变化，否则所有查询都会失效，这一点实际上也可以规避，只要在混淆后根据前后接口名和方法名的映射关系修改对应Mapper文件内容即可，这一步需要自行开发工具进行实现。</p>
+</li>
+<li>
+<p>实践后发现方法参数名是否变化取决于是否保留LocalVariableTable属性，而与-keepparameternames无关，保留LocalVariableTable属性时所有方法参数和局部变量名称都保持不变，不保留时都重命名，而且参数名是否保留无法在类或方法的粒度进行控制，仅能做全局控制。</p>
+</li>
+<li>
+<p>SpringMVC中Controller类的方法参数名必须与前端参数名对应，要注意混淆可能导致的传参失败问题。</p>
+</li>
+<li>
+<p>MyBatis在Mapper文件中声明对应的接口和方法，要注意混淆可能导致的Mapper文件失效问题</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

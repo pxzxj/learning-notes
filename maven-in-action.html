@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com">
+<title>Maven实战</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Maven实战</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="revdate">2022/06/09</span>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_坐标规划">1. 坐标规划</a>
+<ul class="sectlevel2">
+<li><a href="#_groupid">1.1. groupId</a></li>
+<li><a href="#_artifactid">1.2. artifactId</a></li>
+<li><a href="#_version">1.3. version</a></li>
+<li><a href="#_classifier">1.4. classifier</a></li>
+</ul>
+</li>
+<li><a href="#_pom重构">2. POM重构</a>
+<ul class="sectlevel2">
+<li><a href="#_前提">2.1. 前提</a></li>
+<li><a href="#_增还是删">2.2. 增还是删</a></li>
+<li><a href="#_重复还是重复">2.3. 重复，还是重复</a></li>
+<li><a href="#_消除多模块依赖配置重复">2.4. 消除多模块依赖配置重复</a></li>
+<li><a href="#_消除多模块插件配置重复">2.5. 消除多模块插件配置重复</a></li>
+</ul>
+</li>
+<li><a href="#_打包">3. 打包</a>
+<ul class="sectlevel2">
+<li><a href="#_packaging_的含义">3.1. Packaging 的含义</a></li>
+<li><a href="#_源码包和_javadoc_包">3.2. 源码包和 Javadoc 包</a></li>
+<li><a href="#_可执行_cli_包">3.3. 可执行 CLI 包</a></li>
+<li><a href="#_自定义格式包">3.4. 自定义格式包</a></li>
+</ul>
+</li>
+<li><a href="#_插件">4. 插件</a>
+<ul class="sectlevel2">
+<li><a href="#_maven_antrun_plugin">4.1. maven-antrun-plugin</a></li>
+<li><a href="#_maven_archetype_plugin">4.2. maven-archetype-plugin</a></li>
+<li><a href="#_maven_assembly_plugin">4.3. maven-assembly-plugin</a></li>
+<li><a href="#_maven_dependency_plugin">4.4. maven-dependency-plugin</a></li>
+<li><a href="#_maven_enforcer_plugin">4.5. maven-enforcer-plugin</a></li>
+<li><a href="#_maven_help_plugin">4.6. maven-help-plugin</a></li>
+<li><a href="#_maven_release_plugin">4.7. maven-release-plugin</a></li>
+<li><a href="#_maven_resources_plugin">4.8. maven-resources-plugin</a></li>
+<li><a href="#_maven_surefire_plugin">4.9. maven-surefire-plugin</a></li>
+<li><a href="#_exec_maven_plugin">4.10. exec-maven-plugin</a></li>
+<li><a href="#_versions_maven_plugin">4.11. versions-maven-plugin</a></li>
+</ul>
+</li>
+<li><a href="#_私服">5. 私服</a>
+<ul class="sectlevel2">
+<li><a href="#_下载依赖">5.1. 下载依赖</a>
+<ul class="sectlevel3">
+<li><a href="#_项目配置">5.1.1. 项目配置</a></li>
+<li><a href="#_全局配置">5.1.2. 全局配置</a></li>
+</ul>
+</li>
+<li><a href="#_上传依赖">5.2. 上传依赖</a>
+<ul class="sectlevel3">
+<li><a href="#_distributionmanagement配置">5.2.1. distributionManagement配置</a></li>
+<li><a href="#_artifactory插件配置">5.2.2. Artifactory插件配置</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>本文根据国内Maven专家许晓斌在InfoQ连载的系列文章 <a href="https://www.infoq.cn/profile/DC5848403A32D1/publish/all">Maven实战</a>以及个人使用经验整理而成，主要介绍Maven的日常使用方法和技巧</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_坐标规划"><a class="anchor" href="#_坐标规划"></a>1. 坐标规划</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>坐标是 Maven 的核心，正确的坐标不但使项目结构直观清晰，也给日常依赖管理带来极大便利，下文结合Spring的坐标介绍一种合理的坐标规划方式</p>
+</div>
+<div class="sect2">
+<h3 id="_groupid"><a class="anchor" href="#_groupid"></a>1.1. groupId</h3>
+<div class="paragraph">
+<p>Spring项目的groupId有两种形式，一种是 <code>org.springframework</code>，Spring Framework的依赖都在此groupId下，例如spring-core、spring-beans、spring-context等，另一种是包含具体的项目名的如 <code>org.springframework.boot</code> 表示Spring Boot项目，<code>org.springframework.security</code> 表示Spring Security项目。可以发现使用 <code>org.springframework</code> 的都是些非常基础的项目，这些基础项目被广泛应用在其它特定功能的项目中。</p>
+</div>
+<div class="paragraph">
+<p>一个企业中一般都有多个业务项目，这些项目也可以参考Spring项目进行groupId规划，不同项目间公共的依赖使用反写的企业域名作为groupId例如 <code>com.baidu</code>，具体业务项目的groupId再加上项目名称例如 <code>com.baidu.tieba</code></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_artifactid"><a class="anchor" href="#_artifactid"></a>1.2. artifactId</h3>
+<div class="paragraph">
+<p>artifactId必须包含项目名称并可选的包含厂商名称，是否包含厂商名称取决于项目名称的特殊性，如果项目名本身已经是一个特殊定义的名称那么artifactId可以不包含厂商名称例如 <code>skywalking</code>、<code>fastjson</code> 等，如果项目名是日常普遍使用的单词如 <code>utils</code>、<code>security</code>、<code>network</code> 等则最好在前面加上厂商名称，<code>spring-security</code>、<code>spring-boot</code> 等显然属于后者。如果项目下还包含多个子项目，子项目再按照功能添加后缀如 <code>spring-security-core</code>、<code>spring-security-config</code>。</p>
+</div>
+<div class="paragraph">
+<p>可以发现项目名既出现在了groupId中也出现在了artifactId中，貌似存在冗余，但这是有必要的。groupId中包含项目名不难理解，而artifactId包含的项目名则是考虑了项目打包后的问题，因为项目打包后生成的文件只包含artifactId，如果artifactId中没有项目名，那么不同项目的同一名称的子项目打包后生成的文件非常容易混淆。假设Spring Security和Spring Session都有一个子项目core，artifactId不包含项目名的坐标是 <code>org.springframework.security:core:1.0</code> 和 <code>org.springframework.session:core:2.0</code>，那么最终打包的后分别生成了core-1.0.jar和core-2.0.jar，这样的两个文件显然容易混淆，若是加上了项目名变成spring-security-core-1.0.jar和spring-session-core-2.0.jar就清楚多了</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_version"><a class="anchor" href="#_version"></a>1.3. version</h3>
+<div class="paragraph">
+<p>Spring团队在2020年的一篇博文 <a href="https://spring.io/blog/2020/04/30/updates-to-spring-versions#project-module-version-changes">Updates to Spring Versions</a>中介绍了Spring项目的版本约定，简而言之，Spring项目的版本格式为 <code>MAJOR.MINOR.PATCH[-MODIFIER]</code> 其中各字段意义如下</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+MAJOR  
+</td>
+<td class="hdlist2">
+<p>增加时表示巨大变更，例如即将到来的Spring Framework 6就新增非常多新特性，并且Java版本要求也从上个版本的Java 8升级为Java 17</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+MINOR  
+</td>
+<td class="hdlist2">
+<p>增加时表示一小部分特性变更</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+PATCH  
+</td>
+<td class="hdlist2">
+<p>增加时表示小的补丁变更</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+MODIFIER  
+</td>
+<td class="hdlist2">
+<p>可选的修饰符表达额外信息，Spring项目使用M、RC、SNAPSHOT表示发布的不同阶段例如2.4.0-M1，正式发布时MODIFIER为空例如2.4.0</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>实际的项目中可以参考Spring的版本号约定结合项目现状制定版本号规则，例如一些小型项目可以只保留 <code>MAJOR</code> 和 <code>MINOR</code> 版本号</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_classifier"><a class="anchor" href="#_classifier"></a>1.4. classifier</h3>
+<div class="paragraph">
+<p>有时除了可执行jar包外还需要提供其它格式的发行包，例如javadoc、source以及自定义的其它格式，这就需要用到classifier，制作特定classifier包的方法参考 <a href="http://maven.apache.org/plugins/maven-assembly-plugin/">Maven Assembly Plugin</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pom重构"><a class="anchor" href="#_pom重构"></a>2. POM重构</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>重构是广大开发者再熟悉不过的技术，在 Martin Fowler 的 <a href="http://book.douban.com/subject_search?search_text=%E9%87%8D%E6%9E%84+Martin+Fowler&amp;cat=1001">《重构——改善既有代码的设计》</a>一书中，其定义为“重构 (名词): 对软件内部结构的一种调整, 目的是在不改变软件之可察行为前提下, 提高其可理解性, 降低其修改成本.”以及“重构 (动词): 使用一系列重构准则 (手法), 在不改变软件之可察行为前提下, 调整其结构.”。重构能够改善软件设计，使代码更易读，更容易找出 bug，并帮助你更快速地编码。较之于一般的代码来说，Maven 的 POM 简单很多，不过随着项目的成长，模块的增多，POM 的内容也会变多，这个时候，我们可以对 POM 进行重构，在保持构建成功的前提下，简化 POM 内容，使其更简洁易懂。</p>
+</div>
+<div class="sect2">
+<h3 id="_前提"><a class="anchor" href="#_前提"></a>2.1. 前提</h3>
+<div class="paragraph">
+<p>大家都知道，如果没有单元测试为前提，对代码进行重构是非常危险的。同样，在重构 POM 之前，项目应该有足够的自动化测试保证 POM 重构不会破坏构建。例如，重构 POM 的时候可能会删除或添加依赖，造成依赖版本变化，依赖范围变化，插件版本变化等等，这些变化可能会导致项目编译失败，或者测试失败。在自动化测试及构建的基础上，最好能够有持续集成环境，以保证 POM 的修改可能造成的问题能够及时的被发现和修复。笔者目前工作的项目有一个对应的持续集成任务，该任务基于 Hudson，每 10 分钟检查一次 SCM，如果发现变更则构建项目，并反馈结果。这样，我就不用担心自己修改 POM 会引入潜在的问题。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_增还是删"><a class="anchor" href="#_增还是删"></a>2.2. 增还是删</h3>
+<div class="paragraph">
+<p>有时候这个答案是很显然的，当你的 POM 中存在一些依赖或者插件配置，但实际代码没有用到这些配置的时候，应该尽早删掉它们以免给人带来困惑。</p>
+</div>
+<div class="paragraph">
+<p>还有一种常见的情况，我们可以删掉一些 POM 的元素，例如 POM 中配置了继承，当前模块与父模块使用同样的 <code>groupId</code> 和 <code>version</code> 时，就可以将和元素删除，因为它们可以从父模块继承而来，重复配置没有什么意义，例如下面的项目中就没有配置 <code>groupId</code> 和 <code>version</code>。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;project&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;parent&gt;
+        &lt;groupId&gt;com.juvenxu.sample&lt;/groupId&gt;
+        &lt;artifactId&gt;sample-parent&lt;/artifactId&gt;
+        &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
+    &lt;/parent&gt;
+    &lt;artifactId&gt;sample-foo&lt;/artifactId&gt;
+    &lt;packaging&gt;jar&lt;/packaging&gt;
+...
+&lt;/project&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>除了删之外，有些时候我们还需要在 POM 中增加一些 XML 元素，目的是为了让 POM 更清晰易读，且保证 Maven 构建的稳定性。考虑如下的插件配置：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;plugin&gt;
+    &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+    &lt;configuration&gt;
+        &lt;source&gt;1.5&lt;/source&gt;
+        &lt;target&gt;1.5&lt;/target&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>虽然没有 <code>groupId</code> 及 <code>version</code>，但这段配置是完全合法的。当插件没有 <code>groupId</code> 配置的时候，Maven 会认为它是官方插件而自动使用 <code>org.apache.maven.plugins</code> 作为 groupId，当插件没有 version 配置的时候，Maven 则会使用最新的版本（Maven 2 会使用最新的版本，包括 SNAPSHOT，而 Maven 3 则只使用最新的非 SNAPSHOT 版本）。这段配置有两个问题，首先，如果让一个不熟悉 Maven 的开发者来看这段配置，他会感到费解，<code>groupId</code> 和 <code>version</code> 究竟是什么呢？这与不清晰的代码是一个意思，有时候一些程序员为了让代码更短，会采用一些奇怪的语法和变量名，虽然代码量是少了，但沟通成本增加了，得不偿失。其次，让 Maven 猜测版本会有潜在的风险，因为插件的最新版本可能会变化，而这种变化对于 Maven 使用者来说通常是隐藏的，特别是在 Maven 2 中，甚至可能引入 SNAPSHOT 版本的插件，这是非常危险的。基于这两个原因，使用插件的时候，我们应当配置清楚 groupId 和 version，如：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.3.2&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;source&gt;1.5&lt;/source&gt;
+        &lt;target&gt;1.5&lt;/target&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>基于类似的原因，在配置项目依赖的时候也应当显式地写明依赖版本，以避免 Maven 在不同的时刻引入不同版本的依赖而导致项目构建的不稳定。</p>
+</div>
+<div class="paragraph">
+<p>除了上面提到的增删点之外，Maven 官方还提供了一个非常有用的 <a href="http://maven.apache.org/plugins/maven-dependency-plugin/">Maven Dependency Plugin</a> 来帮助我们分析项目中哪些依赖配置应该删除，那些依赖配置应该增加。Maven Dependency Plugin 的 analyze 目标能够帮助分析项目依赖，例如运行命令  <strong>mvn dependency:analyze</strong> ，可以看到如下输出：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[INFO] --- maven-dependency-plugin:2.1:analyze (default-cli) @ sample-bar ---
+[WARNING] Used undeclared dependencies found:
+[WARNING]    org.springframework:spring-context:jar:2.5.6:compile
+[WARNING] Unused declared dependencies found:
+[WARNING]    org.springframework:spring-core:jar:2.5.6:compile
+[WARNING]    org.springframework:spring-beans:jar:2.5.6:compile
+[INFO] ------------------------------------------------------------------------</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这里的 Used undeclared dependencies 是指那些在项目中直接使用到的，但没有在 POM 中配置的依赖。例如该例中可能项目中的一些类有关于 spring-context 的 Java import 声明，但 spring-context 这个依赖实际是通过传递性依赖进入 classpath 的，这就意味者潜在的风险。一般来说我们对直接依赖的版本变化会比较清楚，因为那是我们自己直接配置的，但对于传递性依赖的版本变化，就会比较模糊，当这种变化造成构建失败的时候，就很难找到原因。因此我们应当增加这些 Used undeclared dependencies 。</p>
+</div>
+<div class="paragraph">
+<p>依赖分析还提供了 Unused declared dependencies 供我们参考，这表示那些我们配置了，但并未直接使用的依赖。需要注意的时，对于这些依赖，我们不该直接简单地删除。由于 dependency:analyze 只分析编译主代码和测试代码使用的依赖，一些执行测试和运行时的依赖它发现不了，因此还需要人工分析。通常情况，Unused declared dependencies 还是能帮助我们发现一些无用的依赖配置。</p>
+</div>
+<div class="paragraph">
+<p>最后，还一些重要的 POM 内容通常被大多数项目所忽略，这些内容不会影响项目的构建，但能方便信息的沟通，它们包括项目 URL，开发者信息，SCM 信息，持续集成服务器信息等等，这些信息对于开源项目来说尤其重要。对于那些想了解项目的人来说，这些信息能他们帮助找到想要的信息，基于这些信息生成的 Maven 站点也更有价值。相关的 POM 配置很简单，如：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;project&gt;
+    &lt;description&gt;...&lt;/description&gt;
+    &lt;url&gt;...&lt;/url&gt;
+    &lt;licenses&gt;...&lt;/licenses&gt;
+    &lt;organization&gt;...&lt;/organization&gt;
+    &lt;developers&gt;...&lt;/developers&gt;
+    &lt;issueManagement&gt;...&lt;/issueManagement&gt;
+    &lt;ciManagement&gt;...&lt;/ciManagement&gt;
+    &lt;mailingLists&gt;...&lt;/mailingLists&gt;
+    &lt;scm&gt;...&lt;/scm&gt;
+&lt;/project&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_重复还是重复"><a class="anchor" href="#_重复还是重复"></a>2.3. 重复，还是重复</h3>
+<div class="paragraph">
+<p>程序员应该有狗一般的嗅觉，要能嗅到重复这一最常见的坏味道，不管重复披着怎样的外衣，一旦发现，都应该毫不留情地彻底地将其干掉。不要因为 POM 不是产品代码而纵容重复在这里发酵，例如这样一段代码就有重复：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactid&gt;spring-beans&lt;/artifactId&gt;
+    &lt;version&gt;2.5&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactid&gt;spring-context&lt;/artifactId&gt;
+    &lt;version&gt;2.5&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactid&gt;spring-core&lt;/artifactId&gt;
+    &lt;version&gt;2.5&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>你会在一个项目中使用不同版本的 SpringFramework 组件么？答案显然是不会。因此这里就没必要重复写三次2.5，使用 Maven 属性将 2.5 提取出来如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;properties&gt;
+    &lt;spring.version&gt;2.5&lt;/spring.version&gt;
+&lt;/properties&gt;
+&lt;depencencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+        &lt;artifactid&gt;spring-beans&lt;/artifactId&gt;
+        &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+        &lt;artifactid&gt;spring-context&lt;/artifactId&gt;
+        &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+        &lt;artifactid&gt;spring-core&lt;/artifactId&gt;
+        &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/depencencies&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>现在 2.5 只出现在一个地方，虽然代码稍微长了点，但重复消失了，日后升级依赖版本的时候，只需要修改一处，而且也能避免漏掉升级某个依赖。</p>
+</div>
+<div class="paragraph">
+<p>读者可能已经非常熟悉这个例子了，我这里再啰嗦一遍是为了给后面做铺垫，多模块 POM 重构的目的和该例一样，也是为了消除重复，模块越多，潜在的重复就越多，重构就越有必要。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_消除多模块依赖配置重复"><a class="anchor" href="#_消除多模块依赖配置重复"></a>2.4. 消除多模块依赖配置重复</h3>
+<div class="paragraph">
+<p>考虑这样一个不大不小的项目，它有 10 多个 Maven 模块，这些模块分工明确，各司其职，相互之间耦合度比较小，这样大家就能够专注在自己的模块中进行开发而不用过多考虑他人对自己的影响。（好吧，我承认这是比较理想的情况）那我开始对模块 A 进行编码了，首先就需要引入一些常见的依赖如 JUnit、Log4j 等等：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;junit&lt;/groupId&gt;
+    &lt;artifactid&gt;junit&lt;/artifactId&gt;
+    &lt;version&gt;4.8.2&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;log4j&lt;/groupId&gt;
+    &lt;artifactid&gt;log4j&lt;/artifactId&gt;
+    &lt;version&gt;1.2.16&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>我的同事在开发模块 B，他也要用 JUnit 和 Log4j（我们开会讨论过了，统一单元测试框架为 JUnit 而不是 TestNG，统一日志实现为 Log4j 而不是 JUL，为什么做这个决定就不解释了，总之就这么定了）。同事就写了如下依赖配置：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;junit&lt;/groupId&gt;
+    &lt;artifactid&gt;junit&lt;/artifactId&gt;
+    &lt;version&gt;3.8.2&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;log4j&lt;/groupId&gt;
+    &lt;artifactid&gt;log4j&lt;/artifactId&gt;
+    &lt;version&gt;1.2.9&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>看出什么问题来没有？对的，他漏了 JUnit 依赖的 scope，那是因为他不熟悉 Maven。还有什么问题？对，版本！虽然他和我一样都依赖了 JUnit 及 Log4j，但版本不一致啊。我们开会讨论没有细化到具体用什么版本，但如果一个项目同时依赖某个类库的多个版本，那是十分危险的！OK，现在只是两个模块的两个依赖，手动修复一下没什么问题，但如果是 10 个模块，每个模块 10 个依赖或者更多呢？看来这真是一个泥潭，一旦陷进去就难以收拾了。</p>
+</div>
+<div class="paragraph">
+<p>好在 Maven 提供了优雅的解决办法，使用继承机制以及 dependencyManagement 元素就能解决这个问题。注意，是 dependencyMananget 而非 dependencies。也许你已经想到在父模块中配置 dependencies，那样所有子模块都自动继承，不仅达到了依赖一致的目的，还省掉了大段代码，但这么做是有问题的，例如你将模块 C 的依赖 spring-aop 提取到了父模块中，但模块 A 和 B 虽然不需要 spring-aop，但也直接继承了。dependencyManagement 就没有这样的问题， <strong>dependencyManagement 只会影响现有依赖的配置，但不会引入依赖</strong> 。例如我们可以在父模块中配置如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;junit&lt;/groupId&gt;
+        &lt;artifactid&gt;junit&lt;/artifactId&gt;
+        &lt;version&gt;4.8.2&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;log4j&lt;/groupId&gt;
+        &lt;artifactid&gt;log4j&lt;/artifactId&gt;
+        &lt;version&gt;1.2.16&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这段配置不会给任何子模块引入依赖，但如果某个子模块需要使用 JUnit 和 Log4j 的时候，我们就可以简化依赖配置成这样：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;junit&lt;/groupId&gt;
+    &lt;artifactid&gt;junit&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;log4j&lt;/groupId&gt;
+    &lt;artifactid&gt;log4j&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>现在只需要 groupId 和 artifactId，其它元素如 version 和 scope 都能通过继承父 POM 的 dependencyManagement 得到，如果有依赖配置了 exclusions，那节省的代码就更加可观。但重点不在这，重点在于现在能够保证所有模块使用的 JUnit 和 Log4j 依赖配置是一致的。而且子模块仍然可以按需引入依赖，如果我不配置 dependency，父模块中 dependencyManagement 下的 spring-aop 依赖不会对我产生任何影响。</p>
+</div>
+<div class="paragraph">
+<p>也许你已经意识到了，<strong>在多模块 Maven 项目中，dependencyManagement 几乎是必不可少的，因为只有它是才能够有效地帮我们维护依赖一致性</strong>。</p>
+</div>
+<div class="paragraph">
+<p>我们知道 Maven 的继承和 Java 的继承一样，是无法实现多重继承的，如果 10 个、20 个甚至更多模块继承自同一个模块，那么按照我们之前的做法，这个父模块的 dependencyManagement 会包含大量的依赖。如果你想把这些依赖分类以更清晰的管理，那就不可能了，import scope 依赖能解决这个问题。你可以把 dependencyManagement 放到单独的专门用来管理依赖的 POM 中，然后在需要使用依赖的模块中通过 import scope 依赖，就可以引入 dependencyManagement。例如可以写这样一个用于依赖管理的 POM：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;project&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.juvenxu.sample&lt;/groupId&gt;
+    &lt;artifactId&gt;sample-dependency-infrastructure&lt;/artifactId&gt;
+    &lt;packaging&gt;pom&lt;/packaging&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;junit&lt;/groupId&gt;
+            &lt;artifactid&gt;junit&lt;/artifactId&gt;
+            &lt;version&gt;4.8.2&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;log4j&lt;/groupId&gt;
+            &lt;artifactid&gt;log4j&lt;/artifactId&gt;
+            &lt;version&gt;1.2.16&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+    &lt;/dependencyManagement&gt;
+&lt;/project&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>然后我就可以通过非继承的方式来引入这段依赖管理配置：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependencyManagement&gt;
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.juvenxu.sample&lt;/groupId&gt;
+        &lt;artifactid&gt;sample-dependency-infrastructure&lt;/artifactId&gt;
+        &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+        &lt;type&gt;pom&lt;/type&gt;
+        &lt;scope&gt;import&lt;/scope&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;junit&lt;/groupId&gt;
+    &lt;artifactid&gt;junit&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;log4j&lt;/groupId&gt;
+    &lt;artifactid&gt;log4j&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这样，父模块的 POM 就会非常干净，由专门的 packaging 为 pom 的 POM 来管理依赖，也契合的面向对象设计中的单一职责原则。此外，我们还能够创建多个这样的依赖管理 POM，以更细化的方式管理依赖。这种做法与面向对象设计中使用组合而非继承也有点相似的味道。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_消除多模块插件配置重复"><a class="anchor" href="#_消除多模块插件配置重复"></a>2.5. 消除多模块插件配置重复</h3>
+<div class="paragraph">
+<p>与 dependencyManagement 类似的，我们也可以使用 pluginManagement 元素管理插件。一个常见的用法就是我们希望项目所有模块的使用 Maven Compiler Plugin 的时候，都使用 Java 1.5，以及指定 Java 源文件编码为 UTF-8，这时可以在父模块的 POM 中如下配置 pluginManagement：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;build&gt;
+    &lt;pluginManagement&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+            &lt;version&gt;2.3.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;source&gt;1.5&lt;/source&gt;
+                &lt;target&gt;1.5&lt;/target&gt;
+                &lt;encoding&gt;UTF-8&lt;/encoding&gt;
+            &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/pluginManagement&gt;
+&lt;/build&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这段配置会被应用到所有子模块的 maven-compiler-plugin 中，由于 Maven 内置了 maven-compiler-plugin 与生命周期的绑定，因此子模块就不再需要任何 maven-compiler-plugin 的配置了。</p>
+</div>
+<div class="paragraph">
+<p>与依赖配置不同的是，通常所有项目对于任意一个依赖的配置都应该是统一的，但插件却不是这样，例如你可以希望模块 A 运行所有单元测试，模块 B 要跳过一些测试，这时就需要配置 maven-surefire-plugin 来实现，那样两个模块的插件配置就不一致了。这也就是说，简单的把插件配置提取到父 POM 的 pluginManagement 中往往不适合所有情况，那我们在使用的时候就需要注意了，只有那些普适的插件配置才应该使用 pluginManagement 提取到父 POM 中。</p>
+</div>
+<div class="paragraph">
+<p>关于插件 pluginManagement，Maven 并没有提供与 import scope 依赖类似的方式管理，那我们只能借助继承关系，不过好在一般来说插件配置的数量远没有依赖配置那么多，因此这也不是一个问题。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_打包"><a class="anchor" href="#_打包"></a>3. 打包</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>“打包“这个词听起来比较土，比较正式的说法应该是”构建项目软件包“，具体说就是将项目中的各种文件，比如源代码、编译生成的字节码、配置文件、文档，按照规范的格式生成归档，最常见的当然就是 JAR 包和 WAR 包了，复杂点的例子是 Maven 官方下载页面的分发包，它有自定义的格式，方便用户直接解压后就在命令行使用。作为一款”打包工具“，Maven 自然有义务帮助用户创建各种各样的包，规范的 JAR 包和 WAR 包自然不再话下，略微复杂的自定义打包格式也必须支持，本章就介绍一些常用的打包案例以及相关的实现方式，除了前面提到的一些包以外，你还能看到如何生成源码包、Javadoc 包、以及从命令行可直接运行的 CLI 包。</p>
+</div>
+<div class="sect2">
+<h3 id="_packaging_的含义"><a class="anchor" href="#_packaging_的含义"></a>3.1. Packaging 的含义</h3>
+<div class="paragraph">
+<p>任何一个 Maven 项目都需要定义 POM 元素 packaging（如果不写则默认值为 jar）。顾名思义，该元素决定了项目的打包方式。实际的情形中，如果你不声明该元素，Maven 会帮你生成一个 JAR 包；如果你定义该元素的值为 war，那你会得到一个 WAR 包；如果定义其值为 POM（比如是一个父模块），那什么包都不会生成。除此之外，Maven 默认还支持一些其他的流行打包格式，例如 ejb3 和 ear。你不需要了解具体的打包细节，你所需要做的就是告诉 Maven，”我是个什么类型的项目“，这就是约定优于配置的力量。</p>
+</div>
+<div class="paragraph">
+<p>为了更好的理解 Maven 的默认打包方式，我们不妨来看看简单的声明背后发生了什么，对一个 jar 项目执行 mvn package 操作，会看到如下的输出：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[INFO] --- maven-jar-plugin:2.3.1:jar (default-jar) @ git-demo ---
+[INFO] Building jar: /home/juven/git_juven/git-demo/target/git-demo-1.2-SNAPSHOT.jar</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>相比之下，对一个 war 项目执行 mvn package 操作，输出是这样的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[INFO] --- maven-war-plugin:2.1:war (default-war) @ webapp-demo ---
+[INFO] Packaging webapp
+[INFO] Assembling webapp [webapp-demo] in [/home/juven/git_juven/webapp-demo/target/webapp-demo-1.0-SNAPSHOT]
+[INFO] Processing war project
+[INFO] Copying webapp resources [/home/juven/git_juven/webapp-demo/src/main/webapp]
+[INFO] Webapp assembled in [90 msecs]
+[INFO] Building war: /home/juven/git_juven/webapp-demo/target/webapp-demo-1.0-SNAPSHOT.war</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>对应于同样的 package 生命周期阶段，Maven 为 jar 项目调用了 maven-jar-plugin，为 war 项目调用了 maven-war-plugin，换言之，packaging 直接影响 Maven 的构建生命周期。了解这一点非常重要，特别是当你需要自定义打包行为的时候，你就必须知道去配置哪个插件。一个常见的例子就是在打包 war 项目的时候排除某些 web 资源文件，这时就应该配置 maven-war-plugin 如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-war-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.1.1&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;webResources&gt;
+        &lt;resource&gt;
+         &lt;directory&gt;src/main/webapp&lt;/directory&gt;
+         &lt;excludes&gt;
+            &lt;exclude&gt;**/*.jpg&lt;/exclude&gt;
+         &lt;/excludes&gt;
+        &lt;/resource&gt;
+        &lt;/webResources&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_源码包和_javadoc_包"><a class="anchor" href="#_源码包和_javadoc_包"></a>3.2. 源码包和 Javadoc 包</h3>
+<div class="paragraph">
+<p>一个 Maven 项目只生成一个主构件，当需要生成其他附属构件的时候，就需要用上 classifier。源码包和 Javadoc 包就是附属构件的极佳例子。它们有着广泛的用途，尤其是源码包，当你使用一个第三方依赖的时候，有时候会希望在 IDE 中直接进入该依赖的源码查看其实现的细节，如果该依赖将源码包发布到了 Maven 仓库，那么像 Eclipse 就能通过 m2eclipse 插件解析下载源码包并关联到你的项目中，十分方便。由于生成源码包是极其常见的需求，因此 Maven 官方提供了一个插件来帮助用户完成这个任务：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-source-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.1.2&lt;/version&gt;
+    &lt;executions&gt;
+         &lt;execution&gt;
+            &lt;id&gt;attach-sources&lt;/id&gt;
+            &lt;phase&gt;verify&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;jar-no-fork&lt;/goal&gt;
+            &lt;/goals&gt;
+         &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>类似的，生成 Javadoc 包只需要配置插件如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-javadoc-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.7&lt;/version&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+        &lt;id&gt;attach-javadocs&lt;/id&gt;
+        &lt;goals&gt;
+            &lt;goal&gt;jar&lt;/goal&gt;
+        &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>为了帮助所有 Maven 用户更方便的使用 Maven 中央库中海量的资源，中央仓库的维护者强制要求开源项目提交构件的时候同时提供源码包和 Javadoc 包。这是个很好的实践，读者也可以尝试在自己所处的公司内部实行，以促进不同项目之间的交流。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_可执行_cli_包"><a class="anchor" href="#_可执行_cli_包"></a>3.3. 可执行 CLI 包</h3>
+<div class="paragraph">
+<p>除了前面提到了常规 JAR 包、WAR 包，源码包和 Javadoc 包，另一种常被用到的包是在命令行可直接运行的 CLI（Command Line）包。默认 Maven 生成的 JAR 包只包含了编译生成的.class 文件和项目资源文件，而要得到一个可以直接在命令行通过 java 命令运行的 JAR 文件，还要满足两个条件：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>JAR 包中的 /META-INF/MANIFEST.MF 元数据文件必须包含 Main-Class 信息。</p>
+</li>
+<li>
+<p>项目所有的依赖都必须在 Classpath 中。</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Maven 有好几个插件能帮助用户完成上述任务，不过用起来最方便的还是 maven-shade-plugin ，它可以让用户配置 Main-Class 的值，然后在打包的时候将值填入 /META-INF/MANIFEST.MF 文件。关于项目的依赖，它很聪明地将依赖 JAR 文件全部解压后，再将得到的.class 文件连同当前项目的.class 文件一起合并到最终的 CLI 包中，这样，在执行 CLI JAR 文件的时候，所有需要的类就都在 Classpath 中了。下面是一个配置样例：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-shade-plugin&lt;/artifactId&gt;
+    &lt;version&gt;1.4&lt;/version&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;phase&gt;package&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;shade&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;configuration&gt;
+                &lt;transformers&gt;
+                    &lt;transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"&gt;
+                         &lt;mainClass&gt;com.juvenxu.mavenbook.HelloWorldCli&lt;/mainClass&gt;
+                    &lt;/transformer&gt;
+                &lt;/transformers&gt;
+            &lt;/configuration&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>上述例子中的，我的 Main-Class 是 com.juvenxu.mavenbook.HelloWorldCli，构建完成后，对应于一个常规的 hello-world-1.0.jar 文件，我还得到了一个 hello-world-1.0-cli.jar 文件。细心的读者可能已经注意到了，这里用的是 cli 这个 classifier。最后，我可以通过java -jar hello-world-1.0-cli.jar命令运行程序。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_自定义格式包"><a class="anchor" href="#_自定义格式包"></a>3.4. 自定义格式包</h3>
+<div class="paragraph">
+<p>实际的软件项目常常会有更复杂的打包需求，例如我们可能需要为客户提供一份产品的分发包，这个包不仅仅包含项目的字节码文件，还得包含依赖以及相关脚本文件以方便客户解压后就能运行，此外分发包还得包含一些必要的文档。这时项目的源码目录结构大致是这样的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>pom.xml
+src/main/java/
+src/main/resources/
+src/test/java/
+src/test/resources/
+src/main/scripts/
+src/main/assembly/
+README.txt</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>除了基本的 pom.xml 和一般 Maven 目录之外，这里还有一个 src/main/scripts/ 目录，该目录会包含一些脚本文件如 run.sh 和 run.bat，src/main/assembly/ 会包含一个 assembly.xml，这是打包的描述文件，稍后介绍，最后的 README.txt 是份简单的文档。</p>
+</div>
+<div class="paragraph">
+<p>我们希望最终生成一个 zip 格式的分发包，它包含如下的一个结构：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>bin/
+lib/
+README.txt</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>其中 bin/ 目录包含了可执行脚本 run.sh 和 run.bat，lib/ 目录包含了项目 JAR 包和所有依赖 JAR，README.txt 就是前面提到的文档。</p>
+</div>
+<div class="paragraph">
+<p>描述清楚需求后，我们就要搬出 Maven 最强大的打包插件： maven-assembly-plugin 。它支持各种打包文件格式，包括 zip、tar.gz、tar.bz2 等等，通过一个打包描述文件（该例中是 src/main/assembly.xml），它能够帮助用户选择具体打包哪些文件集合、依赖、模块、和甚至本地仓库文件，每个项的具体打包路径用户也能自由控制。如下就是对应上述需求的打包描述文件 src/main/assembly.xml：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;assembly&gt;
+    &lt;id&gt;bin&lt;/id&gt;
+    &lt;formats&gt;
+        &lt;format&gt;zip&lt;/format&gt;
+    &lt;/formats&gt;
+    &lt;dependencySets&gt;
+        &lt;dependencySet&gt;
+            &lt;useProjectArtifact&gt;true&lt;/useProjectArtifact&gt;
+            &lt;outputDirectory&gt;lib&lt;/outputDirectory&gt;
+        &lt;/dependencySet&gt;
+    &lt;/dependencySets&gt;
+    &lt;fileSets&gt;
+        &lt;fileSet&gt;
+            &lt;outputDirectory&gt;/&lt;/outputDirectory&gt;
+            &lt;includes&gt;
+                &lt;include&gt;README.txt&lt;/include&gt;
+            &lt;/includes&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;directory&gt;src/main/scripts&lt;/directory&gt;
+            &lt;outputDirectory&gt;/bin&lt;/outputDirectory&gt;
+            &lt;includes&gt;
+                &lt;include&gt;run.sh&lt;/include&gt;
+                &lt;include&gt;run.bat&lt;/include&gt;
+            &lt;/includes&gt;
+        &lt;/fileSet&gt;
+    &lt;/fileSets&gt;
+&lt;/assembly&gt;</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>首先这个 assembly.xml 文件的 id 对应了其最终生成文件的 classifier。</p>
+</li>
+<li>
+<p>其次 formats 定义打包生成的文件格式，这里是 zip。因此结合 id 我们会得到一个名为 hello-world-1.0-bin.zip 的文件。（假设 artifactId 为 hello-world，version 为 1.0）</p>
+</li>
+<li>
+<p>dependencySets 用来定义选择依赖并定义最终打包到什么目录，这里我们声明的一个 depenencySet 默认包含所有所有依赖，而 useProjectArtifact 表示将项目本身生成的构件也包含在内，最终打包至输出包内的 lib 路径下（由 outputDirectory 指定）。</p>
+</li>
+<li>
+<p>fileSets 允许用户通过文件或目录的粒度来控制打包。这里的第一个 fileSet 打包 README.txt 文件至包的根目录下，第二个 fileSet 则将 src/main/scripts 下的 run.sh 和 run.bat 文件打包至输出包的 bin 目录下。</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>打包描述文件所支持的配置远超出本文所能覆盖的范围，为了避免读者被过多细节扰乱思维，这里不再展开，读者若有需要可以去参考 <a href="http://maven.apache.org/plugins/maven-assembly-plugin/assembly.html">官方文档</a>。</p>
+</div>
+<div class="paragraph">
+<p>最后，我们需要配置 maven-assembly-plugin 使用打包描述文件，并绑定生命周期阶段使其自动执行打包操作：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-assembly-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.2.1&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;descriptors&gt;
+            &lt;descriptor&gt;src/main/assembly/assembly.xml&lt;/descriptor&gt;
+        &lt;/descriptors&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+        &lt;id&gt;make-assembly&lt;/id&gt;
+        &lt;phase&gt;package&lt;/phase&gt;
+        &lt;goals&gt;
+            &lt;goal&gt;single&lt;/goal&gt;
+        &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>运行 <strong>mvn clean package</strong> 之后，我们就能在 target/ 目录下得到名为 hello-world-1.0-bin.zip 的分发包了。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_插件"><a class="anchor" href="#_插件"></a>4. 插件</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>我们都知道 Maven 本质上是一个插件框架，它的核心并不执行任何具体的构建任务，所有这些任务都交给插件来完成，例如编译源代码是由 maven-compiler-plugin 完成的。进一步说，每个任务对应了一个插件目标（goal），每个插件会有一个或者多个目标，例如 maven-compiler-plugin 的 compile 目标用来编译位于src/main/java/目录下的主源码，testCompile 目标用来编译位于src/test/java/目录下的测试源码。</p>
+</div>
+<div class="paragraph">
+<p>用户可以通过两种方式调用 Maven 插件目标。第一种方式是将插件目标与生命周期阶段（lifecycle phase）绑定，这样用户在命令行只是输入生命周期阶段而已，例如 Maven 默认将 maven-compiler-plugin 的 compile 目标与 compile 生命周期阶段绑定，因此命令 <strong>mvn compile</strong> 实际上是先定位到 compile 这一生命周期阶段，然后再根据绑定关系调用 maven-compiler-plugin 的 compile 目标。第二种方式是直接在命令行指定要执行的插件目标，例如 <strong>mvn archetype:generate</strong> 就表示调用 maven-archetype-plugin 的 generate 目标，这种带冒号的调用方式与生命周期无关。</p>
+</div>
+<div class="paragraph">
+<p>认识上述 Maven 插件的基本概念能帮助你理解 Maven 的工作机制，不过要想更高效率地使用 Maven，了解一些常用的插件还是很有必要的，这可以帮助你避免一不小心重新发明轮子。多年来 Maven 社区积累了大量的经验，并随之形成了一个成熟的插件生态圈。Maven 官方有两个插件列表，第一个列表的 GroupId 为 org.apache.maven.plugins，这里的插件最为成熟，具体地址为： <a href="http://maven.apache.org/plugins/index.html" class="bare">http://maven.apache.org/plugins/index.html</a> 。第二个列表的 GroupId 为 org.codehaus.mojo，这里的插件没有那么核心，但也有不少十分有用，其地址为： <a href="http://mojo.codehaus.org/plugins.html" class="bare">http://mojo.codehaus.org/plugins.html</a> 。</p>
+</div>
+<div class="paragraph">
+<p>接下来笔者根据自己的经验介绍一些最常用的 Maven 插件，在不同的环境下它们各自都有其出色的表现，熟练地使用它们能让你的日常构建工作事半功倍。</p>
+</div>
+<div class="sect2">
+<h3 id="_maven_antrun_plugin"><a class="anchor" href="#_maven_antrun_plugin"></a>4.1. maven-antrun-plugin</h3>
+<div class="paragraph">
+<p><a href="http://maven.apache.org/plugins/maven-antrun-plugin/">maven-antrun-plugin</a> 能让用户在 Maven 项目中运行 Ant 任务。用户可以直接在该插件的配置以 Ant 的方式编写 Target，然后交给该插件的 run 目标去执行。在一些由 Ant 往 Maven 迁移的项目中，该插件尤其有用。此外当你发现需要编写一些自定义程度很高的任务，同时又觉得 Maven 不够灵活时，也可以以 Ant 的方式实现之。maven-antrun-plugin 的 run 目标通常与生命周期绑定运行。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maven_archetype_plugin"><a class="anchor" href="#_maven_archetype_plugin"></a>4.2. maven-archetype-plugin</h3>
+<div class="paragraph">
+<p>Archtype 指项目的骨架，Maven 初学者最开始执行的 Maven 命令可能就是 <strong>mvn archetype:generate</strong>，这实际上就是让 <a href="http://maven.apache.org/archetype/maven-archetype-plugin/">maven-archetype-plugin</a> 生成一个很简单的项目骨架，帮助开发者快速上手。可能也有人看到一些文档写了 <strong>mvn archetype:create</strong>，但实际上 create 目标已经被弃用了，取而代之的是 generate 目标，该目标使用交互式的方式提示用户输入必要的信息以创建项目，体验更好。maven-archetype-plugin 还有一些其他目标帮助用户自己定义项目原型，例如你由一个产品需要交付给很多客户进行二次开发，你就可以为他们提供一个 Archtype，帮助他们快速上手。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maven_assembly_plugin"><a class="anchor" href="#_maven_assembly_plugin"></a>4.3. maven-assembly-plugin</h3>
+<div class="paragraph">
+<p><a href="http://maven.apache.org/plugins/maven-assembly-plugin/">maven-assembly-plugin</a> 的用途是制作项目分发包，该分发包可能包含了项目的可执行文件、源代码、readme、平台脚本等等。maven-assembly-plugin 支持各种主流的格式如 zip、tar.gz、jar 和 war 等，具体打包哪些文件是高度可控的，例如用户可以按文件级别的粒度、文件集级别的粒度、模块级别的粒度、以及依赖级别的粒度控制打包，此外，包含和排除配置也是支持的。maven-assembly-plugin 要求用户使用一个名为assembly.xml的元数据文件来表述打包，它的 single 目标可以直接在命令行调用，也可以被绑定至生命周期。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maven_dependency_plugin"><a class="anchor" href="#_maven_dependency_plugin"></a>4.4. maven-dependency-plugin</h3>
+<div class="paragraph">
+<p><a href="http://maven.apache.org/plugins/maven-dependency-plugin/">maven-dependency-plugin</a> 最大的用途是帮助分析项目依赖，<strong>dependency:list</strong> 能够列出项目最终解析到的依赖列表，<strong>dependency:tree</strong> 能进一步的描绘项目依赖树，<strong>dependency:analyze</strong> 可以告诉你项目依赖潜在的问题，如果你有直接使用到的却未声明的依赖，该目标就会发出警告。maven-dependency-plugin 还有很多目标帮助你操作依赖文件，例如 <strong>dependency:copy-dependencies</strong> 能将项目依赖从本地 Maven 仓库复制到某个特定的文件夹下面。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maven_enforcer_plugin"><a class="anchor" href="#_maven_enforcer_plugin"></a>4.5. maven-enforcer-plugin</h3>
+<div class="paragraph">
+<p>在一个稍大一点的组织或团队中，你无法保证所有成员都熟悉 Maven，那他们做一些比较愚蠢的事情就会变得很正常，例如给项目引入了外部的 SNAPSHOT 依赖而导致构建不稳定，使用了一个与大家不一致的 Maven 版本而经常抱怨构建出现诡异问题。http://maven.apache.org/plugins/maven-enforcer-plugin/[maven-enforcer-plugin] 能够帮助你避免之类问题，它允许你创建一系列规则强制大家遵守，包括设定 Java 版本、设定 Maven 版本、禁止某些依赖、禁止 SNAPSHOT 依赖。只要在一个父 POM 配置规则，然后让大家继承，当规则遭到破坏的时候，Maven 就会报错。除了标准的规则之外，你还可以扩展该插件，编写自己的规则。maven-enforcer-plugin 的 enforce 目标负责检查规则，它默认绑定到生命周期的 validate 阶段。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maven_help_plugin"><a class="anchor" href="#_maven_help_plugin"></a>4.6. maven-help-plugin</h3>
+<div class="paragraph">
+<p><a href="http://maven.apache.org/plugins/maven-help-plugin/">maven-help-plugin</a> 是一个小巧的辅助工具，最简单的 <strong>help:system</strong> 可以打印所有可用的环境变量和 Java 系统属性。<strong>help:effective-pom</strong> 和 <strong>help:effective-settings</strong> 最为有用，它们分别打印项目的有效 POM 和有效 settings，有效 POM 是指合并了所有父 POM（包括 Super POM）后的 XML，当你不确定 POM 的某些信息从何而来时，就可以查看有效 POM。有效 settings 同理，特别是当你发现自己配置的 settings.xml 没有生效时，就可以用 <strong>help:effective-settings</strong> 来验证。此外，maven-help-plugin 的 describe 目标可以帮助你描述任何一个 Maven 插件的信息，还有 all-profiles 目标和 active-profiles 目标帮助查看项目的 Profile。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maven_release_plugin"><a class="anchor" href="#_maven_release_plugin"></a>4.7. maven-release-plugin</h3>
+<div class="paragraph">
+<p><a href="http://maven.apache.org/plugins/maven-release-plugin/">maven-release-plugin</a> 的用途是帮助自动化项目版本发布，它依赖于 POM 中的 SCM 信息。<strong>release:prepare</strong> 用来准备版本发布，具体的工作包括检查是否有未提交代码、检查是否有 SNAPSHOT 依赖、升级项目的 SNAPSHOT 版本至 RELEASE 版本、为项目打标签等等。<strong>release:perform</strong> 则是签出标签中的 RELEASE 源码，构建并发布。版本发布是非常琐碎的工作，它涉及了各种检查，而且由于该工作仅仅是偶尔需要，因此手动操作很容易遗漏一些细节，maven-release-plugin 让该工作变得非常快速简便，不易出错。maven-release-plugin 的各种目标通常直接在命令行调用，因为版本发布显然不是日常构建生命周期的一部分。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maven_resources_plugin"><a class="anchor" href="#_maven_resources_plugin"></a>4.8. maven-resources-plugin</h3>
+<div class="paragraph">
+<p>为了使项目结构更为清晰，Maven 区别对待 Java 代码文件和资源文件，maven-compiler-plugin 用来编译 Java 代码，maven-resources-plugin 则用来处理资源文件。默认的主资源文件目录是src/main/resources，很多用户会需要添加额外的资源文件目录，这个时候就可以通过配置 <a href="http://maven.apache.org/plugins/maven-resources-plugin/">maven-resources-plugin</a> 来实现。此外，资源文件过滤也是 Maven 的一大特性，你可以在资源文件中使用 ${propertyName} 形式的 Maven 属性，然后配置 maven-resources-plugin 开启对资源文件的过滤，之后就可以针对不同环境通过命令行或者 Profile 传入属性的值，以实现更为灵活的构建。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maven_surefire_plugin"><a class="anchor" href="#_maven_surefire_plugin"></a>4.9. maven-surefire-plugin</h3>
+<div class="paragraph">
+<p>可能是由于历史的原因，Maven 2/3 中用于执行测试的插件不是 maven-test-plugin，而是 <a href="http://maven.apache.org/plugins/maven-surefire-plugin/">maven-surefire-plugin</a>。其实大部分时间内，只要你的测试类遵循通用的命令约定（以 Test 结尾、以 TestCase 结尾、或者以 Test 开头），就几乎不用知晓该插件的存在。然而在当你想要跳过测试、排除某些测试类、或者使用一些 TestNG 特性的时候，了解 maven-surefire-plugin 的一些配置选项就很有用了。例如 <strong>mvn test -Dtest=FooTest</strong> 这样一条命令的效果是仅运行 FooTest 测试类，这是通过控制 maven-surefire-plugin 的 test 参数实现的。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_exec_maven_plugin"><a class="anchor" href="#_exec_maven_plugin"></a>4.10. exec-maven-plugin</h3>
+<div class="paragraph">
+<p><a href="http://mojo.codehaus.org/exec-maven-plugin/">exec-maven-plugin</a> 很好理解，顾名思义，它能让你运行任何本地的系统程序，在某些特定情况下，运行一个 Maven 外部的程序可能就是最简单的问题解决方案，这就是exec:exec的用途，当然，该插件还允许你配置相关的程序运行参数。除了 exec 目标之外，exec-maven-plugin 还提供了一个 java 目标，该目标要求你提供一个 mainClass 参数，然后它能够利用当前项目的依赖作为 classpath，在同一个 JVM 中运行该 mainClass。有时候，为了简单的演示一个命令行 Java 程序，你可以在 POM 中配置好 exec-maven-plugin 的相关运行参数，然后直接在命令运行 mvn exec:java 以查看运行效果。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_versions_maven_plugin"><a class="anchor" href="#_versions_maven_plugin"></a>4.11. versions-maven-plugin</h3>
+<div class="paragraph">
+<p>很多 Maven 用户遇到过这样一个问题，当项目包含大量模块的时候，为他们集体更新版本就变成一件烦人的事情，到底有没有自动化工具能帮助完成这件事情呢？（当然你可以使用 sed 之类的文本操作工具，不过不在本文讨论范围）答案是肯定的，versions-maven- plugin 提供了很多目标帮助你管理 Maven 项目的各种版本信息。例如最常用的，命令 <strong>mvn versions:set -DnewVersion=1.1-SNAPSHOT</strong> 就能帮助你把所有模块的版本更新到 1.1-SNAPSHOT。该插件还提供了其他一些很有用的目标，display-dependency- updates 能告诉你项目依赖有哪些可用的更新；类似的 display-plugin-updates 能告诉你可用的插件更新；然后 use- latest-versions 能自动帮你将所有依赖升级到最新版本。最后，如果你对所做的更改满意，则可以使用 <strong>mvn versions:commit</strong> 提交，不满意的话也可以使用 <strong>mvn versions:revert</strong> 进行撤销。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_私服"><a class="anchor" href="#_私服"></a>5. 私服</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>maven私服用于管理公司内部开发和使用的依赖</p>
+</div>
+<div class="sect2">
+<h3 id="_下载依赖"><a class="anchor" href="#_下载依赖"></a>5.1. 下载依赖</h3>
+<div class="paragraph">
+<p>下载依赖需要配置私服地址，有两种配置方式</p>
+</div>
+<div class="sect3">
+<h4 id="_项目配置"><a class="anchor" href="#_项目配置"></a>5.1.1. 项目配置</h4>
+<div class="paragraph">
+<p>项目的 <code>pom.xml</code> 添加下面的私服信息即可</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;project&gt;
+...
+    &lt;repositories&gt;
+        &lt;repository&gt;
+            &lt;id&gt;local-release&lt;/id&gt;
+            &lt;url&gt;http://maven.baidu.com/artifactory/libs-release-local&lt;/url&gt;
+            &lt;snapshots&gt;
+                &lt;enabled&gt;false&lt;/enabled&gt;
+            &lt;/snapshots&gt;
+        &lt;/repository&gt;
+        &lt;repository&gt;
+            &lt;id&gt;local-snapshot&lt;/id&gt;
+            &lt;url&gt;http://maven.baidu.com/artifactory/libs-snapshot-local&lt;/url&gt;
+            &lt;releases&gt;
+                &lt;enabled&gt;false&lt;/enabled&gt;
+            &lt;/releases&gt;
+        &lt;/repository&gt;
+    &lt;/repositories&gt;
+...
+&lt;/project&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_全局配置"><a class="anchor" href="#_全局配置"></a>5.1.2. 全局配置</h4>
+<div class="paragraph">
+<p>在maven的 <code>setting.xml</code> 配置文件中添加如下内容</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;settings&gt;
+...
+&lt;profiles&gt;
+    &lt;profile&gt;
+      &lt;id&gt;baidu-repo&lt;/id&gt;
+      &lt;repositories&gt;
+        &lt;repository&gt;
+          &lt;id&gt;baidu-release&lt;/id&gt;
+          &lt;name&gt;baidu Release Repo&lt;/name&gt;
+          &lt;url&gt;http://maven.baidu.com/artifactory/libs-release-local&lt;/url&gt;
+          &lt;layout&gt;default&lt;/layout&gt;
+        &lt;/repository&gt;
+        &lt;repository&gt;
+          &lt;id&gt;baidu-snapshot&lt;/id&gt;
+          &lt;name&gt;baidu Snapshot Repo&lt;/name&gt;
+          &lt;url&gt;http://maven.baidu.com/artifactory/libs-snapshot-local&lt;/url&gt;
+          &lt;layout&gt;default&lt;/layout&gt;
+        &lt;/repository&gt;
+      &lt;/repositories&gt;
+    &lt;/profile&gt;
+&lt;/profiles&gt;
+...
+&lt;/settings&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>配置说明参考 <a href="https://maven.apache.org/guides/mini/guide-multiple-repositories.html">maven官方站点</a></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_上传依赖"><a class="anchor" href="#_上传依赖"></a>5.2. 上传依赖</h3>
+<div class="paragraph">
+<p>使用 <code>maven deploy</code> 可以将项目内部或者公司内部使用的jar包部署到私服供其它开发下载使用，部署前需要配置私服仓库位置及认证信息，配置方式有如下两种，任选其一即可</p>
+</div>
+<div class="sect3">
+<h4 id="_distributionmanagement配置"><a class="anchor" href="#_distributionmanagement配置"></a>5.2.1. distributionManagement配置</h4>
+<div class="paragraph">
+<p>在项目的 <code>pom.xml</code> 文件中添加如下内容</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;project&gt;
+...
+    &lt;distributionManagement&gt;
+        &lt;repository&gt;
+            &lt;id&gt;baidu-release&lt;/id&gt;
+            &lt;url&gt;http://maven.baidu.com/artifactory/libs-release-local&lt;/url&gt;
+        &lt;/repository&gt;
+        &lt;snapshotRepository&gt;
+            &lt;id&gt;baidu-snapshot&lt;/id&gt;
+            &lt;url&gt;http://maven.baidu.com/artifactory/libs-snapshot-local&lt;/url&gt;
+        &lt;/snapshotRepository&gt;
+    &lt;/distributionManagement&gt;
+...
+&lt;/project&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在maven的 <code>settings.xml</code> 文件中添加如下内容，id必须与distributionManagement配置中repository的id，username和password为私服认证的用户名密码</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;settings&gt;
+...
+  &lt;servers&gt;
+    &lt;server&gt;
+      &lt;id&gt;baidu-release&lt;/id&gt;
+      &lt;username&gt;user&lt;/username&gt;
+      &lt;password&gt;pwd&lt;/password&gt;
+    &lt;/server&gt;
+    &lt;server&gt;
+      &lt;id&gt;baidu-snapshot&lt;/id&gt;
+      &lt;username&gt;user&lt;/username&gt;
+      &lt;password&gt;pwd&lt;/password&gt;
+    &lt;/server&gt;
+  &lt;/servers&gt;
+...
+&lt;/settings&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>更多内容参考 <a href="https://www.jfrog.com/confluence/display/JFROG/Maven+Repository">Artifactory官方说明</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_artifactory插件配置"><a class="anchor" href="#_artifactory插件配置"></a>5.2.2. Artifactory插件配置</h4>
+<div class="paragraph">
+<p>在项目的 <code>pom.xml</code> 添加如下内容</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;project&gt;
+...
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.jfrog.buildinfo&lt;/groupId&gt;
+                &lt;artifactId&gt;artifactory-maven-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.2.3&lt;/version&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;id&gt;build-info&lt;/id&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;publish&lt;/goal&gt;
+                        &lt;/goals&gt;
+                        &lt;configuration&gt;
+                            &lt;publisher&gt;
+                                &lt;contextUrl&gt;http://maven.baidu.com/artifactory&lt;/contextUrl&gt;
+                                &lt;username&gt;{{artifactory.username}}&lt;/username&gt;
+                                &lt;password&gt;{{artifactory.password}}&lt;/password&gt;
+                                &lt;repoKey&gt;libs-release-local&lt;/repoKey&gt;
+                                &lt;snapshotRepoKey&gt;libs-snapshot-local&lt;/snapshotRepoKey&gt;
+                                &lt;excludePatterns&gt;*-docs-*&lt;/excludePatterns&gt;
+                            &lt;/publisher&gt;
+                        &lt;/configuration&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+...
+&lt;/project&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>上述配置中的 <code>artifactory.username</code> 和 <code>artifactory.password</code> 代表私服认证的用户名密码，为了安全此处使用属性名的表示法，实际用户名密码的值需要在maven中进行配置，Intellij IDEA的配置方法如下</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/maven-runner-properties.jpg" alt="maven runner properties">
+</div>
+</div>
+<div class="paragraph">
+<p>更多内容参考 <a href="https://www.jfrog.com/confluence/display/JFROG/Maven+Artifactory+Plugin">插件官方说明</a></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

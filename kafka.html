@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<title>Kafka基本概念</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Kafka基本概念</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_启动">1. 启动</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Kafka 的数据单元被称为 <strong>消息</strong>（message），消息可以有 个可选的元数据 也就是键。键 个字节数组，与消息一样</p>
+</div>
+<div class="paragraph">
+<p>当消息以 种可控的方式写入不同的分区时，会用到<strong>键</strong>。最简单的例子就是为键生成一个一致性散列值，然后使用散列值对主题分区数进行取模，为消息选取分区。这样可以保证具有相同键的消息总是被写到相同的分区上。</p>
+</div>
+<div class="paragraph">
+<p>为了提高效率，消息被分批次写入 Kafka <strong>批次</strong>就是一组消息，这些消息属于同一 个主题和分区</p>
+</div>
+<div class="paragraph">
+<p>对于 afka 来说，消息不过是晦涩难懂的字节数组，所以有人建议用 些额外的结构来定义消息内容，让它们更易于理解。根据应用程序的需求，肖息<strong>模式（schema ）</strong>有许可用的选项如JSON、xml</p>
+</div>
+<div class="paragraph">
+<p>Kaflca 的悄息通过<strong>主题（topic）</strong>进行分类。主题就好比数据库的表，或者文件系统里的文件夹</p>
+</div>
+<div class="paragraph">
+<p>主题可以被分为若干个<strong>分区</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>偏移量(offset)</strong>是另一种元数据，它是个不断递增的整数值，在创建消息 时， Kafka 会把它添加到消息里。在给定的分区里，每个悄息的偏移量都是唯一的。消费者把每个分区最后读取的悄息偏移量保存在 Zookeeper Kafka 上，如果悄费者关闭或重启，它的读取状态不会丢失。</p>
+</div>
+<div class="paragraph">
+<p>消费者是<strong>消费者群组（Consumer Group）</strong>的一部分，也就是说，会有一个或多个消费者共同读取一个主题，群组保证每个分区只能被一个消费者使用</p>
+</div>
+<div class="paragraph">
+<p>消费者与分区之间的映射通常被称为悄费者对分区的<strong>所有权关系</strong></p>
+</div>
+<div class="paragraph">
+<p>一个独立的 Kafka 服务器被称为 <strong>broker</strong></p>
+</div>
+<div class="paragraph">
+<p>broker 是<strong>集群</strong>的组成部分，每个集群都有 一个broker 同时充当了<strong>集群控制器</strong>的角色</p>
+</div>
+<div class="paragraph">
+<p>一个分区可以分配给多个 broke ，这个时候会发生分区复制，在集群中， 一个分区从属于 一个broker, 该broker 被称为分区的<strong>首领</strong></p>
+</div>
+<div class="paragraph">
+<p>保留消息（在一定期限内）是 Kafka一个重要特性。要么保留一段时间（比如7天），要么保留到消息达到一定大小的字节数</p>
+</div>
+<div class="paragraph">
+<p>可以通过配置把主题当作<strong>紧凑型日志</strong>，只有最后一个带有特定键的消息会被保留下来</p>
+</div>
+<div class="paragraph">
+<p>分区的所有权从一个消费者转移到另一个消费者，这样的行为被称为<strong>再均衡</strong></p>
+</div>
+<div class="paragraph">
+<p>消费者通过向被指派为<strong>群组协调器(GroupCoordinator)</strong>的 broker （不同的群组可以有不同的协调器）发送<strong>心跳</strong>来维持它们和群组的从属关系以及它们对分区的所有权关系</p>
+</div>
+<div class="paragraph">
+<p>消费者可以使用 Kafka 来追踪消息在分区里的位置（偏移量），我们把更新分区当前位置的操作叫作<strong>提交</strong></p>
+</div>
+<div class="paragraph">
+<p>一个消费者群组里一个消费者可能同时消费一个主题的多个分区，但一个分区一定只由一个消费者消费</p>
+</div>
+<div class="paragraph">
+<p>如果只有一个消费者，就不需要<strong>订阅</strong>主题， 而代 是为自己<strong>分配</strong>分区。</p>
+</div>
+<div class="paragraph">
+<p><strong>首领副本（Leader）</strong> 所有生产者和消费者的请求都经过它</p>
+</div>
+<div class="paragraph">
+<p><strong>跟随者副本（follower)</strong> 从Leader复制数据</p>
+</div>
+<div class="paragraph">
+<p>Kafka 使用<strong>零拷贝</strong>技术向客户端发送消息,也就是说， Kafka 直接把消息从文件（或者更确切地说是 Linux 文件系统缓存）里发送到网络通道而不需要经过任何中间缓冲区</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_启动"><a class="anchor" href="#_启动"></a>1. 启动</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-shell" data-lang="shell">[root@localhost ~]# /usr/local/zookeeper/bin/zkServer.sh start
+[root@localhost ~]# telnet localhost 2181
+Trying ::1...
+Connected to localhost.
+Escape character is '^]'.
+srvr
+Zookeeper version: 3.5.8-f439ca583e70862c3068a1f2a7d4d068eec33315, built on 05/04/2020 15:07 GMT
+Latency min/avg/max: 0/0/0
+Received: 1
+Sent: 0
+Connections: 1
+Outstanding: 0
+Zxid: 0x8d
+Mode: standalone
+Node count: 132
+Connection closed by foreign host.</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-shell" data-lang="shell">[root@localhost ~]# /usr/local/kafka/bin/kafka-server-start.sh -daemon /usr/local/kafka/config/server.properties
+[root@localhost ~]# /usr/local/kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+[root@localhost ~]# /usr/local/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+&gt;Test Message1
+&gt;
+^D
+[root@localhost ~]# /usr/local/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
+Test Message1
+^C
+[root@localhost ~]#</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

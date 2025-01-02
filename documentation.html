@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2021/12/12">
+<title>技术文档编写指南</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>技术文档编写指南</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2021/12/12</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_introduction">1. Introduction</a></li>
+<li><a href="#_docs_as_code">2. Docs as Code</a></li>
+<li><a href="#_asciidoc">3. AsciiDoc</a>
+<ul class="sectlevel2">
+<li><a href="#_quickstart">3.1. QuickStart</a></li>
+<li><a href="#_syntax">3.2. Syntax</a></li>
+<li><a href="#_asciidoc_vs_markdown">3.3. AsciiDoc vs Markdown</a></li>
+</ul>
+</li>
+<li><a href="#_asciidoctor">4. Asciidoctor</a>
+<ul class="sectlevel2">
+<li><a href="#_intellij_idea_plugin">4.1. Intellij IDEA Plugin</a></li>
+<li><a href="#_asciidoctor_maven_plugin">4.2. Asciidoctor-Maven-Plugin</a></li>
+<li><a href="#_spring_backend">4.3. Spring Backend</a>
+<ul class="sectlevel3">
+<li><a href="#_install">4.3.1. Install</a></li>
+<li><a href="#_spring_look_and_feel">4.3.2. Spring Look and Feel</a></li>
+<li><a href="#_responsive_design">4.3.3. Responsive Design</a></li>
+<li><a href="#_back_to_index_link">4.3.4. "Back to Index" Link</a></li>
+<li><a href="#_dark_mode">4.3.5. Dark Mode</a></li>
+<li><a href="#_tabs">4.3.6. Tabs</a></li>
+<li><a href="#_code_folding">4.3.7. Code Folding</a></li>
+<li><a href="#_different_config_blocks">4.3.8. Different Config Blocks</a></li>
+</ul>
+</li>
+<li><a href="#_bilibili_extension">4.4. Bilibili Extension</a></li>
+</ul>
+</li>
+<li><a href="#_examples">5. Examples</a>
+<ul class="sectlevel2">
+<li><a href="#_html">5.1. Html</a></li>
+<li><a href="#_pdf">5.2. Pdf</a></li>
+<li><a href="#cicd">5.3. CI/CD</a></li>
+<li><a href="#_doc_review">5.4. Doc Review</a></li>
+</ul>
+</li>
+<li><a href="#_style">6. Style</a></li>
+<li><a href="#_best_practice">7. Best Practice</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction"><a class="anchor" href="#_introduction"></a>1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>软件开发中文档跟代码同等重要，优秀的文档对软件的日常使用和后期维护都至关重要，另一方面结合国内软件厂商员工流动频繁的情况，完善文的档还能帮助新员工迅速熟悉项目及业务，
+将人员变动的影响降到最低，保证项目持续稳定运作，当然最终也能在一定程度上节约企业成本。</p>
+</div>
+<div class="paragraph">
+<p>既然文档如此重要，那么项目组必须保证在整个项目周期中输出各类文档，包括但不限于架构设计文档、详细设计文档、代码评审记录等。
+然而大部分项目组的现状是文档缺失、管理混乱、随便写一下草草了事，其中原因当然跟需求变化快、开发周期紧、人员不足有关，
+但是文档编写工具也会极大地影响编写效率和管理方式。
+目前开发相关文档基本都是使用 <code>Word</code> 进行编写的，使用 <code>Word</code> 会存在下面几点问题：</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">版本管理困难 </dt>
+<dd>
+<p><code>Word</code> 文档是复杂格式的文档，使用版本管理软件无法方便地查看或对比每一次的修改内容。</p>
+</dd>
+<dt class="hdlist1">协作编写困难 </dt>
+<dd>
+<p>同样是因为 <code>Word</code> 文档的复杂格式，无法多人协作在一个文档上编辑，只能手动合并，合并后的文档以及无法区分特定内容的真正作者。</p>
+</dd>
+<dt class="hdlist1">代码支持性差 </dt>
+<dd>
+<p><code>Word</code> 文档主要还是用于文本内容，代码的展示效果很差，除非手工再进行复杂的格式调整。</p>
+</dd>
+<dt class="hdlist1">格式调整耗时 </dt>
+<dd>
+<p>想要获得期望的整洁美观效果，通常需要不断调整文档格式，<code>Word</code> 的格式调整等都需要鼠标操作，键鼠切换通用会降低文档编写效率，这也正是Intellij IDEA提供了如此多快捷键的原因。</p>
+</dd>
+<dt class="hdlist1">需要单独上传 </dt>
+<dd>
+<p>通常是再桌面新建一个文档，如果要上传到SVN或者Git上还需要手动复制到对应目录，很多开发文档已经写了但忘记上传。</p>
+</dd>
+<dt class="hdlist1">需要单独下载 </dt>
+<dd>
+<p>文档编写完成之后必然要供其它人查看，而要查看 <code>Word</code> 编写的文档需要专门从SVN或Git上拣出。</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_docs_as_code"><a class="anchor" href="#_docs_as_code"></a>2. Docs as Code</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>针对上文描述的 <code>Word</code> 文档存在的诸多问题，国外的诸多企业开始基于 <code>Docs as Code</code> 的理念进行文档编写。<code>Docs as Code</code> 是指按照写代码的方式写文档，主要包括下面几点内容</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">使用简单文本编写文档 </dt>
+<dd>
+<p>这一点是最重要的要求，只有简单文本才能使用Git强大的版本管理功能。</p>
+</dd>
+<dt class="hdlist1">使用版本控制工具管理文档 </dt>
+<dd>
+<p>文档总是在不断变化的，使用SVN、Git等版本控制工具能够查看文档所有的历史记录以及作者等信息。同代码一样，文档也可以使用分支管理等功能为软件的不同版本提供不同的文档。</p>
+</dd>
+<dt class="hdlist1">文档评审 </dt>
+<dd>
+<p>代码需要评审，文档也是一样，只有评审通过的文档才能合并到主干。评审可以是线下会议的方式进行也可以是线上Review Commit或者Pull Request的方式进行。</p>
+</dd>
+<dt class="hdlist1">为文档编写测试 </dt>
+<dd>
+<p>使用测试验证文档中错别字、失效链接、代码片段等，这一点一般不做强制要求。</p>
+</dd>
+<dt class="hdlist1">文档自动化发布 </dt>
+<dd>
+<p>文档提交后能够自动发布到特定文档站点上供其它人查看。</p>
+</dd>
+</dl>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+更多关于 <code>Docs as Code</code> 的介绍参考 <a href="https://www.writethedocs.org/guide/docs-as-code/">writethedocs站点</a>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_asciidoc"><a class="anchor" href="#_asciidoc"></a>3. AsciiDoc</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://asciidoctor.org/docs/what-is-asciidoc/">AsciiDoc</a> 是一种轻量级文本标记语言，可以用于创作笔记、文档、博客、电子书、网页、幻灯片、man手册，
+它以简单文本的方式编写可以转换为html、pdf等多种格式，部分网站如GitHub支持直接将AsciiDoc内容呈现为html。</p>
+</div>
+<div class="sect2">
+<h3 id="_quickstart"><a class="anchor" href="#_quickstart"></a>3.1. QuickStart</h3>
+<div class="listingblock">
+<div class="content">
+<pre>= The First Asciidoc example: Subtitle              <i class="conum" data-value="1"></i><b>(1)</b>
+Lars Vogel(c) 2016 vogella GmbH                     <i class="conum" data-value="2"></i><b>(2)</b>
+Version 0.3, 17.05.2021                             <i class="conum" data-value="3"></i><b>(3)</b>
+:sectnums:                                          <i class="conum" data-value="4"></i><b>(4)</b>
+:toc:                                               <i class="conum" data-value="5"></i><b>(5)</b>
+:toclevels: 4                                       <i class="conum" data-value="6"></i><b>(6)</b>
+:toc-title: My Content                              <i class="conum" data-value="7"></i><b>(7)</b>
+:experimental:                                      <i class="conum" data-value="8"></i><b>(8)</b>
+:description: Example AsciiDoc document             <i class="conum" data-value="9"></i><b>(9)</b>
+:imagesdir: ./img                                   <i class="conum" data-value="10"></i><b>(10)</b>
+
+This is the optional preamble (an untitled section body). Useful for
+writing simple sectionless documents consisting only of a preamble.
+
+== First section
+
+Some text
+
+== Second section
+
+More test</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>文档标题及副标题</p>
+</li>
+<li>
+<p>标题下一行列出作者信息</p>
+</li>
+<li>
+<p>文件修订版本</p>
+</li>
+<li>
+<p>需要展示各章节编号</p>
+</li>
+<li>
+<p>生出文档目录，toc即Table Of Contents</p>
+</li>
+<li>
+<p>默认toc仅展示两级目录，toclevel可以修改为其它值</p>
+</li>
+<li>
+<p>默认目录标题为 <code>Table Of Contents</code>，使用toc-title修改为其它值</p>
+</li>
+<li>
+<p>启用实验性功能</p>
+</li>
+<li>
+<p>文档的描述</p>
+</li>
+<li>
+<p>默认图片目录</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_syntax"><a class="anchor" href="#_syntax"></a>3.2. Syntax</h3>
+<div class="paragraph">
+<p>AsciiDoc相关语法参考 <a href="https://docs.asciidoctor.org/asciidoc/latest/">官方站点</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_asciidoc_vs_markdown"><a class="anchor" href="#_asciidoc_vs_markdown"></a>3.3. AsciiDoc vs Markdown</h3>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<a href="https://docs.asciidoctor.org/asciidoc/latest/asciidoc-vs-markdown/">官方站点</a>详细对比了AsciiDoc和Markdown，本节内容主要是对其进行摘取和翻译
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Markdown是最流行的轻量级文本标记语言，它的语法简单易于学习，很多开源项目的文档也都是使用Markdown编写的包括Dubbo、Nacos等，
+然而语法简单也注定它无法满足一些复杂常见的文档编写需求包括表格、文档交叉引用、脚注、嵌入视频等。而AsciiDoc既保留了简洁的编写语法，
+又考虑到了几乎所有场景的文档编写需求，很多技术书籍就是使用AsciiDoc编写完成后打印出版的。最重要的是AsciiDoc的语法设计为可扩展的，
+用户完全可以根据自己的需求设计特殊AsciiDoc语法。</p>
+</div>
+<div class="paragraph">
+<p>下表对AsciiDoc语法和Markdown语法的比较，不过此处仅关注了AsciiDoc和Markdown都支持的语法</p>
+</div>
+<table class="tableblock frame-all grid-all fit-content">
+<colgroup>
+<col>
+<col>
+<col>
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Language Feature</th>
+<th class="tableblock halign-left valign-top">Markdown</th>
+<th class="tableblock halign-left valign-top">AsciiDoc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">加粗(受约束)</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">**bold**</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>*bold*</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">加粗 (不受约束)</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">**b**old</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>**b**old</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">斜体 (受约束)</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">*italic*</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>_italic_</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">斜体 (不受约束)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>n/a</em></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>__i__talic</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">等宽词 (受约束)</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">`monospace`</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>`monospace`</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">等宽词 (不受约束)</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">`m`onospace</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>``m``onospace</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">超链接</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">[Asciidoctor](https://asciidoctor.org)</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>https://asciidoctor.org[Asciidoctor]</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">相对路径链接</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">[user guide](user-guide.html)</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>link:user-guide.html[user guide]
+xref:user-guide.adoc[user guide]</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">文件链接</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">[get the PDF]({% raw %}{{ site.url }}{% endraw %}/assets/mydoc.pdf)</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>link:{site-url}/assets/mydoc.pdf[get the PDF]</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">交叉引用</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">See [Usage](#_usage).
+
+&lt;h2 id="_usage"&gt;Usage&lt;/h2&gt;</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>See &lt;&lt;_usage&gt;&gt;.
+
+== Usage</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">锚点</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">&lt;h2 id="usage"&gt;Usage&lt;/h2&gt;</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>[#usage]
+== Usage</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">内联图片</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">![Logo](/images/logo.png)</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>image:logo.png[Logo]</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">图片</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>n/a</em></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>image::logo.png[Logo]</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">章节标题</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">## Heading 2</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>== Heading 2</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">引用</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">&gt; Quoted text.
+&gt;
+&gt; Another paragraph in quote.</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>____
+Quoted text.
+
+Another paragraph in quote.
+____</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">文本</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">    $ gem install asciidoctor</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">Indented (by 1 or more spaces)</div>
+<div class="content">
+<pre class="highlight"><code> $ gem install asciidoctor</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Delimited</div>
+<div class="content">
+<pre class="highlight"><code>....
+$ gem install asciidoctor
+....</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">代码</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">```java
+public class Person {
+  private String name;
+  public Person(String name) {
+    this.name = name;
+  }
+}
+```</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>[source,java]
+----
+public class Person {
+  private String name;
+  public Person(String name) {
+    this.name = name;
+  }
+}
+----</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">无序列表</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">* apples
+* orange
+  * temple
+  * navel
+* bananas</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>* apples
+* oranges
+** temple
+** navel
+* bananas</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">有序列表</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">1. first
+2. second
+3. third</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>. first
+. second
+. third</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">文档头</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">Slapped on as &#8220;front matter&#8221;</div>
+<div class="content">
+<pre class="highlight"><code class="language-markdown" data-lang="markdown">---
+layout: docs
+title: Writing posts
+prev_section: defining-frontmatter
+next_section: creating-pages
+permalink: /docs/writing-posts/
+---</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">Native support!</div>
+<div class="content">
+<pre class="highlight"><code>= Writing posts
+:page-layout: base
+:showtitle:
+:prev_section: defining-frontmatter
+:next_section: creating-pages</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">警告</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>n/a</em></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>TIP: You can add line numbers to source listings by adding the word `numbered` in the attribute list after the language name.</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">块标题</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>n/a</em></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>.Grocery list
+* Milk
+* Eggs
+* Bread</code></pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+受约束的是指使用时前后必须有空格，不受约束的则表示可以在任何地方使用
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_asciidoctor"><a class="anchor" href="#_asciidoctor"></a>4. Asciidoctor</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://asciidoctor.org/">Asciidoctor</a> 是最流行的AsciiDoc处理软件，它使用Ruby编写，源码托管在GitHub上，
+很多知名的项目如Spring、Hibernate、JUnit等都是使用Asciidoctor生成项目文档的。</p>
+</div>
+<div class="paragraph">
+<p>AsciiDoctor能够快速将asciidoc文档转换为Html5、Docbook、Pdf、Epub3等多种格式。
+同时AsciiDoctor还提供了很多扩展接口，允许开发者根据特定需求扩展AsciiDoctor的功能，
+下文介绍的 <code>Bilibili Extension</code> 以及 <code>Spring Backend</code> 就是对AsciiDoctor的扩展。</p>
+</div>
+<div class="paragraph">
+<p>Asciidoctor包含了多种不同形式的实现用于满足不同人员的需求，包括命令行工具、Intellij IDEA插件、浏览器插件、Maven插件、Gradle插件等，
+本文选择对Java开发者比较友好的Intellij IDEA和maven插件进行介绍。</p>
+</div>
+<div class="sect2">
+<h3 id="_intellij_idea_plugin"><a class="anchor" href="#_intellij_idea_plugin"></a>4.1. Intellij IDEA Plugin</h3>
+<div class="paragraph">
+<p>搜索AsciiDoc插件安装即可。</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/install-from-marketplace.png" alt="install from marketplace">
+</div>
+</div>
+<div class="paragraph">
+<p>插件安装完成后新建.adoc结尾的文件就会自动使用此插件，左侧为使用asciidoc编写的原始内容，右侧为渲染后的效果。</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/asciidoc-intellij-idea-plugin-editor.png" alt="asciidoc intellij idea plugin editor">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_asciidoctor_maven_plugin"><a class="anchor" href="#_asciidoctor_maven_plugin"></a>4.2. Asciidoctor-Maven-Plugin</h3>
+<div class="paragraph">
+<p>Asciidoctor Maven Plugin可以将AsciiDoc文档转换为多种格式。跟其它Maven插件一样，在 <code>pom.xml</code> 中添加AsciiDoctor插件配置即可开始使用。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;project&gt;
+    ...
+    &lt;build&gt;
+        ...
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.asciidoctor&lt;/groupId&gt;
+            &lt;artifactId&gt;asciidoctor-maven-plugin&lt;/artifactId&gt;
+            &lt;version&gt;2.2.1&lt;/version&gt;
+            &lt;executions&gt;
+                &lt;execution&gt;
+                    &lt;id&gt;convert-to-html&lt;/id&gt;
+                    &lt;phase&gt;generate-resources&lt;/phase&gt;          <i class="conum" data-value="1"></i><b>(1)</b>
+                    &lt;goals&gt;
+                        &lt;goal&gt;process-asciidoc&lt;/goal&gt;
+                    &lt;/goals&gt;
+                    &lt;configuration&gt;
+                        &lt;outputDirectory&gt;${project.build.directory}/html&lt;/outputDirectory&gt;       <i class="conum" data-value="2"></i><b>(2)</b>
+                        &lt;attributes&gt;                           <i class="conum" data-value="3"></i><b>(3)</b>
+                            &lt;source-highlighter&gt;coderay&lt;/source-highlighter&gt;
+                            &lt;imagesdir&gt;./images&lt;/imagesdir&gt;
+                            &lt;toc&gt;left&lt;/toc&gt;
+                            &lt;icons&gt;font&lt;/icons&gt;
+                        &lt;/attributes&gt;
+                    &lt;/configuration&gt;
+                &lt;/execution&gt;
+            &lt;/executions&gt;
+        &lt;/plugin&gt;
+  ...
+&lt;/project&gt;</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>配置插件执行阶段和目标</p>
+</li>
+<li>
+<p><code>Configuration</code> 中配置插件相关参数</p>
+</li>
+<li>
+<p>文档属性</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><code>Configuration</code> 中支持众多参数的配置，下面选择几个重要的进行说明，完整参数列表参考 <a href="https://docs.asciidoctor.org/maven-tools/latest/plugin/goals/process-asciidoc/">官方文档</a></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><em><strong>sourceDirectory</strong></em> </dt>
+<dd>
+<p>源文件目录，默认检查 <em>/src/docs/asciidoc, /src/asciidoc和/src/main/asciidoc</em>。</p>
+</dd>
+<dt class="hdlist1"><em><strong>sourceDocumentName</strong></em> </dt>
+<dd>
+<p>源文件名称，默认检查 <code>sourceDirectory</code> 下的所有文件。</p>
+</dd>
+<dt class="hdlist1"><em><strong>sourceDocumentExtensions</strong></em> </dt>
+<dd>
+<p>源文件扩展名，默认包含<em>ad, adoc, and asciidoc</em>。</p>
+</dd>
+<dt class="hdlist1"><em><strong>outputDirectory</strong></em> </dt>
+<dd>
+<p>转换后文件输出目录，默认为<em>${project.build.directory}/generated-docs.</em>。</p>
+</dd>
+<dt class="hdlist1"><em><strong>backend</strong></em> </dt>
+<dd>
+<p>转换目标类型，默认是html5。</p>
+</dd>
+<dt class="hdlist1"><em><strong>doctype</strong></em> </dt>
+<dd>
+<p>支持book和article，默认使用article。</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_backend"><a class="anchor" href="#_spring_backend"></a>4.3. Spring Backend</h3>
+<div class="paragraph">
+<p>Asciidoctor提供了通用的文档输出格式，而不同框架或软件则可以根据自身需求进行扩展，Spring为了提升文档可读性创建了 <a href="https://github.com/spring-io/spring-asciidoctor-backends">spring-asciidoctor-backends</a>项目用于生成Spring风格的html文档。</p>
+</div>
+<div class="sect3">
+<h4 id="_install"><a class="anchor" href="#_install"></a>4.3.1. Install</h4>
+<div class="paragraph">
+<p>再Asciidoctor Maven插件中添加Spring Backend相关配置即可使用。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;plugin&gt;
+	&lt;groupId&gt;org.asciidoctor&lt;/groupId&gt;
+	&lt;artifactId&gt;asciidoctor-maven-plugin&lt;/artifactId&gt;
+	&lt;version&gt;2.1.0&lt;/version&gt;
+	&lt;executions&gt;
+		&lt;execution&gt;
+			&lt;id&gt;generate-html-documentation&lt;/id&gt;
+			&lt;phase&gt;prepare-package&lt;/phase&gt;
+			&lt;goals&gt;
+				&lt;goal&gt;process-asciidoc&lt;/goal&gt;
+			&lt;/goals&gt;
+			&lt;configuration&gt;
+				&lt;backend&gt;spring-html&lt;/backend&gt;                      <i class="conum" data-value="1"></i><b>(1)</b>
+			&lt;/configuration&gt;
+		&lt;/execution&gt;
+	&lt;/executions&gt;
+	&lt;dependencies&gt;
+		&lt;dependency&gt;                                                <i class="conum" data-value="2"></i><b>(2)</b>
+			&lt;groupId&gt;io.spring.asciidoctor.backends&lt;/groupId&gt;
+			&lt;artifactId&gt;spring-asciidoctor-backends&lt;/artifactId&gt;
+			&lt;version&gt;${spring-asciidoctor-backends.version}&lt;/version&gt;
+		&lt;/dependency&gt;
+	&lt;/dependencies&gt;
+&lt;/plugin&gt;
+
+&lt;repositories&gt;
+	&lt;repository&gt;                                                    <i class="conum" data-value="3"></i><b>(3)</b>
+		&lt;id&gt;spring-release&lt;/id&gt;
+		&lt;name&gt;Spring Releases&lt;/name&gt;
+		&lt;url&gt;https://repo.spring.io/release&lt;/url&gt;
+		&lt;snapshots&gt;
+			&lt;enabled&gt;false&lt;/enabled&gt;
+		&lt;/snapshots&gt;
+	&lt;/repository&gt;
+&lt;/repositories&gt;</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>backend设置为spring-html</p>
+</li>
+<li>
+<p>添加spring-backend依赖</p>
+</li>
+<li>
+<p>配置Spring Maven仓库</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_spring_look_and_feel"><a class="anchor" href="#_spring_look_and_feel"></a>4.3.2. Spring Look and Feel</h4>
+<div class="paragraph">
+<p>生成的html样式与Spring官网保持一致，左上角展示Spring的Logo。</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+后期可能会允许使用自定义的Logo，参考 <a href="https://github.com/spring-io/spring-asciidoctor-backends/issues/24">Ability to override the banner logo</a>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_responsive_design"><a class="anchor" href="#_responsive_design"></a>4.3.3. Responsive Design</h4>
+<div class="paragraph">
+<p>生成的html遵循响应式设计，能在各种设备上很好地展示，如台式机、平板电脑、智能手机等。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_back_to_index_link"><a class="anchor" href="#_back_to_index_link"></a>4.3.4. "Back to Index" Link</h4>
+<div class="paragraph">
+<p>如果当前页面部署index.html,那么提供一个Back to Index链接用于返回到首页</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_dark_mode"><a class="anchor" href="#_dark_mode"></a>4.3.5. Dark Mode</h4>
+<div class="paragraph">
+<p>页面右上角支持切换黑夜模式，模式设置保存在本地，无需每次重新加载后设置</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_tabs"><a class="anchor" href="#_tabs"></a>4.3.6. Tabs</h4>
+<div class="paragraph">
+<p>支持多个Tab页合并与切换，常见的如Maven和Gradle，Java和Groovy、Kotlin</p>
+</div>
+<div class="listingblock primary">
+<div class="title">Maven</div>
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;com.example&lt;/groupId&gt;
+    &lt;artifactId&gt;some-library&lt;/artifactId&gt;
+    &lt;version&gt;1.2.3&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="listingblock secondary">
+<div class="title">Gradle</div>
+<div class="content">
+<pre class="highlight"><code>compile 'com.example:some-library:1.2.3'</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_code_folding"><a class="anchor" href="#_code_folding"></a>4.3.7. Code Folding</h4>
+<div class="paragraph">
+<p>折叠部分非核心代码，例如Java代码的import或者getter、setter</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block">public class Example {
+
+	private String first;
+
+	private String second;
+
+</span><span class="fold-block hide-when-unfolded">	// getters / setters...
+
+</span><span class="fold-block hide-when-folded">	public String getFirst() {
+		return this.first;
+	}
+
+	public void setFirst(String first) {
+		this.first = first;
+	}
+
+	public String getSecond() {
+		return this.second;
+	}
+
+	public void setSecond(String second) {
+		this.second = second;
+	}
+
+</span><span class="fold-block">}
+</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_different_config_blocks"><a class="anchor" href="#_different_config_blocks"></a>4.3.8. Different Config Blocks</h4>
+<div class="paragraph">
+<p>configblocks用于生成同一配置的yaml格式和properties格式，例如下面的源文件和渲染后效果</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[source,yaml,configblocks]
+----
+example:
+  property:
+    alpha: a
+----</pre>
+</div>
+</div>
+<div class="listingblock primary">
+<div class="title">Properties</div>
+<div class="content">
+<pre class="highlight"><code class="language-properties" data-lang="properties">example.property.alpha=a</code></pre>
+</div>
+</div>
+<div class="listingblock secondary">
+<div class="title">Yaml</div>
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">example:
+  property:
+    alpha: a</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+此功能还需要添加 <code>io.spring.asciidoctor:spring-asciidoctor-extensions-spring-boot</code> 依赖，参考 <a href="https://github.com/spring-io/spring-asciidoctor-extensions">spring-asciidoctor-extensions</a>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_bilibili_extension"><a class="anchor" href="#_bilibili_extension"></a>4.4. Bilibili Extension</h3>
+<div class="paragraph">
+<p>文档中插入视频是很常见的需求，可能是需要记录视频教程的学习笔记，也可能是使用视频对文档的内容做进一步说明。
+默认Asciidoctor仅支持在文档中插入Youtube、vimeo视频或者本地视频文件，但国内开发者更多使用的是Bilibili，
+因此开发了 <code>asciidoctor-bilibili-extension</code> 用于向AsciiDoc文档中插入Bilibili视频，
+详细用法参考 <a href="https://github.com/pxzxj/asciidoctor-bilibili-extension">asciidoctor-bilibili-extension</a>。</p>
+</div>
+<div class="videoblock"><div class="content">
+<iframe width="640" height="480" src="https://player.bilibili.com/player.html?bvid=BV12t411m7RV&high_quality=1&page=1"  border="0" frameborder="no" framespacing="0" scrolling="no" allowfullscreen="true"></iframe>
+</div></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples"><a class="anchor" href="#_examples"></a>5. Examples</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Asciidoctor提供了大量的 <a href="https://github.com/asciidoctor/asciidoctor-maven-examples">Maven示例</a>用于说明相关功能，本文选择常用的几类进行说明</p>
+</div>
+<div class="sect2">
+<h3 id="_html"><a class="anchor" href="#_html"></a>5.1. Html</h3>
+<div class="paragraph">
+<p>参考 <a href="https://github.com/asciidoctor/asciidoctor-maven-examples/tree/main/asciidoc-to-html-example">asciidoc-to-html-example</a>，也可以参考<a href="#cicd">CI/CD示例</a>。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pdf"><a class="anchor" href="#_pdf"></a>5.2. Pdf</h3>
+<div class="paragraph">
+<p>参考 <a href="https://github.com/asciidoctor/asciidoctor-maven-examples/tree/main/asciidoctor-pdf-cjk-example">asciidoctor-pdf-cjk-example</a>，也可以参考<a href="#cicd">CI/CD示例</a>。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="cicd"><a class="anchor" href="#cicd"></a>5.3. CI/CD</h3>
+<div class="paragraph">
+<p><code>Docs as Code</code> 要求文档同代码一样能够在CI/CD流水线中自动发布，例如可以将生成的html文件部署到nginx搭建的站点上就可以直接在浏览器中查看文档了，
+由于文档是使用Maven插件生成的，因此整个发布过程与普通Java项目没有任何区别。
+本文使用 <code>GitHub Action</code> 以及 <code>GitHub Pages</code> 演示CI/CD过程，示例代码参考 <a href="https://github.com/pxzxj/asciidoc-cicd-demo">asciidoc-cicd-demo</a>。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_doc_review"><a class="anchor" href="#_doc_review"></a>5.4. Doc Review</h3>
+<div class="paragraph">
+<p>代码需要评审，文档也一样，通过文档评审可以逐步提升文档质量以及团队文档编写能力。</p>
+</div>
+<div class="paragraph">
+<p>GitHub和GitLab都提供了强大的 <code>Review</code> 功能，可以对PR的内容进行评审和讨论，只有评审通过的内容才会合并。
+以Spring Boot项目中的一个对 <code>README.adoc</code> 润色的 <a href="https://github.com/spring-projects/spring-boot/pull/28835">PR</a>为例，
+Spring成员查看提交的内容并提出疑问，原作者进行回复</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/doc-review.png" alt="doc review">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_style"><a class="anchor" href="#_style"></a>6. Style</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>上文主要讨论了编写技术文档使用的工具，而文档编写的另一个重要主题是写作规范，
+使用陈述句还是祈使句、使用第一人称还是第二人称等等这些语法细节也会影响最终文档的质量。</p>
+</div>
+<div class="paragraph">
+<p>Spring就非常重视文档写作规范， <a href="https://github.com/spring-io/spring-asciidoctor-backends/blob/main/guides/style-guide.adoc">spring-style</a>详细描述了编写Spring技术文档相关规范，
+同时还根据开发者反馈对文档不断进行 <a href="https://github.com/spring-projects/spring-boot/issues/27895">优化</a>，可以说完善的文档也是Spring框架如此成功的重要原因之一。</p>
+</div>
+<div class="paragraph">
+<p>Kubernetes的文档规范参考 <a href="https://kubernetes.io/docs/contribute/style/style-guide/">Documentation Style Guide</a></p>
+</div>
+<div class="paragraph">
+<p>中文技术领域目前比较受开发者认可的是由阮一峰编写的 <a href="https://www.ruanyifeng.com/blog/2016/10/document_style_guide.html">中文技术文档的写作规范</a>，GitHub的Star数量已经接近一万。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_best_practice"><a class="anchor" href="#_best_practice"></a>7. Best Practice</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>先列举文档的目录，再补充各章节的内容。</p>
+</li>
+<li>
+<p>参考优秀的开源项目文档。</p>
+</li>
+<li>
+<p>内容为王，时间紧急情况下优先保证内容，其次考虑格式美观。</p>
+</li>
+<li>
+<p><strong>写</strong>，立即开始。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

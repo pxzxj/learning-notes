@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj">
+<title>spring-security</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>spring-security</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="email" class="email"><a href="mailto:pudge.zxj@gmail.com">pudge.zxj@gmail.com</a></span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_争议">1. 争议</a></li>
+<li><a href="#_为什么用">2. 为什么用</a>
+<ul class="sectlevel2">
+<li><a href="#_安全是一件专业的事儿">2.1. 安全是一件专业的事儿</a></li>
+<li><a href="#_多元化的认证要求">2.2. 多元化的认证要求</a></li>
+<li><a href="#_易用性">2.3. 易用性</a></li>
+</ul>
+</li>
+<li><a href="#_怎么用">3. 怎么用</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_争议"><a class="anchor" href="#_争议"></a>1. 争议</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>spring-security在国内社区有较多 <a href="https://www.zhihu.com/question/460284894/answer/3080593874">争议</a>，一部分部分开发者认为spring-security功能强大，也有一部分开发者认为它过于复杂</p>
+</div>
+<div class="paragraph">
+<p>还有大量的开发者在纠结到底该不该使用它</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_为什么用"><a class="anchor" href="#_为什么用"></a>2. 为什么用</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_安全是一件专业的事儿"><a class="anchor" href="#_安全是一件专业的事儿"></a>2.1. 安全是一件专业的事儿</h3>
+<div class="paragraph">
+<p>以 <a href="https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html">密码的存储</a>为例就经过了 <code>明文存储 &#8594; 加密存储 &#8594; 存储hash值</code> 这几个阶段，那么该使用什么hash算法？</p>
+</div>
+<div class="paragraph">
+<p>各种安全问题该怎么处理？例如CSRF攻击、XSS攻击、Sql注入攻击</p>
+</div>
+<div class="paragraph">
+<p>spring-security是由spring团队在众多安全领域的专家协助下开发完成的</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_多元化的认证要求"><a class="anchor" href="#_多元化的认证要求"></a>2.2. 多元化的认证要求</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>单一的表单登录已经不能满足要求</p>
+</li>
+<li>
+<p>有些场景需要使用Basic认证，例如Eureka Server、Actuator接口</p>
+</li>
+<li>
+<p>使用其它平台（例如QQ、GitHub）账号登录需要使用OAuth2</p>
+</li>
+<li>
+<p>微服务需要使用OAuth2</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>spring-security支持几乎所有认证功能</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_易用性"><a class="anchor" href="#_易用性"></a>2.3. 易用性</h3>
+<div class="paragraph">
+<p>spring-security与spring-boot整合方便</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+前spring-boot时代  
+</td>
+<td class="hdlist2">
+<p>手动配置+xml配置</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+spring-boot时代   
+</td>
+<td class="hdlist2">
+<p>自动配置+java配置</p>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_怎么用"><a class="anchor" href="#_怎么用"></a>3. 怎么用</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>参考 <a href="https://docs.spring.io/spring-security/reference/index.html">官方文档</a>，spring文档的特点</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>内容编排完善，由浅入深</p>
+</li>
+<li>
+<p>内容详尽</p>
+</li>
+<li>
+<p>英文简单，借助工具更简单</p>
+</li>
+<li>
+<p>随版本不断演进</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>spring-ecurity文档内容非常多，需要根据个人需要有选择的看，另外阅读文档时同步阅读源码相互印证或者编写demo项目查看效果并debug</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

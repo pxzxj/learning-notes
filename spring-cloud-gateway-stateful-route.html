@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2023/03/08">
+<title>Spring Cloud Gateway有状态路由</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Spring Cloud Gateway有状态路由</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2023/03/08</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_项目准备">1. 项目准备</a></li>
+<li><a href="#_配置验证">2. 配置验证</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Gateway是目前最流行的网关实现之一，通常与Spring Cloud中其它框架一起用于构建微服务项目，Spring Cloud Gateway默认是按照负载均衡的方式将请求路由到后端服务实例的，但在某些特殊场景下则需要有状态路由，例如服务有两个接口其中一个用于生成文件存储在本地，下一个接口用于下载生成的文件。本文介绍有状态路由的实现方法</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_项目准备"><a class="anchor" href="#_项目准备"></a>1. 项目准备</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>新建一个网关项目 <code>gateway</code> 和后端服务项目 <code>backend</code>，并在 <code>backend</code> 中定义两个有状态的接口</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@RestController
+public class MyController {
+
+    private final Map&lt;String, String&gt; map = new HashMap&lt;&gt;();
+
+    @RequestMapping("/get")
+    public String get() {
+        return map.get("key");
+    }
+
+    @RequestMapping("/set/{value}")
+    public void set(@PathVariable String value) {
+        map.put("key", value);
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>backend</code> 启动两个实例并在 <code>gateway</code> 中配置两个实例的地址，此处为 <code>localhost:8082</code> 和 <code>localhost:8083</code>，对应的实例Id是 <code>ins2</code> 和 <code>ins3</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">server:
+  port: 8081
+spring:
+  cloud:
+    discovery:
+      client:
+        simple:
+          instances:
+            backend:
+              - uri: http://localhost:8082
+                instance-id: ins2
+              - uri: http://localhost:8083
+                instance-id: ins3
+    gateway:
+      routes:
+        - id: backend
+          uri: lb://backend
+          predicates:
+            - Path=/**</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+完整项目源码参考 <a href="https://github.com/pxzxj/spring-cloud-gateway-stateful-route">GitHub</a>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>此时通过网关先调用 <code>/set/vv</code> 接口再调用 <code>/get</code> 接口是显然无法获取到上一步保存的 <code>vv</code> 的，因为按照默认的负载均衡算法，两次请求被路由到了不同的 <code>backend</code> 实例上</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>C:\Users\pxzxj1&gt;curl "http://localhost:8081/set/vv"
+
+C:\Users\pxzxj1&gt;curl "http://localhost:8081/get"
+
+C:\Users\pxzxj1&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_配置验证"><a class="anchor" href="#_配置验证"></a>2. 配置验证</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud LoadBalancer提供了 <a href="https://docs.spring.io/spring-cloud-commons/docs/3.1.6/reference/html/#request-based-sticky-session-for-loadbalancer">Request-based Sticky Session</a>配置可以解决有状态路由问题，Spring Cloud Cloud也使用了Spring Cloud LoadBalancer实现路由选择</p>
+</div>
+<div class="paragraph">
+<p>首先在网关的配置文件中添加如下内容</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">spring:
+  cloud:
+    loadbalancer:
+      configurations: request-based-sticky-session               <i class="conum" data-value="1"></i><b>(1)</b>
+      sticky-session:
+        add-service-instance-cookie: true                        <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>基于请求中的Cookie路由，默认Cookie名称是 <code>sc-lb-instance-id</code></p>
+</li>
+<li>
+<p>请求转发到后端时将选中的后端实例信息添加到请求的Cookie中</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>为了将此次选中的实例信息返回客户端，后端接口也需要修改，将网关添加到请求中的Cookie添加到响应中</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@RestController
+public class MyController {
+
+    private final Map&lt;String, String&gt; map = new HashMap&lt;&gt;();
+
+    @RequestMapping("/get")
+    public String get() {
+        return map.get("key");
+    }
+
+    @RequestMapping("/set/{value}")
+    public void set(@PathVariable String value, HttpServletRequest request, HttpServletResponse response) {
+        Cookie[] cookies = request.getCookies();
+        if(cookies != null) {
+            for(Cookie cookie : cookies) {
+                if("sc-lb-instance-id".equals(cookie.getName())) {
+                    response.addCookie(cookie);
+                    break;
+                }
+            }
+        }
+        map.put("key", value);
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>此时再次调用 <code>/set/vv</code> 接口可以在它的响应的Cookie中看到本次网关选中的后端实例为 <code>ins2</code>，那么调用 <code>/get</code> 时也附带上此Cookie就可以使网关把请求也路由到 <code>ins2</code>，从而获取到 <code>vv</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>C:\Users\pxzxj1&gt;curl "http://localhost:8081/set/vv" -v
+*   Trying 127.0.0.1:8081...
+* Connected to localhost (127.0.0.1) port 8081 (#0)
+&gt; GET /set/vv HTTP/1.1
+&gt; Host: localhost:8081
+&gt; User-Agent: curl/7.83.1
+&gt; Accept: */*
+&gt;
+* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 200 OK
+&lt; Set-Cookie: sc-lb-instance-id=ins2
+&lt; Content-Length: 0
+&lt; Date: Wed, 08 Mar 2023 08:44:57 GMT
+&lt;
+* Connection #0 to host localhost left intact
+
+C:\Users\pxzxj1&gt;curl -H "Cookie: sc-lb-instance-id=ins2" "http://localhost:8081/get"
+vv
+C:\Users\pxzxj1&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2021/12/02">
+<title>线上环境调试方法</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>线上环境调试方法</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2021/12/02</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_背景">1. 背景</a></li>
+<li><a href="#_方法">2. 方法</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_背景"><a class="anchor" href="#_背景"></a>1. 背景</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在某些业务场景中，开发的功能无法本地验证，只能在测试环境甚至生产环境验证，典型的如调用其它厂商的Rest接口或者Webservice接口，
+对方服务只能在内网环境访问，此时需要将开发的程序打包部署在内网环境进行调试验证，验证失败则根据异常信息修改代码重新打包部署，
+如此重复数次甚至数十次直到联调成功，这个过程浪费大量时间在打包部署上面，更好的方式是直接在线上环境修改代码并执行验证。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_方法"><a class="anchor" href="#_方法"></a>2. 方法</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://github.com/pxzxj/webservice-demo/tree/master/client">webservice-client</a> 仓库中包含了一个 <code>Client</code> 类用于调用webservice，
+按照下面步骤操作就可以在线上环境运行 <code>Client</code></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>执行 <code>mvn dependency:copy-dependencies</code> ，将webservice-client的所有依赖jar包下载到 <code>target/dependency</code> 目录中</p>
+</li>
+<li>
+<p>线上环境新建一个项目目录client</p>
+</li>
+<li>
+<p>client目录下新建lib目录并将第一步的所有jar包上传到lib目录下</p>
+</li>
+<li>
+<p>client目录下新建src目录以及对应的包目录并在包下创建用于调用webservice接口的java文件</p>
+</li>
+<li>
+<p>编译项目 <code>javac -cp lib/* -d bin  src/io/github/*.java</code></p>
+</li>
+<li>
+<p>运行Client类 <code>java -cp bin;lib/* io.github.Client</code></p>
+</li>
+<li>
+<p>如果有异常则修改 <code>Client</code> 类或者新增其它类并重复5、6步</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+在Linux环境下第6步 <code>-cp</code> 后的多个jar包路径使用分号连接，如果所有jar包都在同一目录内，可以使用 <code>find $your-jar-lib-fold  -name  *.jar | xargs | sed  "s/ /:/g"</code> 命令生成所有jar包的classpath结果
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+不只是webservice，任何的java程序例如Spring Boot应用都可以使用这种方式在线上进行调试
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

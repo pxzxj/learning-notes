@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2024/08/22">
+<title>两种任务调度模式</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>两种任务调度模式</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2024/08/22</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_单独调度服务">1. 单独调度服务</a></li>
+<li><a href="#_worker自调度">2. worker自调度</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>构建业务系统时通常会把一些耗时且复杂的任务放在一个独立的服务中执行，即上图中的 <code>worker</code>，任务量大时为了更快地完成任务还必须启动多个 <code>worker</code> 服务实例，此时就需要考虑怎么把一批任务合理地分配到这些 <code>worker</code> 上执行，本文把这个分配过程称为 <strong>调度</strong></p>
+</div>
+<div class="paragraph">
+<p>下图是两种典型的调度模式，其中 <code>producer</code> 代表任务的生产者，通常是一个单独的服务，<code>storage</code> 代表任务信息的存储，可能是普通的RDB也可能是Redis或消息中间件，下文对这两种模式进一步详细介绍</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/task-schedule.png" alt="task schedule">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_单独调度服务"><a class="anchor" href="#_单独调度服务"></a>1. 单独调度服务</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>scheduler</code> 代表一个单独的调度服务，所有 <code>worker</code> 都从 <code>scheduler</code> 获取任务信息，可能是scheduler主动 <code>push</code> 也可能是 <code>worker</code> 不断 <code>poll</code></p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>push</code> 和 <code>poll</code> 模式当然也各有利弊，读者可以自行查阅相关资料了解
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>此模式的优势是 <code>worker</code> 更轻量级，尤其是使用基于http协议的 <code>poll</code> 获取任务时，此时 <code>worker</code> 不再局限于使用Java实现，几乎任何语言都可能快速开发出一个 <code>worker</code> 服务</p>
+</div>
+<div class="paragraph">
+<p>此外此模式还支持在 <code>scheduler</code> 中实现比较复杂的调度策略例如指定 <code>worker</code>、延迟执行等，还能对任务执行做进一步管理，例如任务的超时、重试等</p>
+</div>
+<div class="paragraph">
+<p>此模式的缺点主要在于开发难度较高，尤其是 <code>scheduler</code> 要考虑到调度过程中的诸多细节，例如怎么实现各个 <code>worker</code> 平均分配、怎么保证 <code>scheduler</code> 的高可用，要不要根据 <code>worker</code> 当前性能情况动态调整调度数量等等，在之前的项目中多次出现过因为 <code>scheduler</code> 设计缺陷导致 <code>任务卡住</code> 的问题</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_worker自调度"><a class="anchor" href="#_worker自调度"></a>2. worker自调度</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>该模式由 <code>worker</code> 直接从 <code>storage</code> 中获取任务，获取的方法完全取决于 <code>storage</code> 的类型，如果是RDB就轮询执行sql语句查询任务信息表，如果是消息中间件就把 <code>worker</code> 作为一个消费者，该模式依赖 <code>worker</code> 自身实现合理调用</p>
+</div>
+<div class="paragraph">
+<p>该模式的优点是架构简单，开发难度也较低，开发者只需要掌握基础的 <code>storage</code> 操作API即可</p>
+</div>
+<div class="paragraph">
+<p>该模式的缺点同样明显，不支持复杂调度策略，但是注意一些常见的策略如按照 <code>任务优先级</code> 调度是完全能够实现的，此外在跨语言上此模式也不如前一种</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

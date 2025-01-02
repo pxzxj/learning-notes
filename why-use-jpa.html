@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2024/08/05">
+<title>为什么应该使用Spring Data JPA</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>为什么应该使用Spring Data JPA</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2024/08/05</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_现状">1. 现状</a></li>
+<li><a href="#_介绍">2. 介绍</a>
+<ul class="sectlevel2">
+<li><a href="#_libraries">2.1. Libraries</a></li>
+<li><a href="#_official_libraries">2.2. Official Libraries</a></li>
+<li><a href="#_jpa">2.3. JPA</a></li>
+<li><a href="#_jpa_vs_mybatis">2.4. JPA vs MyBatis</a></li>
+<li><a href="#_spring_data_jpa">2.5. Spring Data JPA</a></li>
+<li><a href="#_特性">2.6. 特性</a></li>
+</ul>
+</li>
+<li><a href="#_示例">3. 示例</a>
+<ul class="sectlevel2">
+<li><a href="#_快速开始">3.1. 快速开始</a></li>
+<li><a href="#_spring_data_jpa_vs_mybatis">3.2. Spring Data JPA vs MyBatis</a></li>
+<li><a href="#_声明式查询方法">3.3. 声明式查询方法</a></li>
+<li><a href="#_自定义sql">3.4. 自定义sql</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="videoblock"><div class="content">
+<iframe width="640" height="480" src="https://player.bilibili.com/player.html?bvid=BV1EMpreFE5Q&high_quality=1&page=1"  border="0" frameborder="no" framespacing="0" scrolling="no" allowfullscreen="true"></iframe>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_现状"><a class="anchor" href="#_现状"></a>1. 现状</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="images/java-data-access-technology.png" alt="java data access technology">
+</div>
+</div>
+<div class="paragraph">
+<p>(<a href="https://x.com/starbuxman/status/1528655715933597697">via</a>)</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/intellij-jpa.png" alt="intellij jpa">
+</div>
+</div>
+<div class="paragraph">
+<p>(<a href="https://www.jetbrains.com/idea/jakarta/">via</a>)</p>
+</div>
+<div class="paragraph">
+<p><strong class="big">Intellij IDEA和Spring不断新增对JPA的特性支持</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_介绍"><a class="anchor" href="#_介绍"></a>2. 介绍</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_libraries"><a class="anchor" href="#_libraries"></a>2.1. Libraries</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/java-libraries.png" alt="java libraries">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_official_libraries"><a class="anchor" href="#_official_libraries"></a>2.2. Official Libraries</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Servlet</p>
+</li>
+<li>
+<p>JDBC</p>
+</li>
+<li>
+<p>WebSocket Client</p>
+</li>
+<li>
+<p>Email Client</p>
+</li>
+<li>
+<p>Validation</p>
+</li>
+<li>
+<p>JAX-RS(The Java API for RESTful Web Services)</p>
+</li>
+<li>
+<p>JPA</p>
+</li>
+<li>
+<p>javax.xxx/jakarta.xxx</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jpa"><a class="anchor" href="#_jpa"></a>2.3. JPA</h3>
+<div class="paragraph">
+<p><a href="https://jcp.org/en/jsr/detail?id=338">JPA</a>（Java Persistence API）是Java EE规范的一部分，它提供了一种将Java对象映射到关系数据库表的标准方法。JPA旨在简化数据持久化过程，即把内存中的对象状态保存到数据库中，以及从数据库中恢复对象状态到内存中。通过这种方式，开发者可以更加专注于业务逻辑的实现，而不是数据库操作的细节。</p>
+</div>
+<div class="paragraph">
+<p>JPA包含了一系列的标准接口和类，这些接口和类定义了对象关系映射（ORM）的标准。开发者可以使用这些接口和类来创建实体（Entity）类，这些类代表数据库中的表，并使用注解（Annotations）或XML映射文件来定义实体与数据库表之间的映射关系。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jpa_vs_mybatis"><a class="anchor" href="#_jpa_vs_mybatis"></a>2.4. JPA vs MyBatis</h3>
+<div class="paragraph">
+<p>ORM（Object-Relational Mapping）框架是一种在面向对象的编程语言中使用的技术，它提供了一种将对象模型映射到关系型数据库表的方式，MyBatis只能映射孤立的对象和数据库表，而不能映射对象间的关系，也就是说只实现了OM，因此有时候会把MyBatis称为 <strong>半个ORM框架</strong></p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/mybatis-orm-jpa.png" alt="mybatis orm jpa">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_data_jpa"><a class="anchor" href="#_spring_data_jpa"></a>2.5. Spring Data JPA</h3>
+<div class="paragraph">
+<p><a href="https://spring.io/projects/spring-data-jpa">Spring Data JPA</a>是Spring Data设计思想在JPA上的实现，允许开发者以一种声明式和简洁的方式来处理数据库操作，使用它能够极大地简化JPA的使用，减少模板代码，轻松构建Java EE应用</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/jpa-hibernate.png" alt="jpa hibernate">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_特性"><a class="anchor" href="#_特性"></a>2.6. 特性</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>可靠性高</p>
+</li>
+<li>
+<p>代码可读性高</p>
+</li>
+<li>
+<p>安全性高</p>
+</li>
+<li>
+<p>开发效率高</p>
+</li>
+<li>
+<p>移植性高</p>
+</li>
+<li>
+<p>与Spring Boot整合方便</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_示例"><a class="anchor" href="#_示例"></a>3. 示例</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>开发一个简单的学生管理系统，学生信息包括姓名、年龄、性别、家属，一个学生对应多个家属，家属信息包含姓名、年龄、与学生关系</p>
+</div>
+<div class="sect2">
+<h3 id="_快速开始"><a class="anchor" href="#_快速开始"></a>3.1. 快速开始</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+        &lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class Student {
+
+    //...
+
+    public static class Family {
+
+        //...
+    }
+}
+
+public interface StudentRepository extends CrudRepository&lt;Student, Long&gt; {
+
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_data_jpa_vs_mybatis"><a class="anchor" href="#_spring_data_jpa_vs_mybatis"></a>3.2. Spring Data JPA vs MyBatis</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/service-sdj-vs-mp.png" alt="service sdj vs mp">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_声明式查询方法"><a class="anchor" href="#_声明式查询方法"></a>3.3. 声明式查询方法</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface StudentRepository extends CrudRepository&lt;Student, Long&gt; {
+
+    List&lt;Student&gt; findByNameLike(String name);
+
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-shell" data-lang="shell">2024-08-05 13:35:28.639  INFO 20516 --- [           main] o.s.t.c.transaction.TransactionContext   : Began transaction (1) for test context ...
+Hibernate: select student0_.id as id1_0_, student0_.age as age2_0_, student0_.gender as gender3_0_, student0_.name as name4_0_ from student student0_ where student0_.name like ? escape ?
+2024-08-05 13:35:28.935  INFO 20516 --- [           main] o.s.t.c.transaction.TransactionContext   : Rolled back transaction for test ...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_自定义sql"><a class="anchor" href="#_自定义sql"></a>3.4. 自定义sql</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface StudentRepository extends CrudRepository&lt;Student, Long&gt; {
+
+    @Query(value = "update student set age=?1", nativeQuery = true)
+    @Modifying
+    int updateAge(Integer age);
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>更多特性参考 <a href="https://docs.spring.io/spring-data/jpa/reference/">官方文档</a>，源码参考 <a href="https://github.com/pxzxj/spring-data-jpa-sample">GitHub</a></p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+更多注解的用法参考 <a href="https://jcp.org/en/jsr/detail?id=338">JPA规范</a>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

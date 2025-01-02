@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<title>Java开发问题排查方法与技巧</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Java开发问题排查方法与技巧</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_通用方法">1. 通用方法</a>
+<ul class="sectlevel2">
+<li><a href="#_日志">1.1. 日志</a></li>
+<li><a href="#_搜索">1.2. 搜索</a></li>
+<li><a href="#_重现">1.3. 重现</a></li>
+<li><a href="#_缩小范围">1.4. 缩小范围</a></li>
+<li><a href="#_替换">1.5. 替换</a></li>
+<li><a href="#_debug_remote_debug">1.6. Debug &amp; Remote Debug</a>
+<ul class="sectlevel3">
+<li><a href="#_tomcat远程调试">1.6.1. tomcat远程调试</a></li>
+<li><a href="#_spring_boot远程调试">1.6.2. spring boot远程调试</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#_问题分类">2. 问题分类</a>
+<ul class="sectlevel2">
+<li><a href="#_系统资源">2.1. 系统资源</a>
+<ul class="sectlevel3">
+<li><a href="#_cpu占用高">2.1.1. CPU占用高</a></li>
+<li><a href="#_内存溢出">2.1.2. 内存溢出</a></li>
+</ul>
+</li>
+<li><a href="#_接口">2.2. 接口</a></li>
+<li><a href="#_采集">2.3. 采集</a></li>
+<li><a href="#_springmvc">2.4. SpringMVC</a></li>
+<li><a href="#_spring_boot">2.5. Spring Boot</a></li>
+<li><a href="#_spring_security">2.6. Spring Security</a></li>
+<li><a href="#_spring_data_jpa">2.7. Spring Data JPA</a></li>
+<li><a href="#_maven">2.8. Maven</a>
+<ul class="sectlevel3">
+<li><a href="#_依赖冲突">2.8.1. 依赖冲突</a></li>
+<li><a href="#_传递依赖失败">2.8.2. 传递依赖失败</a></li>
+</ul>
+</li>
+<li><a href="#_tomcat">2.9. Tomcat</a></li>
+<li><a href="#_mysql">2.10. MySQL</a></li>
+<li><a href="#_elasticsearch">2.11. Elasticsearch</a></li>
+<li><a href="#_kafka">2.12. Kafka</a></li>
+<li><a href="#_其它">2.13. 其它</a></li>
+</ul>
+</li>
+<li><a href="#_总结">3. 总结</a></li>
+<li><a href="#_appendices">Appendices</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_通用方法"><a class="anchor" href="#_通用方法"></a>1. 通用方法</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_日志"><a class="anchor" href="#_日志"></a>1.1. 日志</h3>
+<div class="paragraph">
+<p>不论是开发或者使用其它组件，一定要知道它的日志保存在哪</p>
+</div>
+<div class="paragraph">
+<p>配置文件配置日志位置</p>
+</div>
+<div class="paragraph">
+<p>systemctl</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_搜索"><a class="anchor" href="#_搜索"></a>1.2. 搜索</h3>
+<div class="paragraph">
+<p>关键字选择</p>
+</div>
+<div class="paragraph">
+<p>Google  &gt;&gt;   Bing    &gt;&gt;  baidu</p>
+</div>
+<div class="paragraph">
+<p>官方文档、项目Issue、javadoc</p>
+</div>
+<div class="paragraph">
+<p>例如搜索发现项目加入spring security后CPU利用率升高</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_重现"><a class="anchor" href="#_重现"></a>1.3. 重现</h3>
+<div class="paragraph">
+<p>本地环境重现</p>
+</div>
+<div class="paragraph">
+<p>快速重现，甚至为了重现问题单独开发一个程序</p>
+</div>
+<div class="paragraph">
+<p>重现一般也是和下一节的缩小范围一起反复尝试</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_缩小范围"><a class="anchor" href="#_缩小范围"></a>1.4. 缩小范围</h3>
+<div class="paragraph">
+<p>删除不相关代码</p>
+</div>
+<div class="paragraph">
+<p>新建测试项目
+单独开发一个程序还可以避免受其它功能影响，例如axis2和cxf会相互影响</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_替换"><a class="anchor" href="#_替换"></a>1.5. 替换</h3>
+<div class="paragraph">
+<p>有时候实现同一目的的方法有很多种，例如nginx、haproxy、端口映射都能实现反向代理，与其花大量时间解决一个方案存在的问题不如直接选择另一个方案</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_debug_remote_debug"><a class="anchor" href="#_debug_remote_debug"></a>1.6. Debug &amp; Remote Debug</h3>
+<div class="sect3">
+<h4 id="_tomcat远程调试"><a class="anchor" href="#_tomcat远程调试"></a>1.6.1. tomcat远程调试</h4>
+
+</div>
+<div class="sect3">
+<h4 id="_spring_boot远程调试"><a class="anchor" href="#_spring_boot远程调试"></a>1.6.2. spring boot远程调试</h4>
+
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_问题分类"><a class="anchor" href="#_问题分类"></a>2. 问题分类</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_系统资源"><a class="anchor" href="#_系统资源"></a>2.1. 系统资源</h3>
+<div class="sect3">
+<h4 id="_cpu占用高"><a class="anchor" href="#_cpu占用高"></a>2.1.1. CPU占用高</h4>
+
+</div>
+<div class="sect3">
+<h4 id="_内存溢出"><a class="anchor" href="#_内存溢出"></a>2.1.2. 内存溢出</h4>
+<div class="paragraph">
+<p>内存溢出有多种报错形式
+jstat
+HeapDumpOnOutOfMemory
+MAT</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_接口"><a class="anchor" href="#_接口"></a>2.2. 接口</h3>
+<div class="paragraph">
+<p>curl</p>
+</div>
+<div class="paragraph">
+<p>webservice(优先选择生成客户端代码)</p>
+</div>
+<div class="paragraph">
+<p>浏览器控制台copy as curl</p>
+</div>
+<div class="paragraph">
+<p>部署到服务器后接口访问不到(防火墙问题)</p>
+</div>
+<div class="paragraph">
+<p>接口调用卡死(jstack查看线程栈信息，查看gc确认是否存在内存溢出问题)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_采集"><a class="anchor" href="#_采集"></a>2.3. 采集</h3>
+<div class="paragraph">
+<p>回显取不到或取不全</p>
+</div>
+<div class="paragraph">
+<p>回车问题</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_springmvc"><a class="anchor" href="#_springmvc"></a>2.4. SpringMVC</h3>
+<div class="paragraph">
+<p>接口写了，访问404
+项目部署上去</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_boot"><a class="anchor" href="#_spring_boot"></a>2.5. Spring Boot</h3>
+<div class="paragraph">
+<p>自动配置</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_security"><a class="anchor" href="#_spring_security"></a>2.6. Spring Security</h3>
+<div class="paragraph">
+<p>UsernamePasswordFilter</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_data_jpa"><a class="anchor" href="#_spring_data_jpa"></a>2.7. Spring Data JPA</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_maven"><a class="anchor" href="#_maven"></a>2.8. Maven</h3>
+<div class="sect3">
+<h4 id="_依赖冲突"><a class="anchor" href="#_依赖冲突"></a>2.8.1. 依赖冲突</h4>
+
+</div>
+<div class="sect3">
+<h4 id="_传递依赖失败"><a class="anchor" href="#_传递依赖失败"></a>2.8.2. 传递依赖失败</h4>
+
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tomcat"><a class="anchor" href="#_tomcat"></a>2.9. Tomcat</h3>
+<div class="paragraph">
+<p>出错了 catalina.out 没异常<br>
+日志刷太快 打印不好看
+日志分隔</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mysql"><a class="anchor" href="#_mysql"></a>2.10. MySQL</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_elasticsearch"><a class="anchor" href="#_elasticsearch"></a>2.11. Elasticsearch</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_kafka"><a class="anchor" href="#_kafka"></a>2.12. Kafka</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_其它"><a class="anchor" href="#_其它"></a>2.13. 其它</h3>
+<div class="paragraph">
+<p>前后端责任不清晰，相互推诿</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_总结"><a class="anchor" href="#_总结"></a>3. 总结</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>以上都是简单问题
+夯实基础知识</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_appendices"><a class="anchor" href="#_appendices"></a>Appendices</h2>
+<div class="sectionbody">
+<div class="videoblock"><div class="content">
+<iframe width="640" height="480" src="https://player.bilibili.com/player.html?bvid=BV1vt411g7F5&high_quality=1&page=1"  border="0" frameborder="no" framespacing="0" scrolling="no" allowfullscreen="true"></iframe>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

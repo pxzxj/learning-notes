@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2023/12/22">
+<title>java 8之后新特性</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>java 8之后新特性</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2023/12/22</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_关键特性">1. 关键特性</a></li>
+<li><a href="#_switch优化">2. switch优化</a></li>
+<li><a href="#_try_with_resources增强">3. try-with-resources增强</a></li>
+<li><a href="#_新增api">4. 新增API</a>
+<ul class="sectlevel2">
+<li><a href="#_集合增强">4.1. 集合增强</a></li>
+<li><a href="#_字符串增强">4.2. 字符串增强</a></li>
+<li><a href="#_数学运算增强">4.3. 数学运算增强</a></li>
+<li><a href="#_httpclientjdk_11">4.4. HttpClient(<code>JDK 11</code>)</a></li>
+<li><a href="#_hexformatjdk_17">4.5. HexFormat(<code>JDK 17</code>)</a></li>
+<li><a href="#_arrays">4.6. Arrays</a></li>
+<li><a href="#_unixdomainsocketaddressjdk_16">4.7. UnixDomainSocketAddress(<code>JDK 16</code>)</a></li>
+<li><a href="#_reactive_streams_publish_subscribe_frameworkjdk_9">4.8. Reactive Streams publish-subscribe framework(<code>JDK 9</code>)</a></li>
+<li><a href="#_varhandlejdk_9">4.9. VarHandle(<code>JDK 9</code>)</a></li>
+</ul>
+</li>
+<li><a href="#_杂项">5. 杂项</a></li>
+<li><a href="#_preview">6. Preview</a>
+<ul class="sectlevel2">
+<li><a href="#_string_templatesjdk_21_preview">6.1. String Templates(<code>JDK 21 Preview</code>)</a></li>
+<li><a href="#_unnamed_variablesjdk_21_preview">6.2. Unnamed Variables(<code>JDK 21 Preview</code>)</a></li>
+<li><a href="#_unnamed_classes_and_instance_main_methodsjdk_21_preview">6.3. Unnamed Classes and Instance Main Methods(<code>JDK 21 Preview</code>)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Java 21是最近的LTS版本，在今年10月份发布，包含了多个令人兴奋的新特性如虚拟线程等，本文用于总结Java9-21的重要特性，帮助还停留在Java 8的开发者迅速了解新版本并完成迁移</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_关键特性"><a class="anchor" href="#_关键特性"></a>1. 关键特性</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Java架构师Brian Goetz写了如下几篇文章用于介绍关键新特性</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+局部变量的类型推断  
+</td>
+<td class="hdlist2">
+<p><a href="https://www.infoq.cn/article/ET9ffWtGxErjvwexCl5G">Java 特性聚焦：局部变量的类型推断</a></p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+封闭类   
+</td>
+<td class="hdlist2">
+<p><a href="https://www.infoq.cn/article/x66h5q2sPwSLsmbxkA1T">Java 新特性前瞻：封印类</a></p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+记录类   
+</td>
+<td class="hdlist2">
+<p><a href="https://www.infoq.cn/article/bJrVTPcuXGG0cHQpSzae">Java 14 特性专题报道：记录</a></p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+文本块   
+</td>
+<td class="hdlist2">
+<p><a href="https://www.infoq.cn/article/L53YgjdXISy793CfLjSI">Java 特性专题报道：文本块</a></p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+模式匹配 
+</td>
+<td class="hdlist2">
+<p><a href="https://www.infoq.cn/article/1CB7jiLBmvU3Hbxw2ZO7">Java 新特性解析：模式匹配</a></p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+面向数据编程  
+</td>
+<td class="hdlist2">
+<p><a href="https://www.infoq.cn/article/e0cVtyDv3LwKAvJ3076N">Java 中的面向数据编程</a></p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+虚拟线程 
+</td>
+<td class="hdlist2">
+<p><a href="https://www.infoq.cn/article/YaBqqD7fd6kX97GbhkGm">虚拟线程：大规模 Java 应用的新基石</a></p>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_switch优化"><a class="anchor" href="#_switch优化"></a>2. switch优化</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>switch 内部现在支持使用表达式，表达式的结果作为switch的返回值，使用表达式时不需要像之前那样添加break语句</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">int numLetters = switch (day) {
+    case MONDAY, FRIDAY, SUNDAY -&gt; 6;
+    case TUESDAY                -&gt; 7;
+    default      -&gt; {
+      String s = day.toString();
+      int result = s.length();
+      yield result;
+    }
+};
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_try_with_resources增强"><a class="anchor" href="#_try_with_resources增强"></a>3. try-with-resources增强</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>try-with-resources支持声明多个需要释放的资源</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">try (BufferedReader br1 = new BufferedReader(...);
+    BufferedReader br2 = new BufferedReader(...)) {
+    System.out.println(br1.readLine() + br2.readLine());
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>可以明显感觉到这样的代码可读性很差，Java 9中对此进行了增强如下，注意此时br1和br2尽管没有显式声明为final但已经有了final的语义，不允许再修改</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">BufferedReader br1 = new BufferedReader(...);
+BufferedReader br2 = new BufferedReader(...);
+try (br1; br2) {
+    System.out.println(br1.readLine() + br2.readLine());
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_新增api"><a class="anchor" href="#_新增api"></a>4. 新增API</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_集合增强"><a class="anchor" href="#_集合增强"></a>4.1. 集合增强</h3>
+<div class="paragraph">
+<p>Java 9新增了多个方法用于简化集合创建</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">Set&lt;Integer&gt; mySet = Set.of(1, 2, 3);
+List&lt;Integer&gt; myList = List.of(1, 2, 3);
+Map&lt;String, Integer&gt; myMap = Map.of("one", 1, "two", 2);
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Java 21中新增了三个有序集合接口</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>SequencedCollection</p>
+</li>
+<li>
+<p>SequencedSet</p>
+</li>
+<li>
+<p>SequencedMap</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/sequencedcollectiondiagram20220216.jpg" alt="sequencedcollectiondiagram20220216">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_字符串增强"><a class="anchor" href="#_字符串增强"></a>4.2. 字符串增强</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>String.splitWithDelimiters(String regex, int limit)</code> 用于分隔字符串，返回的数组包含匹配到的分隔符</p>
+</li>
+<li>
+<p><code>StringBuffer/StringBuilder.repeat(CharSequence cs, int count)</code> 追加多个相同的字符串序列到末尾</p>
+</li>
+<li>
+<p><code>String.repeat(int count)</code> 返回当前字符串重复count次后的字符串</p>
+</li>
+<li>
+<p><code>String.lines()</code> 返回字符串中所有行的流</p>
+</li>
+<li>
+<p><code>String.transform(Function&lt;? super String, ? extends R&gt; f)</code> 字符串转换为R</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_数学运算增强"><a class="anchor" href="#_数学运算增强"></a>4.3. 数学运算增强</h3>
+<div class="paragraph">
+<p>为了使Java语言能够应用于机器学习等大规模数据计算场景中，新版本的Java增强了数学运算的API</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Math.clamp(long value, int min, int max)</code> 用于得到三个值的中间值</p>
+</li>
+<li>
+<p><code>Math.divideExact()</code> 用于long和int的除法，结果溢出时抛出异常</p>
+</li>
+<li>
+<p><code>BigInteger.parallelMultiply()</code> 更高性能的两个大数相乘</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_httpclientjdk_11"><a class="anchor" href="#_httpclientjdk_11"></a>4.4. HttpClient(<code>JDK 11</code>)</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">HttpClient httpClient = HttpClient.newBuilder().build();
+
+HttpRequest request =
+  HttpRequest.newBuilder()
+    .uri(URI.create("https://advancedweb.hu/"))
+    .GET()
+    .build();
+
+HttpResponse&lt;String&gt; response =
+  httpClient.send(request, BodyHandlers.ofString());
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hexformatjdk_17"><a class="anchor" href="#_hexformatjdk_17"></a>4.5. HexFormat(<code>JDK 17</code>)</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">HexFormat.of().toHexDigits(123);
+//  ==&gt; "0000007b"
+HexFormat.of().fromHexDigits("0000007b");
+// ==&gt; 123
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_arrays"><a class="anchor" href="#_arrays"></a>4.6. Arrays</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>mismatch()</code> 方法返回两个数组第一个不相同元素的索引</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_unixdomainsocketaddressjdk_16"><a class="anchor" href="#_unixdomainsocketaddressjdk_16"></a>4.7. UnixDomainSocketAddress(<code>JDK 16</code>)</h3>
+<div class="paragraph">
+<p>用于实现Unix domain socket的SocketAddress实现类</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_reactive_streams_publish_subscribe_frameworkjdk_9"><a class="anchor" href="#_reactive_streams_publish_subscribe_frameworkjdk_9"></a>4.8. Reactive Streams publish-subscribe framework(<code>JDK 9</code>)</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_varhandlejdk_9"><a class="anchor" href="#_varhandlejdk_9"></a>4.9. VarHandle(<code>JDK 9</code>)</h3>
+<div class="paragraph">
+<p>VarHandle API to replace the field and array related operations of java.util.concurrent.atomic and sun.misc.Unsafe in order to and provide low-level access mechamisms, e.g. atomic write.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_杂项"><a class="anchor" href="#_杂项"></a>5. 杂项</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>jwebserver启动一个简单的web服务，一般用于开发测试</p>
+</li>
+<li>
+<p>移除Nashorn</p>
+</li>
+<li>
+<p>NullPointerException优化，提示导致空指针的变量</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_preview"><a class="anchor" href="#_preview"></a>6. Preview</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_string_templatesjdk_21_preview"><a class="anchor" href="#_string_templatesjdk_21_preview"></a>6.1. String Templates(<code>JDK 21 Preview</code>)</h3>
+<div class="paragraph">
+<p>变量与字符串连接为一个新的字符串是代码非常频繁的操作，目前版本的Java可以使用加号连接、
+StringBuilder、String.format来实现，但这些都不如字符串模板来的简单直观</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">var name = "Duke";
+var info = STR."My name is \{name}";
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_unnamed_variablesjdk_21_preview"><a class="anchor" href="#_unnamed_variablesjdk_21_preview"></a>6.2. Unnamed Variables(<code>JDK 21 Preview</code>)</h3>
+<div class="paragraph">
+<p>对于不会实际使用的变量可以把变量名或者变量类型与变量名声明为下划线</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">var _ = mySet.add(x); // ignore the return value
+
+try {
+  // ...
+} catch (Exception _) { // ignore the exception object
+  // ...
+}
+
+list.stream()
+  .map((_) -&gt; /* ... */) // ignore the parameter
+  .toList();
+
+if (r instanceof Point(int x, _)) {
+  // work with x, ignore second parameter
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_unnamed_classes_and_instance_main_methodsjdk_21_preview"><a class="anchor" href="#_unnamed_classes_and_instance_main_methodsjdk_21_preview"></a>6.3. Unnamed Classes and Instance Main Methods(<code>JDK 21 Preview</code>)</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">// This is a complete and runnable program!
+void main() {
+  System.out.println("Hello, World!");
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

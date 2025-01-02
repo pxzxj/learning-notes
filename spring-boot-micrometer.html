@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2021/10/29">
+<title>使用Micrometer记录Java应用指标</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>使用Micrometer记录Java应用指标</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2021/10/29</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_observability">1. Observability</a></li>
+<li><a href="#_micrometer">2. Micrometer</a>
+<ul class="sectlevel2">
+<li><a href="#_支持的监控软件">2.1. 支持的监控软件</a>
+<ul class="sectlevel3">
+<li><a href="#_基于指标格式分类">2.1.1. 基于指标格式分类</a></li>
+<li><a href="#_基于采集方式分类">2.1.2. 基于采集方式分类</a></li>
+</ul>
+</li>
+<li><a href="#_术语">2.2. 术语</a>
+<ul class="sectlevel3">
+<li><a href="#_meter">2.2.1. Meter</a></li>
+<li><a href="#_meterregistry">2.2.2. MeterRegistry</a></li>
+</ul>
+</li>
+<li><a href="#_examples">2.3. Examples</a>
+<ul class="sectlevel3">
+<li><a href="#_counter_timer">2.3.1. Counter &amp; Timer</a></li>
+<li><a href="#_compositeregistry_loggingregistry">2.3.2. CompositeRegistry  &amp;  LoggingRegistry</a></li>
+<li><a href="#_tags_commonstags">2.3.3. Tags &amp; CommonsTags</a></li>
+<li><a href="#_gauge">2.3.4. Gauge</a></li>
+</ul>
+</li>
+<li><a href="#_最佳实践">2.4. 最佳实践</a>
+<ul class="sectlevel3">
+<li><a href="#_避免指标数量过多">2.4.1. 避免指标数量过多</a></li>
+<li><a href="#_使用meterfilter降噪">2.4.2. 使用MeterFilter降噪</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#_spring_boot_micrometer">3. Spring Boot <span class="image"><img src="images/heart.png" alt="25" width="25"></span> Micrometer</a>
+<ul class="sectlevel2">
+<li><a href="#autowired-mr">3.1. Autowired MeterRegistry</a></li>
+<li><a href="#_metrics_endpoint">3.2. Metrics Endpoint</a></li>
+<li><a href="#_resttemplate">3.3. RestTemplate</a></li>
+<li><a href="#_meterbinder">3.4. MeterBinder</a></li>
+<li><a href="#_meterfilter">3.5. MeterFilter</a></li>
+<li><a href="#_common_tags">3.6. Common Tags</a></li>
+<li><a href="#_healthinfo">3.7. HealthInfo</a></li>
+</ul>
+</li>
+<li><a href="#_prometheus_grafana">4. Prometheus &amp; Grafana</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>本文根据SpringOne 2019的演讲Performance Monitoring Backend and Frontend using Micrometer整理而成，英语能力不错的建议直接观看下面的原始视频</p>
+</div>
+<div class="videoblock"><div class="content">
+<iframe width="640" height="480" src="https://player.bilibili.com/player.html?bvid=BV1jQ4y1q7uC&high_quality=1&page=1"  border="0" frameborder="no" framespacing="0" scrolling="no" allowfullscreen="true"></iframe>
+</div></div>
+<div class="paragraph">
+<p><a href="slides/SpringOne2019-ClintChecketts-PerformanceMonitoringBackendandFrontendUsingMicrometer.pdf">PPT</a> <a href="https://github.com/checketts/micrometer-springone-2019">代码</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_observability"><a class="anchor" href="#_observability"></a>1. Observability</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>监控告警是软件系统尤其是对可用性要求高的软件系统的重要组成部分，通过监控告警可以防患于未然，将故障对业务系统的影响降到最低<br>
+通常监控需要包含三部分内容日志、指标、跟踪</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>日志(Logging)</strong>  </dt>
+<dd>
+<p>日志记录了所有业务操作的详细信息，对日常问题定位起着至关重要的左右。日志记录通常使用日志框架Slf4j、Log4j、Logback实现，小应用直接使用日志文件即可无需考虑其它存储方式，而对中大型的应用或者微服务场景中一般使用ELFK的方案存储日志</p>
+</dd>
+<dt class="hdlist1"><strong>指标(Metrics)</strong>  </dt>
+<dd>
+<p>指标是对某一业务数据的统计或聚合例如常见的CPU利用率、接口访问量等，相比日志指标是更直观的数据，基于指标可以快速发现系统存在在的问题，指标一般也会与告警系统一起使用使运维人员能在问题出现时立刻收到通知<br>
+指标统计可以使用Micrometer实现，Micrometer的使用也是本文的主要内容，指标的结果一般使用时序数据库进行存储常见的如InfluxDB、Prometheus等</p>
+</dd>
+<dt class="hdlist1"><strong>跟踪(Traceing)</strong> </dt>
+<dd>
+<p>跟踪通常只在比较复杂的业务系统例如一个业务操作需要调用不同的应用程序完成的场景中使用，通过traceId可以将这些不同的调用关联起来进行分析<br>
+Zipkin可以用来实现应用跟踪</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_micrometer"><a class="anchor" href="#_micrometer"></a>2. Micrometer</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Micrometer用于在JVM应用中实现指标统计功能，它的最大特点是使用了类似Slf4j门面模式的设计，使开发者无需关注指标的存储实现，直接使用统一的API记录即可，开发完成后可以选择Micrometer支持的任意一种或多种存储系统，正如使用Slf4j记录的日志既可以使用Log4j的实现也可以使用Logback的实现</p>
+</div>
+<div class="sect2">
+<h3 id="_支持的监控软件"><a class="anchor" href="#_支持的监控软件"></a>2.1. 支持的监控软件</h3>
+<div class="paragraph">
+<p>Micrometer支持众多监控软件，这些软件一般会通过下面两种方式进行分类</p>
+</div>
+<div class="sect3">
+<h4 id="_基于指标格式分类"><a class="anchor" href="#_基于指标格式分类"></a>2.1.1. 基于指标格式分类</h4>
+<div class="paragraph">
+<p>指标格式有基于维度的(Dimensional)和基于层级的(Hierarchical)两种，Dimensional指标是由一个名称和多个Tag组成，每个Tag是一个键值对，Hierarchical指标则只有一个名称，所有信息都压扁保存在名称中<br></p>
+</div>
+<div class="exampleblock">
+<div class="title">Hierarchical</div>
+<div class="content">
+<div class="literalblock">
+<div class="content">
+<pre>server1.http.requests = 10
+us-east.blue.server1.http.requests.200.users = 10</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="exampleblock">
+<div class="title">Dimensional</div>
+<div class="content">
+<div class="literalblock">
+<div class="content">
+<pre>http_requests{server="server1"} 10
+http_requests{server="server1", region="us-east", cluster="blue", status="200", uri="users"} 10</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>从上面的示例可以看出基于维度的指标有两个优点，首先是意义更清晰，它的每个维度都是一个key-value格式的数据，通过维度信息可以很明确看出指标的意义，而基于层级的只有value而没有key，所以不容易理解；另一个优点是它更灵活便于修改，指标维度变化时可以直接修改而不破坏原来的结构</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Dimensional</th>
+<th class="tableblock halign-left valign-top">Hierarchical</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AppOptics, Atlas, Azure Monitor, Cloudwatch, Datadog, Datadog StatsD, Dynatrace, Elastic, Humio, Influx, KairosDB, New Relic, Prometheus, SignalFx, Sysdig StatsD, Telegraf StatsD, Wavefront</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Graphite, Ganglia, JMX, Etsy StatsD</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_基于采集方式分类"><a class="anchor" href="#_基于采集方式分类"></a>2.1.2. 基于采集方式分类</h4>
+<div class="paragraph">
+<p>采集方式有Client push和Server poll两种方式，不管哪种方式都是周期执行</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Client pushes</th>
+<th class="tableblock halign-left valign-top">Server polls</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AppOptics, Atlas, Azure Monitor, Datadog, Elastic, Graphite, Ganglia, Humio, Influx, JMX, Kairos, New Relic, SignalFx, Wavefront</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus, all StatsD flavors</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_术语"><a class="anchor" href="#_术语"></a>2.2. 术语</h3>
+<div class="sect3">
+<h4 id="_meter"><a class="anchor" href="#_meter"></a>2.2.1. Meter</h4>
+<div class="paragraph">
+<p>Meter表示一个指标，新增业务指标时首先需要确定它的类型，Micrometer支持下面几种类型</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Counter：计数器，用于保存单调递增型的数据，例如站点的访问次数，JVM的GC次数等；不能为负值，也不支持减少，但可以重置为0</p>
+</li>
+<li>
+<p>Gauge：仪表盘，用于存储有着起伏特征的数据，例如堆内存的大小，注意能用Counter记录的指标不要用Guage</p>
+</li>
+<li>
+<p>Timer：计时器，记录事件的次数和总时间，例如HTTP请求消耗的时间，Timer同时也会包含次数统计，不需要再使用Counter</p>
+</li>
+<li>
+<p>Distribution Summaries： 用于跟踪事件的分布，与Timer结构类似，但值的单位可以是自定义的任意单位</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>确定类型后要为指标取一个合适的名称并添加标签(Tag)，名称最好由小写字母和点组成例如http.request.count，标签是key-value格式的数据，key-value都是字符串，key最好也只包含小写字母和点，一个指标可以包含多个Tag，最终的指标形式如下</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="paragraph">
+<p>cpu.usage {"host"="192.168.3.1"}<br>
+cpu.usage {"host"="192.168.3.2"}</p>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>名称和标签唯一确定了一个指标，上面的示例表示示两台主机的cpu利用率，host值不同就是两个不同的指标</p>
+</div>
+<div class="paragraph">
+<p>其它指标相关内容 <a href="https://micrometer.io/docs/concepts">官方文档</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_meterregistry"><a class="anchor" href="#_meterregistry"></a>2.2.2. MeterRegistry</h4>
+<div class="paragraph">
+<p>MeterRegistry代表指标的存储，每种监控软件都有对应的MeterRegistry实现</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_examples"><a class="anchor" href="#_examples"></a>2.3. Examples</h3>
+<div class="sect3">
+<h4 id="_counter_timer"><a class="anchor" href="#_counter_timer"></a>2.3.1. Counter &amp; Timer</h4>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block">package io.github;
+
+</span><span class="fold-block hide-when-folded">import io.micrometer.core.instrument.*;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
+import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
+import io.micrometer.core.instrument.logging.LoggingRegistryConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+</span><span class="fold-block">public class MicrometerTest {
+
+    private List&lt;Chore&gt; chores = Arrays.asList(
+            new Chore("Mow front lawn", Duration.ofMinutes(20), "yard"),
+            new Chore("Mow back lawn", Duration.ofMinutes(10), "yard"),
+            new Chore("Gather the laundry", Duration.ofMinutes(7), "laundry"),
+            new Chore("Wash the laundry", Duration.ofMinutes(3), "laundry"),
+            new Chore("Sort/Fold the laundry", Duration.ofMinutes(50), "laundry"),
+            new Chore("Was the dishes", Duration.ofMinutes(10), "kitchen"),
+            new Chore("Find my phone charger", Duration.ofMinutes(5))
+    );
+
+    @Test
+    void testCounterAndTimer() {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();                 <i class="conum" data-value="1"></i><b>(1)</b>
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();                <i class="conum" data-value="2"></i><b>(2)</b>
+            meterRegistry.timer("chore.duration").record(chore.getDuration());   <i class="conum" data-value="3"></i><b>(3)</b>
+        }
+
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+    }
+
+        static class Chore {
+
+        private String name;
+        private Duration duration;
+        private String group;
+
+        public Chore(String name, Duration duration, String group) {
+            this.name = name;
+            this.duration = duration;
+            this.group = group;
+        }
+
+        public Chore(String name, Duration duration) {
+            this.name = name;
+            this.duration = duration;
+            this.group = "home";
+        }
+
+        //getter, setter
+    }
+}
+</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>SimpleMeterRegistry</code> 可以用来测试Micrometer的功能，</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>MeterRegistry</code> 的 <code>counter()</code> 方法用来创建Counter类型指标，<code>Counter.increment()</code> 方法表示该指标值加1</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><code>MeterRegistry</code> 的 <code>timer()</code> 方法用来创建Counter类型指标，<code>Timer.record()</code> 方法记录事件耗时</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+可以在 <a href="https://github.com/pxzxj/micrometer-demo">GitHub</a> 下载示例源码
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_compositeregistry_loggingregistry"><a class="anchor" href="#_compositeregistry_loggingregistry"></a>2.3.2. CompositeRegistry  &amp;  LoggingRegistry</h4>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class MicrometerTest {
+
+    @Test
+    void testCompositeMeterRegistryAndLoggingMeterRegistry() throws InterruptedException {
+        CompositeMeterRegistry meterRegistry = Metrics.globalRegistry;       //  <i class="conum" data-value="1"></i><b>(1)</b>
+        LoggingRegistryConfig loggingRegistryConfig = new LoggingRegistryConfig() {
+            @Override
+            public String get(String s) {
+                return null;
+            }
+
+            @Override
+            public boolean logInactive() {
+                return true;
+            }
+
+            @Override
+            public Duration step() {
+                return Duration.ofSeconds(5);
+            }
+        };   <i class="conum" data-value="2"></i><b>(2)</b>
+        MeterRegistry loggingRegistry = new LoggingMeterRegistry(loggingRegistryConfig, Clock.SYSTEM);
+        meterRegistry.add(loggingRegistry);
+        meterRegistry.add(new SimpleMeterRegistry());
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();
+            meterRegistry.timer("chore.duration").record(chore.getDuration());
+        }
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+        for(int i = 1; i &lt; 100; i++) {           <i class="conum" data-value="3"></i><b>(3)</b>
+            TimeUnit.SECONDS.sleep(1);
+            System.out.println("Waiting " + i);
+        }
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>可以使用 <code>Metrics.globalRegistry</code> 也可以使用 <code>new CompositeMeterRegistry()</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>设置日志每5秒推送一次</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>等100s为了观察 `LoggingMeterRegistry`的效果</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_tags_commonstags"><a class="anchor" href="#_tags_commonstags"></a>2.3.3. Tags &amp; CommonsTags</h4>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class MicrometerTest {
+
+    @Test
+    void testTagsAndCommonTags() throws InterruptedException {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        meterRegistry.config().commonTags("team", "spring");          //  <i class="conum" data-value="1"></i><b>(1)</b>
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();
+            meterRegistry.timer("chore.duration", Tags.of("group", chore.getGroup())).record(chore.getDuration());  <i class="conum" data-value="2"></i><b>(2)</b>
+        }
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+    }
+
+}
+</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>添加commonsTags，commonsTag就是对所有指标都生效的Tag</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>使用 两个参数的 <code>timer()</code> 方法为Timer指标添加Tag</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_gauge"><a class="anchor" href="#_gauge"></a>2.3.4. Gauge</h4>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class MicrometerTest {
+
+    @Test
+    void testGauge() throws InterruptedException {
+        CompositeMeterRegistry meterRegistry = Metrics.globalRegistry;
+        LoggingRegistryConfig loggingRegistryConfig = new LoggingRegistryConfig() {
+            @Override
+            public String get(String s) {
+                return null;
+            }
+
+            @Override
+            public boolean logInactive() {
+                return true;
+            }
+
+            @Override
+            public Duration step() {
+                return Duration.ofSeconds(5);
+            }
+        };
+        MeterRegistry loggingRegistry = new LoggingMeterRegistry(loggingRegistryConfig, Clock.SYSTEM);
+        meterRegistry.add(loggingRegistry);
+        meterRegistry.add(new SimpleMeterRegistry());
+        meterRegistry.config().commonTags("team", "spring");
+        addGauge(meterRegistry);
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();
+            meterRegistry.timer("chore.duration", Tags.of("group", chore.getGroup())).record(chore.getDuration());
+        }
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+        System.gc();
+        for(int i = 1; i &lt; 100; i++) {
+            TimeUnit.SECONDS.sleep(1);
+            System.out.println("Waiting " + i);
+        }
+    }
+
+    void addGauge(MeterRegistry meterRegistry) {
+        List&lt;Chore&gt; choresList = new ArrayList&lt;&gt;(chores);
+        meterRegistry.gauge("chore.size.weak", choresList, List::size);          //     <i class="conum" data-value="1"></i><b>(1)</b>
+        meterRegistry.gauge("chore.size.lambda", "", o -&gt; choresList.size());    //   <i class="conum" data-value="2"></i><b>(2)</b>
+        Gauge.builder("chore.size.strong", choresList, List::size).strongReference(true).register(meterRegistry);  //  <i class="conum" data-value="3"></i><b>(3)</b>
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Gauge默认使用弱引用，可能出现值为NaN，演示演示效果时需要注释掉下面两行</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>使用Lambda表达式解决弱引用问题</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>使用强引用</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_最佳实践"><a class="anchor" href="#_最佳实践"></a>2.4. 最佳实践</h3>
+<div class="sect3">
+<h4 id="_避免指标数量过多"><a class="anchor" href="#_避免指标数量过多"></a>2.4.1. 避免指标数量过多</h4>
+<div class="paragraph">
+<p>在使用Micrometer时要注意指标数量，不要出现数量爆炸(Cardinality Explosion)</p>
+</div>
+<div class="paragraph">
+<p>下面是一个典型的示例，有个查询用户的接口 <code>/user/{id}</code> ，新增了一个指标 <code>http_request</code> 记录接口调用量，如果把每次用户请求的url作为一个Tag去记录指标那么最终该接口会出现无数个指标，合理的方式是用 <code>/user/{id}</code> 作为Tag</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/cardinality-explosion.png" alt="cardinality explosion">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_使用meterfilter降噪"><a class="anchor" href="#_使用meterfilter降噪"></a>2.4.2. 使用MeterFilter降噪</h4>
+<div class="paragraph">
+<p>解决指标数量爆炸的另一种方式是MeterFilter，它能够重写指标的Tag甚至是直接忽略指标</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class MicrometerTest {
+
+    @Test
+    void testMeterFilter() throws InterruptedException {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        meterRegistry.config().meterFilter(MeterFilter.deny(id -&gt; id.getName().equals("chore.completed")));   //  <i class="conum" data-value="1"></i><b>(1)</b>
+        meterRegistry.config().meterFilter(MeterFilter.maximumAllowableMetrics(2));                           //  <i class="conum" data-value="2"></i><b>(2)</b>
+        meterRegistry.config().meterFilter(new MeterFilter() {                                                //  <i class="conum" data-value="3"></i><b>(3)</b>
+            @Override
+            public Meter.Id map(Meter.Id id) {
+                if(id.getName().equals("chore.duration")) {
+                    return id.replaceTags(id.getTags().stream().map(tag -&gt; {
+                        if(tag.getKey().equals("group") &amp;&amp; tag.getValue().equals("laundry")) {
+                            return tag;
+                        } else {
+                            return Tag.of("group", "other");
+                        }
+                    }).collect(Collectors.toList()));
+                } else {
+                    return id;
+                }
+            }
+        });
+        meterRegistry.config().commonTags("team", "spring");
+        for(Chore chore : chores) {
+            System.out.println("Doing " + chore.getName());
+            meterRegistry.counter("chore.completed").increment();
+            meterRegistry.timer("chore.duration", Tags.of("group", chore.getGroup())).record(chore.getDuration());
+        }
+        for(Meter meter : meterRegistry.getMeters()) {
+            System.out.println(meter.getId() + "   " + meter.measure());
+        }
+    }
+
+}
+</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>deny()方法用于屏蔽部分指标</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>maximumAllowableMetrics()方法设置最大指标数量，超出此数量的指标会直接忽略</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>map()方法可以转换指标的Tag</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>MeterFilter还有更多用法可以自行查看其API</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring_boot_micrometer"><a class="anchor" href="#_spring_boot_micrometer"></a>3. Spring Boot <span class="image"><img src="images/heart.png" alt="25" width="25"></span> Micrometer</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Boot的Actuator模块提供了与Micrometer的整合，因此在Spring Boot中使用Micrometer会更简单</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">		&lt;dependency&gt;
+		    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+		    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+		&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="autowired-mr"><a class="anchor" href="#autowired-mr"></a>3.1. Autowired MeterRegistry</h3>
+<div class="paragraph">
+<p>Spring Boot自动配置了一个 <code>CompositeMeterRegistry</code> ，因此应用代码中无需再创建，可以直接使用依赖注入，下面是一个构造器注入的示例</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block">package io.github.controller;
+
+</span><span class="fold-block hide-when-folded">import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+</span><span class="fold-block">@RestController
+public class HelloController {
+
+    private Counter counter;
+
+    public HelloController(MeterRegistry meterRegistry) {
+        this.counter = meterRegistry.counter("demo.http.requests.total", Tags.of("uri", "/hello"));
+    }
+
+    @GetMapping("/hello")
+    public String hello() {
+        counter.increment();
+        return "Hello Micrometer!";
+    }
+}
+</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>还可以使用 <code>MeterRegistryCustomizer</code> 对Spring自动配置的 <code>MeterRegistry</code> 做更多配置</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Configuration
+public class MicrometerConfig {
+
+    @Bean
+    public MeterRegistryCustomizer&lt;MeterRegistry&gt; meterRegistryCustomizer() {
+        return registry -&gt; registry.config().commonTags("team", "spring");
+    }
+
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_metrics_endpoint"><a class="anchor" href="#_metrics_endpoint"></a>3.2. Metrics Endpoint</h3>
+<div class="paragraph">
+<p>Actuator提供了/metrics端点用于查看指标的值，首先需要暴露此端点</p>
+</div>
+<div class="listingblock primary">
+<div class="title">Properties</div>
+<div class="content">
+<pre class="highlight"><code class="language-properties" data-lang="properties">management.endpoints.web.exposure.include=health,metrics,prometheus</code></pre>
+</div>
+</div>
+<div class="listingblock secondary">
+<div class="title">Yaml</div>
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>浏览器访问/actuator/metrics就可以看到所有的指标</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/meters-endpoint.jpg" alt="meters endpoint">
+</div>
+</div>
+<div class="paragraph">
+<p>可以看到除了上一步添加的 <code>demo.http.requests.total</code> 指标外还有许多其它指标，这些都是Spring Boot默认提供的，实际上这里只是一部分默认指标，完整的可以参考 <a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.metrics.supported">官方文档</a> 进行查看</p>
+</div>
+<div class="paragraph">
+<p>/metrics后还可以添加特定指标名称查看此指标的值，还可以使用tag参数做进一步过滤，tag参数格式为 <code>tag={key}:{value}</code></p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/specific-metrics.jpg" alt="specific metrics">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_resttemplate"><a class="anchor" href="#_resttemplate"></a>3.3. RestTemplate</h3>
+<div class="paragraph">
+<p>Spring Boot自动配置 <code>RestTemplateBuilder</code> 已经添加了指标统计的功能，使用它创建的 <code>RestTemplate</code> 会使用一个名称为 <code>http.client.requests</code> 的Timer指标记录请求的时延，但要注意接口调用时要使用UriTemplate的形式，否则会出现上文提到的数量爆炸问题</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@RestController
+public class HelloController {
+
+    private RestTemplate restTemplate;
+
+    public HelloController(RestTemplateBuilder builder) {
+        this.restTemplate = builder.build();
+    }
+
+    @GetMapping("/restwithuritemplate")
+    public Map&lt;String, String&gt; restWithUriTemplate(String suffix) {
+        return Collections.singletonMap("html", restTemplate.getForObject("https://tieba.baidu.com/{suffix}", String.class, suffix));
+    }
+
+    @GetMapping("/restwithouturitemplate")
+    public Map&lt;String, String&gt; restWithoutUriTemplate(String suffix) {
+        return Collections.singletonMap("html", restTemplate.getForObject("https://tieba.baidu.com/" + suffix, String.class));
+    }
+
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_meterbinder"><a class="anchor" href="#_meterbinder"></a>3.4. MeterBinder</h3>
+<div class="paragraph">
+<p><a href="#autowired-mr">上文</a>的示例直接向Bean中注入 <code>MeterRegistry</code> 用来记录指标，这样对原代表有很强的侵入性，直接影响了原本的依赖关系，一种更好的方法是使用 <code>MeterBinder</code></p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block hide-when-folded">import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.binder.MeterBinder;
+
+import org.springframework.context.annotation.Bean;
+
+</span><span class="fold-block">public class MyMeterBinderConfiguration {
+
+    @Bean
+    public MeterBinder queueSize(Queue queue) {
+        return (registry) -&gt; Gauge.builder("queueSize", queue::size).register(registry);
+    }
+
+}
+</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_meterfilter"><a class="anchor" href="#_meterfilter"></a>3.5. MeterFilter</h3>
+<div class="paragraph">
+<p>Spring Boot应用中声明为Bean的MeterFilter会自动配置在MeterRegistry上</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block hide-when-folded">import io.micrometer.core.instrument.config.MeterFilter;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+public class MyMetricsFilterConfiguration {
+
+    @Bean
+    public MeterFilter renameRegionTagMeterFilter() {
+        return MeterFilter.renameTag("com.example", "mytag.region", "mytag.area");
+    }
+
+}
+</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_common_tags"><a class="anchor" href="#_common_tags"></a>3.6. Common Tags</h3>
+<div class="paragraph">
+<p>Spring Boot应用可以在application.yml中配置CommonTag</p>
+</div>
+<div class="listingblock primary">
+<div class="title">Properties</div>
+<div class="content">
+<pre class="highlight"><code class="language-properties" data-lang="properties">management.metrics.tags.application=${spring.application.name}
+management.metrics.tags.country=cn</code></pre>
+</div>
+</div>
+<div class="listingblock secondary">
+<div class="title">Yaml</div>
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      country: cn</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_healthinfo"><a class="anchor" href="#_healthinfo"></a>3.7. HealthInfo</h3>
+<div class="paragraph">
+<p>Spring Boot 能够对应用本身及依赖的其它外部组件做简单的健康检查，例如Redis是否正常、磁盘空间是否正常等， <a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.endpoints.health.auto-configured-health-indicators">所有</a>这些检查项都需要实现 <code>HealthIndicator</code> 接口，健康检查的结果通常只是简单的服务是否存活，不包含特别详细的指标信息</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface HealthIndicator extends HealthContributor {
+    /**
+     * Return an indication of health.
+     * @return the health
+     */
+	Health health();
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>监控检查的结果可以通过 <code>/health</code> 端点查看</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/health-endpoint.jpg" alt="health endpoint">
+</div>
+</div>
+<div class="paragraph">
+<p>在生产环境中监控检查的结果需要接入真实的监控系统从而实现服务故障时的告警通知，因此可以将健康检查的结果也转换为指标输出</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><span class="fold-block">package io.github.controller;
+
+</span><span class="fold-block hide-when-folded">import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.binder.MeterBinder;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Status;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+</span><span class="fold-block">@Component
+public class HealthToMetricsConverter implements InitializingBean, MeterBinder {
+
+    private Map&lt;String, HealthIndicator&gt; map;
+
+    private ThreadPoolTaskScheduler scheduler;
+
+    private final ConcurrentHashMap&lt;String, Health&gt; latestHealth = new ConcurrentHashMap&lt;&gt;();
+
+    public HealthToMetricsConverter(Map&lt;String, HealthIndicator&gt; map) {
+        this.map = map;
+        this.scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(5);
+        scheduler.setThreadNamePrefix("ThreadPoolTaskScheduler");
+        scheduler.initialize();
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        for(Map.Entry&lt;String, HealthIndicator&gt; entry : map.entrySet()) {
+            scheduler.scheduleWithFixedDelay(() -&gt; latestHealth.put(entry.getKey(), entry.getValue().health()), Duration.ofSeconds(10));    <i class="conum" data-value="1"></i><b>(1)</b>
+        }
+    }
+
+    @Override
+    public void bindTo(MeterRegistry registry) {
+        for(Map.Entry&lt;String, Health&gt; entry : latestHealth.entrySet()) {
+            registry.gauge("health.indicator", Tags.of("name", entry.getKey()), entry.getValue(), health -&gt; {
+                Status status = health.getStatus();
+                double v = 3.0;
+                if(status.equals(Status.UP)) {         <i class="conum" data-value="2"></i><b>(2)</b>
+                    v = 1.0;
+                } else if(status.equals(Status.DOWN)) {
+                    v = -1.0;
+                } else if(status.equals(Status.OUT_OF_SERVICE)) {
+                    v = -2.0;
+                }
+                return v;
+            });
+        }
+    }
+}
+</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>健康检查可能是很慢的过程，而指标采集需要快速，因此使用线程池定期保存监控检查的结果</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>指标的值必须是数字，因此将Status转为数字</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prometheus_grafana"><a class="anchor" href="#_prometheus_grafana"></a>4. Prometheus &amp; Grafana</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Micrometer使用了门面模式，使用不同的监控系统只需要添加对应的依赖 <code>micrometer-registry-{system}</code> 即可，Prometheus对应如下依赖</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">		&lt;dependency&gt;
+			&lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+			&lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;
+		&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Prometheus的安装很简单，在官网下载安装包解压运行即可
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Prometheus是使用pull的方式采集数据，Actuator模块会使用 <code>/prometheus</code> 端点暴露所有指标数据，因此在Prometheus的配置文件 <code>prometheus.yml</code> 中配置采集的目标和接口如下</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">scrape_configs:
+  - job_name: "myapp"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["HOST:PORT"]</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+静态配置的方式实际上并不推荐，Prometheus支持使用服务发现的方式如Eureka、Zookeeper添加target，具体配置方式参考 <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/">官方网站</a>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>最后在Grafana中添加Prometheus作为数据源并添加Spring Boot仪表盘，就可以非常直观地查看所有指标数据了</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/grafana.jpg" alt="grafana">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

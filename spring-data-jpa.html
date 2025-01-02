@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2022/04/26">
+<title>Spring Data JPA最佳实践</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Spring Data JPA最佳实践</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2022/04/26</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_introduction">1. Introduction</a></li>
+<li><a href="#_identify_issues">2. Identify Issues</a></li>
+<li><a href="#_association_fetching">3. Association Fetching</a></li>
+<li><a href="#_many_to_many_association">4. Many-to-Many Association</a></li>
+<li><a href="#_projection">5. Projection</a>
+<ul class="sectlevel2">
+<li><a href="#_projection_with_entity">5.1. Projection with entity</a></li>
+<li><a href="#_projection_with_interface">5.2. Projection with interface</a></li>
+<li><a href="#_nested_associations">5.3. Nested associations</a></li>
+<li><a href="#_spel">5.4. SPEL</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>本文根据SpringOne 2021的演讲Building Fast and Scalable Persistence Layers with Spring Data JPA整理而成，英语能力不错的建议直接观看下面的原始视频</p>
+</div>
+<div class="videoblock"><div class="content">
+<iframe width="640" height="480" src="https://player.bilibili.com/player.html?bvid=BV1Rq4y167qQ&high_quality=1&page=1"  border="0" frameborder="no" framespacing="0" scrolling="no" allowfullscreen="true"></iframe>
+</div></div>
+<div class="paragraph">
+<p>演讲的PPT和源码在下面的地址</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://thorben-janssen.com/wp-content/uploads/talks/Fast%20and%20Scalable%20Persistence%20Layers%20with%20Spring%20Data%20JPA.pdf">Slides</a></p>
+</li>
+<li>
+<p><a href="https://github.com/thjanssen/Talk-ScalablePersistenceLayersSpringDataJPA">Source Code</a></p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+演讲中的示例代码使用了postgresql数据库，本地没有安装的可以使用
+<code>docker run --name some-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=test -p 5432:5432 --rm postgres</code> 启动一个postgresql容器
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction"><a class="anchor" href="#_introduction"></a>1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Data JPA是Spring Data家族的其中一个项目，主要对一些实现了JPA规范的持久层框架进行封装和增强，
+它极大地降低了JPA的使用难度，使那些基于Spring框架构建的应用非常轻松地实现持久层访问。</p>
+</div>
+<div class="paragraph">
+<p>Spring Data JPA良好的封装性使它非常易用，但也隐藏了内部所有的执行逻辑，使其成为一个黑盒子，当然对于一般的中小型应用也确实不需要关注
+其内部的执行逻辑，但是在构建大型应用或者对性能要求较高的中小型应用时很可能会发现Spring Data JPA并不能满足要求，
+这通常是由于使用方法不当使用导致的，因此本文对Spring Data JPA的最佳实践进行说明，遵循这些建议可以在
+提升开发效率的同时保证应用运行速度。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_identify_issues"><a class="anchor" href="#_identify_issues"></a>2. Identify Issues</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>要提升Spring Data JPA的执行效率，首先需要能够观测其内部执行情况，
+大部分情况下Spring Data JPA与Hibernate一起使用，因此可以通过配置Hibernate的相关参数在控制台展示内部执行情况。</p>
+</div>
+<div class="listingblock primary">
+<div class="title">Properties</div>
+<div class="content">
+<pre class="highlight"><code class="language-properties" data-lang="properties">spring.jpa.properties.hibernate[generate_statistics]=true
+spring.jpa.properties.hibernate.session.events.log[LOG_QUERIES_SLOWER_THAN_MS]=3
+logging.level.org.hibernate.stat=debug
+logging.level.org.hibernate[SQL]=debug</code></pre>
+</div>
+</div>
+<div class="listingblock secondary">
+<div class="title">Yaml</div>
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">spring:
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true                  # <1>
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 3        # <2>
+logging:
+  level:
+    org:
+      hibernate:
+        stat: debug                                # <3>
+        SQL: debug</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>输出执行统计</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>输出慢Sql</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>输出执行的Sql</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+注意这些参数配置会一定程度上影响执行速度，因此生产环境不建议使用
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>修改 <code>ChessPlayer#tournaments</code> 的 fetchType 为 <code>EAGER</code> 并运行 <code>TestDemo#findAll()</code> 会在控制台输出执行的SQL以及如下统计信息</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>2022-04-25 21:45:13.095  INFO 30756 --- [           main] i.StatisticalLoggingSessionEventListener : Session Metrics {
+2150100 nanoseconds spent acquiring 1 JDBC connections;
+0 nanoseconds spent releasing 0 JDBC connections;
+1206300 nanoseconds spent preparing 20 JDBC statements;
+45058100 nanoseconds spent executing 20 JDBC statements;
+0 nanoseconds spent executing 0 JDBC batches;
+92742400 nanoseconds spent performing 40 L2C puts;
+0 nanoseconds spent performing 0 L2C hits;
+729500 nanoseconds spent performing 19 L2C misses;
+0 nanoseconds spent executing 0 flushes (flushing a total of 0 entities and 0 collections);
+13700 nanoseconds spent executing 1 partial-flushes (flushing a total of 0 entities and 0 collections)
+}</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_association_fetching"><a class="anchor" href="#_association_fetching"></a>3. Association Fetching</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>关联查询是JPA中非常常见的操作，定义实体关联关系的注解都包含了一个 <code>fetch</code> 属性用于定义关联查询方式</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@ManyToOne(fetch = FetchType.LAZY)
+private Publisher publisher;
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>FetchType</code> 是一个枚举类型，包含 <code>LAZY</code> 和 <code>EAGER</code> 两个值表示使用时查询和立即查询，
+ToMany默认使用 <code>LAZY</code>，ToOne默认使用 <code>EAGER</code>。</p>
+</div>
+<div class="paragraph">
+<p><code>EAGER</code> 意味着不管是否使用都会查询关联的实体，因此一般情况下 <code>LAZY</code> 是更好的选择，也就是说
+ToOne需要显式指定 <code>fetch</code> 值为 <code>LAZY</code>。而在可以确定后续代码中会使用关联的实体的场景中则
+可以使用 <code>@Query</code> 注解手动在JPQL语句中指定join关系用于同时查询所需实体和其关联实体。</p>
+</div>
+<div class="paragraph">
+<p><code>TestDemo#findWithTournaments()</code> 用于演示 LEFT JOIN FETCH 和 EntityGraph 的效果</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>修改 <code>ChessPlayer#tournaments</code> 的 <code>fetch</code> 值为默认值。</p>
+</li>
+<li>
+<p>注释 <code>ChessPlayerRepository#findWithTournamentsBy()</code> 的 @Query 和 @EntityGraph 后执行
+<code>TestDemo#findWithTournaments()</code>，观察控制台统计信息发现会执行20条statement。</p>
+</li>
+<li>
+<p>分别打开 <code>ChessPlayerRepository#findWithTournamentsBy()</code> 的 @Query 和 @EntityGraph 注释后再
+执行 <code>TestDemo#findWithTournaments()</code>，观察控制台统计信息发现都只执行一条statement。</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+使用 <code>join</code> 查询确实会减少执行的sql数量，但也意味着会一次查询大量数据，因此很容易出现慢sql，尤其是
+关联多个实体时，因此在使用时要特别注意。
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_many_to_many_association"><a class="anchor" href="#_many_to_many_association"></a>4. Many-to-Many Association</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>多对多关联的场景中，我们经常使用 <code>List</code> 保存 <strong>多</strong> 的实体，然而此时Hibernate在对这些 <strong>多</strong> 的实体执行写操作时效率很低，
+必须使用 <code>Set</code> 进行替换。</p>
+</div>
+<div class="paragraph">
+<p><code>TestDemo#removePlayerFromTournament()</code> 用于演示使用 <code>List</code> 和 <code>Set</code> 时执行不同的sql</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>首先修改 <code>ChessTournament#players</code> 的类型为List并执行 <code>TestDemo#removePlayerFromTournament()</code> 观察控制台信息会发现执行了
+18条statement，因为先删除了所有的player再插入不需要删除的player。</p>
+</li>
+<li>
+<p>修改 <code>ChessTournament#players</code> 的类型为Set再次执行 <code>TestDemo#removePlayerFromTournament()</code> 观察控制台信息会发现
+执行了4条statement。</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="title">List</div>
+<div class="content">
+<pre>2022-04-26 20:30:50.183 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    select
+        chesstourn0_.id as id1_2_0_,
+        chesstourn0_.end_date as end_date2_2_0_,
+        chesstourn0_.name as name3_2_0_,
+        chesstourn0_.start_date as start_da4_2_0_,
+        chesstourn0_.version as version5_2_0_
+    from
+        chess_tournament chesstourn0_
+    where
+        chesstourn0_.id=?
+2022-04-26 20:30:50.214  INFO 19764 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 6 milliseconds. SQL: 'HikariProxyPreparedStatement@472019958 wrapping select chesstourn0_.id as id1_2_0_, chesstourn0_.end_date as end_date2_2_0_, chesstourn0_.name as name3_2_0_, chesstourn0_.start_date as start_da4_2_0_, chesstourn0_.version as version5_2_0_ from chess_tournament chesstourn0_ where chesstourn0_.id=2'
+2022-04-26 20:30:50.386 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    select
+        players0_.tournaments_id as tourname1_4_0_,
+        players0_.players_id as players_2_4_0_,
+        chessplaye1_.id as id1_1_1_,
+        chessplaye1_.birth_date as birth_da2_1_1_,
+        chessplaye1_.first_name as first_na3_1_1_,
+        chessplaye1_.last_name as last_nam4_1_1_,
+        chessplaye1_.version as version5_1_1_
+    from
+        chess_tournament_players players0_
+    inner join
+        chess_player chessplaye1_
+            on players0_.players_id=chessplaye1_.id
+    where
+        players0_.tournaments_id=?
+2022-04-26 20:30:50.406  INFO 19764 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 4 milliseconds. SQL: 'HikariProxyPreparedStatement@1453157901 wrapping select players0_.tournaments_id as tourname1_4_0_, players0_.players_id as players_2_4_0_, chessplaye1_.id as id1_1_1_, chessplaye1_.birth_date as birth_da2_1_1_, chessplaye1_.first_name as first_na3_1_1_, chessplaye1_.last_name as last_nam4_1_1_, chessplaye1_.version as version5_1_1_ from chess_tournament_players players0_ inner join chess_player chessplaye1_ on players0_.players_id=chessplaye1_.id where players0_.tournaments_id=2'
+2022-04-26 20:30:50.558 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    update
+        chess_tournament
+    set
+        end_date=?,
+        name=?,
+        start_date=?,
+        version=?
+    where
+        id=?
+        and version=?
+2022-04-26 20:30:50.583  INFO 19764 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 5 milliseconds. SQL: 'HikariProxyPreparedStatement@177522915 wrapping update chess_tournament set end_date='2021-05-25 +08', name='Local Championship', start_date='2021-05-22 +08', version=1 where id=2 and version=0'
+2022-04-26 20:30:50.590 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    delete
+    from
+        chess_tournament_players
+    where
+        tournaments_id=?
+2022-04-26 20:30:50.594 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    insert
+    into
+        chess_tournament_players
+        (tournaments_id, players_id)
+    values
+        (?, ?)
+...
+2022-04-26 20:30:50.646 DEBUG 19764 --- [           main] org.hibernate.SQL                        :
+    insert
+    into
+        chess_tournament_players
+        (tournaments_id, players_id)
+    values
+        (?, ?)
+2022-04-26 20:30:50.650  INFO 19764 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 4 milliseconds. SQL: 'HikariProxyPreparedStatement@306941929 wrapping insert into chess_tournament_players (tournaments_id, players_id) values (2, 33)'
+2022-04-26 20:30:50.669  INFO 19764 --- [           main] i.StatisticalLoggingSessionEventListener : Session Metrics {
+    3880100 nanoseconds spent acquiring 1 JDBC connections;
+    0 nanoseconds spent releasing 0 JDBC connections;
+    2100900 nanoseconds spent preparing 18 JDBC statements;
+    58723500 nanoseconds spent executing 18 JDBC statements;
+    0 nanoseconds spent executing 0 JDBC batches;
+    144689100 nanoseconds spent performing 18 L2C puts;
+    0 nanoseconds spent performing 0 L2C hits;
+    6642700 nanoseconds spent performing 1 L2C misses;
+    149136500 nanoseconds spent executing 1 flushes (flushing a total of 16 entities and 47 collections);
+    0 nanoseconds spent executing 0 partial-flushes (flushing a total of 0 entities and 0 collections)
+}</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Set</div>
+<div class="content">
+<pre>2022-04-26 20:33:32.488 DEBUG 32020 --- [           main] org.hibernate.SQL                        :
+    select
+        chesstourn0_.id as id1_2_0_,
+        chesstourn0_.end_date as end_date2_2_0_,
+        chesstourn0_.name as name3_2_0_,
+        chesstourn0_.start_date as start_da4_2_0_,
+        chesstourn0_.version as version5_2_0_
+    from
+        chess_tournament chesstourn0_
+    where
+        chesstourn0_.id=?
+2022-04-26 20:33:32.503  INFO 32020 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 5 milliseconds. SQL: 'HikariProxyPreparedStatement@622702995 wrapping select chesstourn0_.id as id1_2_0_, chesstourn0_.end_date as end_date2_2_0_, chesstourn0_.name as name3_2_0_, chesstourn0_.start_date as start_da4_2_0_, chesstourn0_.version as version5_2_0_ from chess_tournament chesstourn0_ where chesstourn0_.id=2'
+2022-04-26 20:33:32.611 DEBUG 32020 --- [           main] org.hibernate.SQL                        :
+    select
+        players0_.tournaments_id as tourname1_4_0_,
+        players0_.players_id as players_2_4_0_,
+        chessplaye1_.id as id1_1_1_,
+        chessplaye1_.birth_date as birth_da2_1_1_,
+        chessplaye1_.first_name as first_na3_1_1_,
+        chessplaye1_.last_name as last_nam4_1_1_,
+        chessplaye1_.version as version5_1_1_
+    from
+        chess_tournament_players players0_
+    inner join
+        chess_player chessplaye1_
+            on players0_.players_id=chessplaye1_.id
+    where
+        players0_.tournaments_id=?
+2022-04-26 20:33:32.789 DEBUG 32020 --- [           main] org.hibernate.SQL                        :
+    update
+        chess_tournament
+    set
+        end_date=?,
+        name=?,
+        start_date=?,
+        version=?
+    where
+        id=?
+        and version=?
+2022-04-26 20:33:32.809  INFO 32020 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 6 milliseconds. SQL: 'HikariProxyPreparedStatement@1761528165 wrapping update chess_tournament set end_date='2021-05-25 +08', name='Local Championship', start_date='2021-05-22 +08', version=1 where id=2 and version=0'
+2022-04-26 20:33:32.818 DEBUG 32020 --- [           main] org.hibernate.SQL                        :
+    delete
+    from
+        chess_tournament_players
+    where
+        tournaments_id=?
+        and players_id=?
+2022-04-26 20:33:32.836  INFO 32020 --- [           main] i.StatisticalLoggingSessionEventListener : Session Metrics {
+    2230700 nanoseconds spent acquiring 1 JDBC connections;
+    0 nanoseconds spent releasing 0 JDBC connections;
+    1028500 nanoseconds spent preparing 4 JDBC statements;
+    17931500 nanoseconds spent executing 4 JDBC statements;
+    0 nanoseconds spent executing 0 JDBC batches;
+    113258000 nanoseconds spent performing 18 L2C puts;
+    0 nanoseconds spent performing 0 L2C hits;
+    11600200 nanoseconds spent performing 1 L2C misses;
+    116423200 nanoseconds spent executing 1 flushes (flushing a total of 16 entities and 47 collections);
+    0 nanoseconds spent executing 0 partial-flushes (flushing a total of 0 entities and 0 collections)
+}</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_projection"><a class="anchor" href="#_projection"></a>5. Projection</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Data JPA提供的默认查询虽然便于使用，但每次都会查询所有字段，很多时候这是不必要的，
+比如在使用联合索引的情况下，只查询索引包含的字段可以提升查询效率。
+为此Spring Data JPA提供了Projection实现只查询部分字段。</p>
+</div>
+<div class="sect2">
+<h3 id="_projection_with_entity"><a class="anchor" href="#_projection_with_entity"></a>5.1. Projection with entity</h3>
+<div class="paragraph">
+<p><code>TestDemo#getPlayerNamesDto()</code> 用于演示基于实体类的Projection，从控制台的输出可以看到生成的SQL只查询了实体的两个属性</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class PlayerName {
+
+    private String firstName;
+    private String lastName;
+
+    //getter, setter
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>2022-04-26 21:11:25.688 DEBUG 26960 --- [           main] org.hibernate.SQL                        :
+    select
+        chessplaye0_.first_name as col_0_0_,
+        chessplaye0_.last_name as col_1_0_
+    from
+        chess_player chessplaye0_
+    where
+        chessplaye0_.first_name=?</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_projection_with_interface"><a class="anchor" href="#_projection_with_interface"></a>5.2. Projection with interface</h3>
+<div class="paragraph">
+<p><code>TestDemo#getPlayerNames()</code> 用于演示基于接口的Projection，从控制台的输出可以看到生成的sql只查询了接口的get方法对于的字段</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface PlayerNameIntf {
+
+    String getFirstName();
+    String getLastName();
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>2022-04-26 21:17:52.261 DEBUG 31952 --- [           main] org.hibernate.SQL                        :
+    select
+        chessplaye0_.first_name as col_0_0_,
+        chessplaye0_.last_name as col_1_0_
+    from
+        chess_player chessplaye0_
+    where
+        chessplaye0_.first_name=?</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>一般情况下优先选择使用基于接口的Projection，除了声明更简单外还支撑Native Query，<code>TestDemo#getPlayerNamesDtoNative()</code>
+和 <code>TestDemo#getPlayerNamesDtoNative()</code> 分别使用实体类和接口接收Native Query的查询结果，
+但使用实体类时会抛出 <code>ConverterNotFoundException</code>，而使用接口则能正常查询。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_nested_associations"><a class="anchor" href="#_nested_associations"></a>5.3. Nested associations</h3>
+<div class="paragraph">
+<p>Projection还支持接口中定义关联的实体，<code>TestDemo#getTournamentWithPlayers()</code> 用于演示此场景</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface TournamentIntf {
+
+    String getName();
+    List&lt;PlayerNameIntf&gt; getPlayers();
+}
+
+public interface PlayerNameIntf {
+
+    String getFirstName();
+    String getLastName();
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>2022-04-26 22:21:20.112 DEBUG 9948 --- [           main] org.hibernate.SQL                        :
+    select
+        chesstourn0_.id as id1_2_,
+        chesstourn0_.end_date as end_date2_2_,
+        chesstourn0_.name as name3_2_,
+        chesstourn0_.start_date as start_da4_2_,
+        chesstourn0_.version as version5_2_
+    from
+        chess_tournament chesstourn0_
+    where
+        chesstourn0_.name=?
+2022-04-26 22:21:20.138  INFO 9948 --- [           main] org.hibernate.SQL_SLOW                   : SlowQuery: 13 milliseconds. SQL: 'HikariProxyPreparedStatement@1965388767 wrapping select chesstourn0_.id as id1_2_, chesstourn0_.end_date as end_date2_2_, chesstourn0_.name as name3_2_, chesstourn0_.start_date as start_da4_2_, chesstourn0_.version as version5_2_ from chess_tournament chesstourn0_ where chesstourn0_.name='Tata Steel Chess Tournament 2021''
+2022-04-26 22:21:20.222 DEBUG 9948 --- [           main] o.h.stat.internal.StatisticsImpl         : HHH000117: HQL: select generatedAlias0 from ChessTournament as generatedAlias0 where generatedAlias0.name=:param0, time: 122ms, rows: 1
+2022-04-26 22:21:20.238  INFO 9948 --- [           main] c.thorben.janssen.spring.data.TestDemo   : ======== Test Output ===========
+2022-04-26 22:21:20.253 DEBUG 9948 --- [           main] org.hibernate.SQL                        :
+    select
+        players0_.tournaments_id as tourname1_4_0_,
+        players0_.players_id as players_2_4_0_,
+        chessplaye1_.id as id1_1_1_,
+        chessplaye1_.birth_date as birth_da2_1_1_,
+        chessplaye1_.first_name as first_na3_1_1_,
+        chessplaye1_.last_name as last_nam4_1_1_,
+        chessplaye1_.version as version5_1_1_
+    from
+        chess_tournament_players players0_
+    inner join
+        chess_player chessplaye1_
+            on players0_.players_id=chessplaye1_.id
+    where
+        players0_.tournaments_id=?</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>尽管查询能够正常执行，但从控制台的输出可以看出查询了所有字段，而不只是Projection中声明的字段，这样的结果
+完全失去了Projection的优势，反而还多定义了接口，因此绝对不要使用Nested associations。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spel"><a class="anchor" href="#_spel"></a>5.4. SPEL</h3>
+<div class="paragraph">
+<p>Projection的接口支持使用SPEL表达式，<code>TestDemo#getPlayerFullNames()</code> 演示了这一场景，与
+Nested associations一样，最终会查询所有字段，因此这种方式也不要使用。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface PlayerFullNameIntf {
+
+    @Value("#{target.lastName +', ' + target.firstName}")
+    String getFullName();
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>通过在Projection接口中定义默认方法既可以保留Projection的好处，又能对查询的字段计算后返回，
+<code>TestDemo#getBetterPlayerFullNames()</code> 演示了这一用法</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface BetterPlayerFullNameIntf {
+
+    String getFirstName();
+    String getLastName();
+
+    default String getFullName() {return getLastName()+", "+getFirstName();}
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>从控制台的输出也可以看出只查询了get方法对应的字段</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>2022-04-26 22:29:44.729 DEBUG 25592 --- [           main] org.hibernate.SQL                        :
+    select
+        chessplaye0_.first_name as col_0_0_,
+        chessplaye0_.last_name as col_1_0_
+    from
+        chess_player chessplaye0_
+    where
+        chessplaye0_.first_name=?</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-01-02 11:56:50 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>
